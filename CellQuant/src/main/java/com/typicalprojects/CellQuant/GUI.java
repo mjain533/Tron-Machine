@@ -53,7 +53,7 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class GUI  {
-
+	//
 	private JFrame quantFrame;
 	public static final Font smallFont = new Font("PingFang TC", Font.BOLD, 13);
 	public static final Font smallPlainFont = new Font("PingFang TC", Font.PLAIN, 13);
