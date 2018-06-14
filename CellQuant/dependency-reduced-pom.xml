@@ -16,7 +16,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.3</version>
+        <version>2.4.3</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -29,6 +29,8 @@
                   <mainClass>com.typicalprojects.CellQuant.MainFrame</mainClass>
                 </transformer>
               </transformers>
+              <finalName>${project.artifactId}-${project.version}</finalName>
+              <outputDirectory>../guide</outputDirectory>
             </configuration>
           </execution>
         </executions>
