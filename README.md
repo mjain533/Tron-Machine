@@ -1,1 +1,1 @@
-<html>Test description</html>
+<strong>test</strong>
