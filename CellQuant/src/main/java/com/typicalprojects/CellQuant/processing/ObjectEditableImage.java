@@ -100,6 +100,7 @@ public class ObjectEditableImage {
 
 	}
 	
+	@SuppressWarnings("deprecation")
 	public Map<Channel, ResultsTable> createNewResultsTables() {
 		Map<Channel, ResultsTable> tables = new HashMap<Channel, ResultsTable>();
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {

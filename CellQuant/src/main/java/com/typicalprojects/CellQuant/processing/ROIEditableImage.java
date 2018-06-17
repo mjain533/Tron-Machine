@@ -21,7 +21,6 @@ import Util.ImageContainer.Channel;
 import Util.Point;
 import Util.ProspectiveImage;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;

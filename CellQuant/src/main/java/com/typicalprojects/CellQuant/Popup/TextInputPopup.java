@@ -2,7 +2,6 @@ package com.typicalprojects.CellQuant.Popup;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,7 +12,6 @@ import com.typicalprojects.CellQuant.GUI;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -22,10 +20,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 
 import javax.swing.JButton;
 
+@SuppressWarnings("serial")
 public class TextInputPopup extends JFrame {
 
 	private JPanel contentPane;

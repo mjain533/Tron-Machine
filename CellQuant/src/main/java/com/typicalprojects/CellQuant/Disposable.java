@@ -1,45 +1,28 @@
 package com.typicalprojects.CellQuant;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Container;
 import java.awt.EventQueue;
-import java.awt.Font;
-import java.awt.Image;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
-import com.typicalprojects.CellQuant.Popup.TextInputPopup;
-
 import Util.ImagePanel;
-import Util.SimpleJList;
 
 import javax.swing.border.BevelBorder;
 import javax.swing.GroupLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.JList;
-import javax.swing.SpringLayout;
 import javax.swing.JSlider;
-import java.awt.Component;
-import javax.swing.Box;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import com.jgoodies.forms.layout.FormLayout;
-import com.jgoodies.forms.layout.ColumnSpec;
-import com.jgoodies.forms.layout.RowSpec;
 
 public class Disposable extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8983373918226400378L;
 	private JPanel contentPane;
 	private JSlider sldrSlice;
 	private JSlider sldrChan;
