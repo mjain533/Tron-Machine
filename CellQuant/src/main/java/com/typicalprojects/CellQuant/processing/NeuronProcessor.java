@@ -12,10 +12,10 @@ import javax.swing.JOptionPane;
 import com.typicalprojects.CellQuant.GUI;
 import com.typicalprojects.CellQuant.SynchronizedProgress;
 import com.typicalprojects.CellQuant.Wizard;
+import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-import Util.ImageContainer;
-import Util.ImageContainer.Channel;
-import Util.ProspectiveImage;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.measure.ResultsTable;

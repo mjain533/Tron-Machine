@@ -24,10 +24,9 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 
-import com.typicalprojects.CellQuant.Popup.HelpPopup;
-
-import Util.ProspectiveImage;
-import Util.SimpleJList;
+import com.typicalprojects.CellQuant.popup.HelpPopup;
+import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.SimpleJList;
 
 public class PnlSelectFiles {
 

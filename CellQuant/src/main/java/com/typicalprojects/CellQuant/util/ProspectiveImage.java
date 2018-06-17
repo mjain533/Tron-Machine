@@ -1,4 +1,4 @@
-package Util;
+package com.typicalprojects.CellQuant.util;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.typicalprojects.CellQuant.GUI;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-import Util.ImageContainer.Channel;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.measure.Calibration;

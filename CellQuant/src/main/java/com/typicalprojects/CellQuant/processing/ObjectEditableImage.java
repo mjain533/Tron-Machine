@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.typicalprojects.CellQuant.processing.Custom3DCounter.Column;
+import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.ImagePanel;
+import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-import Util.ImageContainer;
-import Util.ImageContainer.Channel;
-import Util.ImagePanel;
-import Util.Point;
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
 import ij.gui.NewImage;

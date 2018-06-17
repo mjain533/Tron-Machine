@@ -29,18 +29,18 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.BrightnessAdjuster.BrightnessChangeReceiver;
 import com.typicalprojects.CellQuant.PnlDisplay.PnlDisplayFeedbackReceiver;
 import com.typicalprojects.CellQuant.Wizard.Status;
-import com.typicalprojects.CellQuant.Popup.HelpPopup;
-import com.typicalprojects.CellQuant.Popup.TextInputPopup;
-import com.typicalprojects.CellQuant.Popup.TextInputPopupReceiver;
+import com.typicalprojects.CellQuant.popup.HelpPopup;
+import com.typicalprojects.CellQuant.popup.TextInputPopup;
+import com.typicalprojects.CellQuant.popup.TextInputPopupReceiver;
 import com.typicalprojects.CellQuant.processing.NeuronProcessor;
 import com.typicalprojects.CellQuant.processing.ObjectEditableImage;
 import com.typicalprojects.CellQuant.processing.ROIEditableImage;
+import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.SimpleJList;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-import Util.ImageContainer;
-import Util.ProspectiveImage;
-import Util.SimpleJList;
-import Util.ImageContainer.Channel;
-import Util.Point;
 import ij.ImagePlus;
 import ij.measure.ResultsTable;
 

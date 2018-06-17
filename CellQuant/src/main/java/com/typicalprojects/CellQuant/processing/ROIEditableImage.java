@@ -15,11 +15,11 @@ import java.util.Map.Entry;
 import com.typicalprojects.CellQuant.GUI;
 import com.typicalprojects.CellQuant.SynchronizedProgress;
 import com.typicalprojects.CellQuant.processing.Custom3DCounter.Column;
+import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-import Util.ImageContainer;
-import Util.ImageContainer.Channel;
-import Util.Point;
-import Util.ProspectiveImage;
 import ij.ImagePlus;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;

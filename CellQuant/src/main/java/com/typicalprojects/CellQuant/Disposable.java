@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import Util.ImagePanel;
+import com.typicalprojects.CellQuant.util.ImagePanel;
 
 import javax.swing.border.BevelBorder;
 import javax.swing.GroupLayout;

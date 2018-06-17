@@ -38,9 +38,8 @@ import java.awt.BorderLayout;
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 
-
-import Util.ImageContainer;
-import Util.ImageContainer.Channel;
+import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import java.awt.Font;
 import java.awt.Toolkit;

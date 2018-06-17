@@ -8,6 +8,8 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
+
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
@@ -40,7 +42,6 @@ import javax.swing.JCheckBox;
 import java.awt.Font;
 
 import javax.swing.DefaultComboBoxModel;
-import Util.ImageContainer.Channel;
 
 public class Preferences extends JFrame {
 

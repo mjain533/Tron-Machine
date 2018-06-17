@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.Popup;
+package com.typicalprojects.CellQuant.popup;
 
 public interface TextInputPopupReceiver {
 	

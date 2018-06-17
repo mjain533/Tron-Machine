@@ -19,11 +19,10 @@ import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import com.typicalprojects.CellQuant.util.ImagePanel;
+import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
-
-import Util.ImageContainer.Channel;
-import Util.ImagePanel;
-import Util.Point;
 import ij.ImagePlus;
 
 public class PnlDisplay  {

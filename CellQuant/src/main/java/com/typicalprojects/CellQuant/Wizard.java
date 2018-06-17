@@ -8,8 +8,7 @@ import java.util.List;
 import javax.swing.JOptionPane;
 
 import com.typicalprojects.CellQuant.PnlInstructions.Instruction;
-
-import Util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ProspectiveImage;
 
 public class Wizard {
 	
