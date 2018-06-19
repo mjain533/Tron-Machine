@@ -98,7 +98,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private List<ProspectiveImage> imagesForObjectAnalysis = new LinkedList<ProspectiveImage>();
 	private List<ProspectiveImage> imagesForObjectSelection = new LinkedList<ProspectiveImage>();
 	private List<ProspectiveImage> imagesForROICreation = new LinkedList<ProspectiveImage>();
-	private Map<Channel, Integer[]> dispMinsMaxsDefaults = new HashMap<Channel, Integer[]>();
+	private Map<Channel, Integer[]> defMinsMaxes = new HashMap<Channel, Integer[]>();
 	private List<ProspectiveImage> imagesForSliceSelection = null;
 	private int currentState = STATE_DISABLED;
 	private NeuronProcessor neuronProcessor;
@@ -558,6 +558,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			this.gui.log("Calculating Distances from Rois...");
 			
 			Map<Channel, ResultsTable> results = imageCurrentlyROIEditing.process(this.gui.getProgressReporter());
+			this.gui.log("Saving resources...");
 			this.imageCurrentlyROIEditing.saveROIs();
 			ImageContainer newIC = this.imageCurrentlyROIEditing.getNewImage();
 
@@ -591,6 +592,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.imageCurrentlyROIEditing = new ROIEditableImage(ic, GUI.channelForROIDraw, tables, this.gui);
 
 		this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
+		
 		List<Channel> channelsForROISelection = new ArrayList<Channel>();
 		channelsForROISelection.add(GUI.channelForROIDraw);
 		for (int i = 0; i < GUI.channelMap.size(); i++) {
@@ -600,7 +602,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			}
 		}
 		this.gui.getPanelDisplay().setChannelSlider(true, channelsForROISelection);
-		this.gui.getPanelDisplay().setSliceSlider(true, 1, ic.getStackSize(GUI.channelForROIDraw));
 
 		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(GUI.channelForROIDraw));
 		this.distTxtCurrDisp.setText(ic.getTotalImageTitle());
@@ -614,11 +615,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.gui.getPanelDisplay().setDisplayState(true, null);
 		for (Channel chan : channelsForROISelection) {
 			if (!GUI.channelsToProcess.contains(chan)) {
-				this.dispMinsMaxsDefaults.put(chan, new Integer[] {imageCurrentlyROIEditing.getContainer().getMin(chan), imageCurrentlyROIEditing.getContainer().getMax(chan)});
+				this.defMinsMaxes.put(chan, new Integer[] {imageCurrentlyROIEditing.getContainer().getMin(chan), imageCurrentlyROIEditing.getContainer().getMax(chan)});
 			}
 		}
 				
-		this.gui.getBrightnessAdjuster().setValues(this.dispMinsMaxsDefaults.get(GUI.channelForROIDraw)[0], this.dispMinsMaxsDefaults.get(GUI.channelForROIDraw)[1]/*(int) Math.pow(2, ip.getBitDepth())*/,this.imageCurrentlyROIEditing.getContainer().getMin(GUI.channelForROIDraw), 
+		this.gui.getBrightnessAdjuster().setValues(this.defMinsMaxes.get(GUI.channelForROIDraw)[0], this.defMinsMaxes.get(GUI.channelForROIDraw)[1]/*(int) Math.pow(2, ip.getBitDepth())*/,this.imageCurrentlyROIEditing.getContainer().getMin(GUI.channelForROIDraw), 
 				this.imageCurrentlyROIEditing.getContainer().getMax(GUI.channelForROIDraw));
 		setDisplayState(STATE_COUNT_DIST, null);
 		return true;
@@ -672,7 +673,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.currentState = state;
 		switch (state) {
 		case STATE_DISABLED:
-			this.dispMinsMaxsDefaults.clear();
 			if (disabledMsg != null) 
 				this.lblDisabled.setText(disabledMsg);
 			else
@@ -869,12 +869,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if(imageCurrentlyDisplayed != null)
 		{
 			this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(gui.getPanelDisplay().getSliderSelectedChannel(), slice, false));
-		} else if (currentState == STATE_COUNT_DIST) {
-			if (imageCurrentlyROIEditing != null) {
-				this.imageCurrentlyROIEditing.setCurrentSlice(slice);
-				this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()));
-
-			}
 		}
 	}
 
@@ -893,15 +887,12 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		} else if (currentState == STATE_COUNT_DIST) {
 			if (imageCurrentlyROIEditing != null) {
 				if (!GUI.channelsToProcess.contains(chan)) {
-					Integer[] minMax = this.dispMinsMaxsDefaults.get(chan);
-					ImagePlus ip = this.imageCurrentlyROIEditing.getContainer().getImageChannel(chan, false);
+					Integer[] minMax = this.defMinsMaxes.get(chan);
 					this.gui.getBrightnessAdjuster().setValues(minMax[0], minMax[1], this.imageCurrentlyROIEditing.getContainer().getMin(chan), this.imageCurrentlyROIEditing.getContainer().getMax(chan));
-					this.gui.getPanelDisplay().setSliceSlider(true, 1, ip.getStackSize(), this.imageCurrentlyROIEditing.getCurrentSlice());
 					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan));
 				} else {
 					this.gui.getBrightnessAdjuster().reset();
 					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan));
-					this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
 				}
 			}
 		}

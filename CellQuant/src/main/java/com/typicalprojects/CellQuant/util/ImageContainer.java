@@ -3,7 +3,6 @@ package com.typicalprojects.CellQuant.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,7 +19,6 @@ public class ImageContainer {
 
 	private List<Channel> channels = new ArrayList<Channel>();
 	private List<ImagePlus> images = new ArrayList<ImagePlus>();
-	private Map<Channel, Integer[]> currMinsMaxes = null;
 	
 	private String title;
 	private File imgFile;
@@ -170,12 +168,10 @@ public class ImageContainer {
 			ImagePlus img = images.get(i);
 			ImageStack is = img.getStack().duplicate();
 			for (int s = (is.getSize() - highSlice); s > 0; s--) {
-				System.out.println(2);
 				is.deleteLastSlice();
 			}
 
 			for (int s = lowSlice; s > 1; s--) {
-				System.out.println(3);
 				is.deleteSlice(1);
 			}
 			newImages[i] = new ImagePlus(img.getTitle(), is);
@@ -213,16 +209,22 @@ public class ImageContainer {
 
 
 	public void save(String date) {
+		
+		try {
+			for (int i = 0; i < images.size(); i++) {
 
-		for (int i = 0; i < images.size(); i++) {
-
-			String savePath = this.intermediateFilesDir + File.separator + images.get(i).getTitle() + ".tiff";
-			if (images.get(i).getStackSize() > 1) {
-				new FileSaver(images.get(i)).saveAsTiffStack(savePath);
-			} else {
-				new FileSaver(images.get(i)).saveAsTiff(savePath);
+				String savePath = this.intermediateFilesDir + File.separator + images.get(i).getTitle() + ".tiff";
+				
+				if (images.get(i).getStackSize() > 1) {
+					new FileSaver(images.get(i)).saveAsTiffStack(savePath);
+				} else {
+					new FileSaver(images.get(i)).saveAsTiff(savePath);
+				}
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+
 
 	}
 	
@@ -261,45 +263,19 @@ public class ImageContainer {
 	}
 	
 	public synchronized void applyMinMax(Channel channel, int min, int max) {
-		if (this.currMinsMaxes == null) {
-			this.currMinsMaxes = new HashMap<Channel, Integer[]>();
-		}
-		this.currMinsMaxes.put(channel, new Integer[] {min, max});
 		ImagePlus ip = this.images.get(this.channels.indexOf(channel));
 		ip.setDisplayRange(min, max);
 		ip.updateImage();
 	}
 	
 	public synchronized int getMin(Channel channel) {
-		if (this.currMinsMaxes == null) {
-			this.currMinsMaxes = new HashMap<Channel, Integer[]>();
-		}
-		
-		if (this.currMinsMaxes.containsKey(channel)) {
-			return this.currMinsMaxes.get(channel)[0];
-		} else {
-			ImagePlus ip = this.images.get(this.channels.indexOf(channel));
-			Integer[] minMax = new Integer[] {(int) ip.getDisplayRangeMin(), (int) ip.getDisplayRangeMax()};
-			this.currMinsMaxes.put(channel, minMax);
-			return minMax[0];
-		}
+
+		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMin();
 		
 	}
 	
 	public synchronized int getMax(Channel channel) {
-		if (this.currMinsMaxes == null) {
-			this.currMinsMaxes = new HashMap<Channel, Integer[]>();
-		}
-		
-		if (this.currMinsMaxes.containsKey(channel)) {
-			return this.currMinsMaxes.get(channel)[1];
-		} else {
-			ImagePlus ip = this.images.get(this.channels.indexOf(channel));
-			Integer[] minMax = new Integer[] {(int) ip.getDisplayRangeMin(), (int) ip.getDisplayRangeMax()};
-			this.currMinsMaxes.put(channel, minMax);
-			return minMax[1];
-
-		}
+		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMax();
 	}
 	
 }

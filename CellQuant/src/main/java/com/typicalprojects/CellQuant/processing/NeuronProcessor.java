@@ -55,7 +55,7 @@ public class NeuronProcessor {
 					List<Channel> channels = new LinkedList<Channel>();
 					List<ImagePlus> images = new LinkedList<ImagePlus>();
 					Map<Channel, ResultsTable> tables = new HashMap<Channel, ResultsTable>();
-
+					ZProjector projector = new ZProjector();
 					for (Channel chan : container.getChannels()) {
 						channels.add(chan);
 
@@ -65,7 +65,10 @@ public class NeuronProcessor {
 							images.add((ImagePlus) chanProcessed[0]);							
 							tables.put(chan, (ResultsTable) chanProcessed[1]);
 						} else {
-							images.add(container.getImageChannel(chan, true));
+							projector.setImage(container.getImageChannel(chan, true));
+							projector.setMethod(ZProjector.MAX_METHOD);
+							projector.doProjection();
+							images.add(projector.getProjection());
 
 						}
 					}
