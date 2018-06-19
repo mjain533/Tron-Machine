@@ -167,7 +167,8 @@ public class GUI  {
 			}
 			initialize();
 		}catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "test");
+			JOptionPane.showMessageDialog(null, e.getMessage());
+			JOptionPane.showMessageDialog(null, e.getStackTrace());
 		}
 
 	}
