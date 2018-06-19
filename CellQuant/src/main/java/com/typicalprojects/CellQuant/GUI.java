@@ -53,7 +53,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class GUI  {
 
-	
+
 	private JFrame quantFrame;
 	public static final Font smallFont = new Font("PingFang TC", Font.BOLD, 13);
 	public static final Font smallPlainFont = new Font("PingFang TC", Font.PLAIN, 13);
@@ -103,73 +103,69 @@ public class GUI  {
 	 * @throws FormatException 
 	 */
 	public GUI() throws IOException {
-		try {
-			DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
-			Date date = new Date();
-			dateString = dateFormat.format(date);
+		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
+		Date date = new Date();
+		dateString = dateFormat.format(date);
 
-			File baseDir = new File(folderName);
-			if (!baseDir.exists() || !baseDir.isDirectory()) {
-				baseDir.mkdir();
+		File baseDir = new File(folderName);
+		if (!baseDir.exists() || !baseDir.isDirectory()) {
+			baseDir.mkdir();
 
-			}
-
-			File settings = new File(folderName + File.separator + settingsFile);
-			if (!settings.exists()) {
-				boolean fileCreated = false;
-
-				while (!fileCreated) {
-					try {
-						settings.createNewFile();
-						fileCreated = true;
-					} catch (IOException e) {
-						if (JOptionPane.showInternalConfirmDialog(null, "A directory for holding contents of this application could not be created on your computer."
-								+ " Would you like to retry?", "Could not create file.", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.CANCEL_OPTION ) {
-							doExit();
-						}
-
-					}
-					BufferedWriter writer = new BufferedWriter(new FileWriter(settings));
-					writer.write("DO NOT TOUCH\nChans:0-G:1-W:2-R:3-B\nChProc:R,G\nChROI:B");
-					writer.close();
-					channelMap.clear();
-					channelMap.put(0, Channel.GREEN);
-					channelMap.put(1, Channel.WHITE);
-					channelMap.put(2, Channel.RED);
-					channelMap.put(3, Channel.BLUE);
-					channelsToProcess.clear();
-					channelsToProcess.add(Channel.RED);
-					channelsToProcess.add(Channel.GREEN);
-					channelForROIDraw = Channel.BLUE;
-
-				}
-
-			} else {
-
-				channelMap.clear();
-				channelsToProcess.clear();
-				Scanner scanner = new Scanner(settings);
-				scanner.nextLine();
-				String[] prefsChannelMAp = scanner.nextLine().split(":");
-				for (int i = 1; i < prefsChannelMAp.length; i++) {
-					String[] channelMapping = prefsChannelMAp[i].split("-");
-					channelMap.put(Integer.valueOf(channelMapping[0]), Channel.getChannelByAbbreviation(channelMapping[1]));
-				}
-
-				String[] prefsChannelProc = scanner.nextLine().split(":")[1].split(",");
-				for (int i = 0; i < prefsChannelProc.length; i++) {
-					channelsToProcess.add(Channel.getChannelByAbbreviation(prefsChannelProc[i]));
-				}
-
-				channelForROIDraw = Channel.getChannelByAbbreviation(scanner.nextLine().split(":")[1]);
-				scanner.close();
-
-			}
-			initialize();
-		}catch (Exception e) {
-			JOptionPane.showMessageDialog(null, e.getMessage());
-			JOptionPane.showMessageDialog(null, e.getStackTrace());
 		}
+
+		File settings = new File(folderName + File.separator + settingsFile);
+		if (!settings.exists()) {
+			boolean fileCreated = false;
+
+			while (!fileCreated) {
+				try {
+					settings.createNewFile();
+					fileCreated = true;
+				} catch (IOException e) {
+					if (JOptionPane.showInternalConfirmDialog(null, "A directory for holding contents of this application could not be created on your computer."
+							+ " Would you like to retry?", "Could not create file.", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.CANCEL_OPTION ) {
+						doExit();
+					}
+
+				}
+				BufferedWriter writer = new BufferedWriter(new FileWriter(settings));
+				writer.write("DO NOT TOUCH\nChans:0-G:1-W:2-R:3-B\nChProc:R,G\nChROI:B");
+				writer.close();
+				channelMap.clear();
+				channelMap.put(0, Channel.GREEN);
+				channelMap.put(1, Channel.WHITE);
+				channelMap.put(2, Channel.RED);
+				channelMap.put(3, Channel.BLUE);
+				channelsToProcess.clear();
+				channelsToProcess.add(Channel.RED);
+				channelsToProcess.add(Channel.GREEN);
+				channelForROIDraw = Channel.BLUE;
+
+			}
+
+		} else {
+
+			channelMap.clear();
+			channelsToProcess.clear();
+			Scanner scanner = new Scanner(settings);
+			scanner.nextLine();
+			String[] prefsChannelMAp = scanner.nextLine().split(":");
+			for (int i = 1; i < prefsChannelMAp.length; i++) {
+				String[] channelMapping = prefsChannelMAp[i].split("-");
+				channelMap.put(Integer.valueOf(channelMapping[0]), Channel.getChannelByAbbreviation(channelMapping[1]));
+			}
+
+			String[] prefsChannelProc = scanner.nextLine().split(":")[1].split(",");
+			for (int i = 0; i < prefsChannelProc.length; i++) {
+				channelsToProcess.add(Channel.getChannelByAbbreviation(prefsChannelProc[i]));
+			}
+
+			channelForROIDraw = Channel.getChannelByAbbreviation(scanner.nextLine().split(":")[1]);
+			scanner.close();
+
+		}
+		initialize();
+
 
 	}
 
@@ -261,7 +257,7 @@ public class GUI  {
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							
+
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -437,7 +433,7 @@ public class GUI  {
 	public BrightnessAdjuster getBrightnessAdjuster() {
 		return this.brightnessAdjuster;
 	}
-	
+
 	public void setBrightnessAdjustOptionEnabled(boolean enabled) {
 		this.mntmBrightnessAdj.setEnabled(enabled);
 
