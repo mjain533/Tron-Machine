@@ -87,7 +87,8 @@ public class PnlSelectFiles {
 		chkAllOutputSingleFolder.setSelected(false);
 
 		btnSelectFilesHelp = new JButton("");
-		btnSelectFilesHelp.setIcon(new ImageIcon(new ImageIcon(GUI.class.getResource("/javax/swing/plaf/metal/icons/ocean/question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
+		btnSelectFilesHelp.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
+
 		btnSelectFilesHelp.setForeground(Color.BLUE);
 		btnSelectFilesHelp.setBorderPainted(false);
 		btnSelectFilesHelp.setOpaque(false);

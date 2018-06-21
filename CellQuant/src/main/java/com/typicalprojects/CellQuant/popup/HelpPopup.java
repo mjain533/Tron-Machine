@@ -61,7 +61,7 @@ public class HelpPopup extends JFrame {
 		lblIcon.setFocusable(false);
 		lblIcon.setVerticalAlignment(SwingConstants.TOP);
 		lblIcon.setBorder(new EmptyBorder(10, 10, 0, 0));
-		lblIcon.setIcon(new ImageIcon(new ImageIcon(HelpPopup.class.getResource("/javax/swing/plaf/metal/icons/ocean/question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
+		lblIcon.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
 		
 		
 		JLabel lblText = new JLabel(message);
