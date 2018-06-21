@@ -179,7 +179,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		
 		distBtnHelp = new JButton("");
-		distBtnHelp.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
+		distBtnHelp.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
 		distBtnHelp.setForeground(Color.BLUE);
 		distBtnHelp.setBorderPainted(false);
 		distBtnHelp.setOpaque(false);
