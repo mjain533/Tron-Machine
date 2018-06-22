@@ -64,8 +64,8 @@ public class HelpPopup extends JFrame {
 		lblIcon.setVerticalAlignment(SwingConstants.TOP);
 		lblIcon.setBorder(new EmptyBorder(10, 10, 0, 0));
 		//new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/question.png")));
-		System.out.println(HelpPopup.class.getResource("question.png"));
-		lblIcon.setIcon(new ImageIcon(new ImageIcon(HelpPopup.class.getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
+		System.out.println(HelpPopup.class.getResource("/question.png"));
+		lblIcon.setIcon(new ImageIcon(new ImageIcon(HelpPopup.class.getResource("/question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
 
 		//lblIcon.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
 		
