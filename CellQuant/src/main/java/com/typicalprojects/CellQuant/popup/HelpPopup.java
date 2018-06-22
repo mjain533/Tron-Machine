@@ -11,8 +11,6 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 import javax.swing.JLabel;
 import javax.swing.ImageIcon;
@@ -64,7 +62,6 @@ public class HelpPopup extends JFrame {
 		lblIcon.setVerticalAlignment(SwingConstants.TOP);
 		lblIcon.setBorder(new EmptyBorder(10, 10, 0, 0));
 		//new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/question.png")));
-		System.out.println(HelpPopup.class.getResource("/question.png"));
 		lblIcon.setIcon(new ImageIcon(new ImageIcon(HelpPopup.class.getResource("/question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
 
 		//lblIcon.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
