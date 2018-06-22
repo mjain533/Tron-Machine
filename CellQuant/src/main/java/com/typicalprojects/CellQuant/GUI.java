@@ -152,6 +152,9 @@ public class GUI  {
 			String[] prefsChannelMAp = scanner.nextLine().split(":");
 			for (int i = 1; i < prefsChannelMAp.length; i++) {
 				String[] channelMapping = prefsChannelMAp[i].split("-");
+				if (channelMapping[1].equals("None")) {
+					continue;
+				}
 				channelMap.put(Integer.valueOf(channelMapping[0]), Channel.getChannelByAbbreviation(channelMapping[1]));
 			}
 

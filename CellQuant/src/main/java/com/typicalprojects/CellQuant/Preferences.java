@@ -54,10 +54,10 @@ public class Preferences extends JFrame {
 	private JCheckBox chkW;
 	private JCheckBox chkG;
 	private JCheckBox chkR;
-	private JComboBox<Channel> comBoxCh3;
-	private JComboBox<Channel> comBoxCh2;
-	private JComboBox<Channel> comBoxCh1;
-	private JComboBox<Channel> comBoxCh0;
+	private JComboBox<String> comBoxCh3;
+	private JComboBox<String> comBoxCh2;
+	private JComboBox<String> comBoxCh1;
+	private JComboBox<String> comBoxCh0;
 	private JComboBox<Channel> comBoxChSelectingROI;
 
 	/**
@@ -161,32 +161,37 @@ public class Preferences extends JFrame {
 
 		JLabel lblChan0 = new JLabel("Chan 0:");
 		lblChan0.setFont(new Font("PingFang TC", Font.PLAIN, 13));
-
-		comBoxCh0 = new JComboBox<Channel>();
-		comBoxCh0.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
-		comBoxCh0.setSelectedItem(GUI.channelMap.get(0));
+		
+		List<String> values = new ArrayList<String>();
+		for (Channel chan : Channel.values()) {
+			values.add(chan.toString());
+		}
+		values.add("None");
+		comBoxCh0 = new JComboBox<String>();
+		comBoxCh0.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
+		comBoxCh0.setSelectedItem(values.get(0));
 
 		JLabel lblChan1 = new JLabel("Chan 1:");
 		lblChan1.setFont(new Font("PingFang TC", Font.PLAIN, 13));
 
-		comBoxCh1 = new JComboBox<Channel>();
-		comBoxCh1.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
-		comBoxCh1.setSelectedItem(GUI.channelMap.get(1));
+		comBoxCh1 = new JComboBox<String>();
+		comBoxCh1.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
+		comBoxCh1.setSelectedItem(values.get(1));
 
 		JLabel lblChan2 = new JLabel("Chan 2:");
 		lblChan2.setFont(new Font("PingFang TC", Font.PLAIN, 13));
 
-		comBoxCh2 = new JComboBox<Channel>();
-		comBoxCh2.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
-		comBoxCh2.setSelectedItem(GUI.channelMap.get(2));
+		comBoxCh2 = new JComboBox<String>();
+		comBoxCh2.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
+		comBoxCh2.setSelectedItem(values.get(2));
 
 
 		JLabel lblChan3 = new JLabel("Chan 3:");
 		lblChan3.setFont(new Font("PingFang TC", Font.PLAIN, 13));
 
-		comBoxCh3 = new JComboBox<Channel>();
-		comBoxCh3.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
-		comBoxCh3.setSelectedItem(GUI.channelMap.get(3));
+		comBoxCh3 = new JComboBox<String>();
+		comBoxCh3.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
+		comBoxCh3.setSelectedItem(values.get(3));
 
 		JLabel lblChannelProcess = new JLabel("Channels to Process:");
 		lblChannelProcess.setFont(new Font("PingFang TC", Font.PLAIN, 13));
@@ -366,10 +371,16 @@ public class Preferences extends JFrame {
 
 	public String applyPreferences(boolean resetIfIncorrect) throws IOException {
 		
-		List<Channel> availChan = new ArrayList<Channel>(Arrays.asList(Channel.values()));
-						
-		if (!availChan.remove(this.comBoxCh0.getSelectedItem()) || !availChan.remove(this.comBoxCh1.getSelectedItem()) ||
-				!availChan.remove(this.comBoxCh2.getSelectedItem()) || !availChan.remove(this.comBoxCh3.getSelectedItem())) {
+		List<String> values = new ArrayList<String>();
+		for (Channel chan : Channel.values()) {
+			values.add(chan.toString());
+		}
+		values.add("None");
+		values.add("None");
+		values.add("None");
+		values.add("None");
+		if (!values.remove(this.comBoxCh0.getSelectedItem()) || !values.remove(this.comBoxCh1.getSelectedItem()) ||
+				!values.remove(this.comBoxCh2.getSelectedItem()) || !values.remove(this.comBoxCh3.getSelectedItem())) {
 			if (resetIfIncorrect) resetPreferences();
 			return "Incorrect channel config. Each channel # must have a unique color.";
 		} else if (!this.chkB.isSelected() && !this.chkG.isSelected() && !this.chkR.isSelected() && !this.chkW.isSelected()) {
@@ -380,28 +391,42 @@ public class Preferences extends JFrame {
 		GUI.channelMap.clear();
 		GUI.channelsToProcess.clear();
 		GUI.channelForROIDraw = (Channel) this.comBoxChSelectingROI.getSelectedItem();
-		GUI.channelMap.put(0, (Channel) this.comBoxCh0.getSelectedItem());
-		GUI.channelMap.put(1, (Channel) this.comBoxCh1.getSelectedItem());
-		GUI.channelMap.put(2, (Channel) this.comBoxCh2.getSelectedItem());
-		GUI.channelMap.put(3, (Channel) this.comBoxCh3.getSelectedItem());
-		if (this.chkB.isSelected()) {
+		if (!this.comBoxCh0.getSelectedItem().equals("None")) {
+			GUI.channelMap.put(0, Channel.getChannelByAbbreviation((String) this.comBoxCh0.getSelectedItem()));
+		}
+		if (!this.comBoxCh1.getSelectedItem().equals("None")) {
+			GUI.channelMap.put(1, Channel.getChannelByAbbreviation((String) this.comBoxCh1.getSelectedItem()));
+		}
+		if (!this.comBoxCh2.getSelectedItem().equals("None")) {
+			GUI.channelMap.put(2, Channel.getChannelByAbbreviation((String) this.comBoxCh2.getSelectedItem()));
+		}
+		if (!this.comBoxCh3.getSelectedItem().equals("None")) {
+			GUI.channelMap.put(3, Channel.getChannelByAbbreviation((String) this.comBoxCh3.getSelectedItem()));
+		}
+		if (this.chkB.isSelected() && GUI.channelMap.containsValue(Channel.BLUE)) {
 			GUI.channelsToProcess.add(Channel.BLUE);
 		}
-		if (this.chkR.isSelected()) {
+		
+		
+		if (this.chkR.isSelected() && GUI.channelMap.containsValue(Channel.RED)) {
 			GUI.channelsToProcess.add(Channel.RED);
 		}
-		if (this.chkG.isSelected()) {
+		if (this.chkG.isSelected() && GUI.channelMap.containsValue(Channel.GREEN)) {
 			GUI.channelsToProcess.add(Channel.GREEN);
 		}
-		if (this.chkW.isSelected()) {
+		if (this.chkW.isSelected() && GUI.channelMap.containsValue(Channel.WHITE)) {
 			GUI.channelsToProcess.add(Channel.WHITE);
+		}
+		
+		if (!GUI.channelMap.values().contains(GUI.channelForROIDraw)) {
+			return "The channel chosen for drawing ROIs was not assigned a number.";
 		}
 
 		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
-		writer.write("DO NOT TOUCH\nChans:0-"+ ((Channel) this.comBoxCh0.getSelectedItem()).getAbbreviation() + ":1-"
-		+ ((Channel) this.comBoxCh1.getSelectedItem()).getAbbreviation() +":2-" 
-				+ ((Channel) this.comBoxCh2.getSelectedItem()).getAbbreviation() +":3-" 
-		+((Channel) this.comBoxCh3.getSelectedItem()).getAbbreviation() +"\nChProc:"+StringUtils.join(GUI.channelsToProcess, ",") + "\nChROI:" + GUI.channelForROIDraw.getAbbreviation());
+		writer.write("DO NOT TOUCH\nChans:0-"+ (String) this.comBoxCh0.getSelectedItem() + ":1-"
+		+ (String) this.comBoxCh1.getSelectedItem() +":2-" 
+				+ (String) this.comBoxCh2.getSelectedItem() +":3-" 
+		+(String) this.comBoxCh3.getSelectedItem() +"\nChProc:"+StringUtils.join(GUI.channelsToProcess, ",") + "\nChROI:" + GUI.channelForROIDraw.getAbbreviation());
 
 		writer.close();
 		
@@ -411,10 +436,33 @@ public class Preferences extends JFrame {
 	}
 
 	public void resetPreferences() {
-		this.comBoxCh0.setSelectedItem(GUI.channelMap.get(0));
-		this.comBoxCh1.setSelectedItem(GUI.channelMap.get(1));
-		this.comBoxCh2.setSelectedItem(GUI.channelMap.get(2));
-		this.comBoxCh3.setSelectedItem(GUI.channelMap.get(3));
+		if (GUI.channelMap.get(0) == null) {
+			this.comBoxCh0.setSelectedItem("None");
+		} else {
+			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(0));
+
+		}
+		
+		if (GUI.channelMap.get(1) == null) {
+			this.comBoxCh0.setSelectedItem("None");
+		} else {
+			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(1));
+
+		}
+		
+		if (GUI.channelMap.get(2) == null) {
+			this.comBoxCh0.setSelectedItem("None");
+		} else {
+			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(2));
+
+		}
+		
+		if (GUI.channelMap.get(3) == null) {
+			this.comBoxCh0.setSelectedItem("None");
+		} else {
+			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(3));
+
+		}
 		this.chkG.setSelected(GUI.channelsToProcess.contains(Channel.GREEN));
 		this.chkR.setSelected(GUI.channelsToProcess.contains(Channel.RED));
 		this.chkW.setSelected(GUI.channelsToProcess.contains(Channel.WHITE));

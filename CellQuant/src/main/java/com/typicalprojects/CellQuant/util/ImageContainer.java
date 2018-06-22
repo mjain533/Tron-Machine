@@ -260,6 +260,7 @@ public class ImageContainer {
 			return this.abbrev;
 		}
 
+
 	}
 	
 	public synchronized void applyMinMax(Channel channel, int min, int max) {
