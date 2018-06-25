@@ -210,7 +210,6 @@ public class PnlDisplay  {
 				this.lblDisabled.setText(disabledMessage);
 			else
 				this.lblDisabled.setText("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface to the left.</p></body></html>");
-			System.out.print("Called " + this.lblDisabled.getText() );
 			this.rawPanel.setBackground(colorDisabled);
 			this.rawPanel.updateUI();
 			this.rawPanel.setLayout(new BorderLayout(0,0));
