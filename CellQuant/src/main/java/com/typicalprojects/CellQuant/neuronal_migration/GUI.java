@@ -38,6 +38,7 @@ import java.awt.BorderLayout;
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 
+import com.typicalprojects.CellQuant.MainFrame;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlInstructions;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlLog;
@@ -62,6 +63,7 @@ public class GUI  {
 
 
 	private JFrame quantFrame;
+	private final MainFrame parentFrame;
 	public static final Font smallFont = new Font("PingFang TC", Font.BOLD, 13);
 	public static final Font smallPlainFont = new Font("PingFang TC", Font.PLAIN, 13);
 	public static final Font medium_smallPlainFont = new Font("PingFang TC", Font.PLAIN, 10);
@@ -109,11 +111,13 @@ public class GUI  {
 	 * @throws IOException 
 	 * @throws FormatException 
 	 */
-	public GUI() throws IOException {
+	public GUI(MainFrame parent) throws IOException {
+		
+		this.parentFrame = parent;
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();
 		dateString = dateFormat.format(date);
-
+		
 		File baseDir = new File(folderName);
 		if (!baseDir.exists() || !baseDir.isDirectory()) {
 			baseDir.mkdir();
@@ -267,7 +271,9 @@ public class GUI  {
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-
+							getWizard().cancel();
+							quantFrame.setVisible(false);
+							parentFrame.reshow();
 						} catch (Exception e) {
 							e.printStackTrace();
 						}

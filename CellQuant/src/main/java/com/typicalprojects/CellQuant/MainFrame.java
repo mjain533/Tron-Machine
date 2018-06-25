@@ -30,6 +30,9 @@ public class MainFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = 8653687111169656048L;
 	private JPanel contentPane;
+	
+	private static MainFrame SINGLETON = null;;
+	private GUI guiWindow;
 
 	/**
 	 * Launch the application.
@@ -39,8 +42,8 @@ public class MainFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					MainFrame frame = new MainFrame();
-					frame.setVisible(true);
+					SINGLETON = new MainFrame();
+					SINGLETON.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -84,11 +87,11 @@ public class MainFrame extends JFrame {
 					public void run() {
 						try {
 							
-							GUI window = new GUI();
+							if (guiWindow == null) {
+								guiWindow = new GUI(SINGLETON);
+							}
 							
-							window.show();
-							
-							
+							guiWindow.show();
 							
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -122,4 +125,9 @@ public class MainFrame extends JFrame {
 		
 
 	}
+	
+	public void reshow() {
+		setVisible(true);
+	}
+	
 }
