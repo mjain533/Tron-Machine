@@ -1,4 +1,0 @@
-DO NOT TOUCH
-Chans:0-G:1-R:2-B:3-None
-ChProc:R,G
-ChROI:B
