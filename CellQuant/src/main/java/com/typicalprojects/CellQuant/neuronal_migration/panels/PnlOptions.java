@@ -29,7 +29,6 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Wizard.Status;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
-import com.typicalprojects.CellQuant.popup.BrightnessAdjuster;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopupReceiver;

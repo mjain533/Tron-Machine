@@ -11,7 +11,6 @@ import javax.swing.border.BevelBorder;
 import javax.swing.text.BadLocationException;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
-import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.SynchronizedProgress.SynchronizedProgressReceiver;
 
 public class PnlLog implements SynchronizedProgressReceiver {
