@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -7,7 +7,9 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
-import com.typicalprojects.CellQuant.PnlInstructions.Instruction;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlOptions;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlSelectFiles;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlInstructions.Instruction;
 import com.typicalprojects.CellQuant.util.ProspectiveImage;
 
 public class Wizard {

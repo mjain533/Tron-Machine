@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.CellQuant.GUI;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 
 import ij.ImagePlus;
 import ij.ImageStack;

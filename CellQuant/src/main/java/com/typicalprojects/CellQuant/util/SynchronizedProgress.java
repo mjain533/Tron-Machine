@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.util;
 
 public class SynchronizedProgress {
 	

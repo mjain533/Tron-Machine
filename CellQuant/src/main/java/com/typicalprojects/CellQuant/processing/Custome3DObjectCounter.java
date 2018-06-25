@@ -1,6 +1,6 @@
 package com.typicalprojects.CellQuant.processing;
 
-import com.typicalprojects.CellQuant.SynchronizedProgress;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 
 import ij.ImagePlus;
 import ij.measure.ResultsTable;

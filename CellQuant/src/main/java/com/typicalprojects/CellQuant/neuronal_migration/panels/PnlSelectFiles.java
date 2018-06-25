@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
 import java.awt.Color;
 import java.awt.Image;
@@ -24,6 +24,7 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
 import com.typicalprojects.CellQuant.util.ProspectiveImage;
 import com.typicalprojects.CellQuant.util.SimpleJList;

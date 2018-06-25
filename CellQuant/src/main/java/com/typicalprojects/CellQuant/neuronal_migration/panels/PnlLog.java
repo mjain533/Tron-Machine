@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
 import javax.swing.GroupLayout;
 import javax.swing.JLabel;
@@ -10,7 +10,9 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 import javax.swing.text.BadLocationException;
 
-import com.typicalprojects.CellQuant.SynchronizedProgress.SynchronizedProgressReceiver;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress.SynchronizedProgressReceiver;
 
 public class PnlLog implements SynchronizedProgressReceiver {
 	

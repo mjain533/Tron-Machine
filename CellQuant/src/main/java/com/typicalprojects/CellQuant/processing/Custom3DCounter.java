@@ -11,7 +11,7 @@ import java.awt.Font;
 import java.util.Arrays;
 import java.util.Vector;
 
-import com.typicalprojects.CellQuant.SynchronizedProgress;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 
 
 public class Custom3DCounter {

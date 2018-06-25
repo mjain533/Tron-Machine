@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.popup;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -8,6 +8,9 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
+
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;

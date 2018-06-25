@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

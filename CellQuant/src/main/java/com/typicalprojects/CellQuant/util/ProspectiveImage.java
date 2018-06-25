@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.typicalprojects.CellQuant.GUI;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;

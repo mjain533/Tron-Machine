@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.CellQuant.GUI;
-import com.typicalprojects.CellQuant.SynchronizedProgress;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
 import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;

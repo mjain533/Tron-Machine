@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration;
 
 
 import javax.swing.JFrame;
@@ -38,7 +38,14 @@ import java.awt.BorderLayout;
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlInstructions;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlLog;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlOptions;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlSelectFiles;
+import com.typicalprojects.CellQuant.popup.BrightnessAdjuster;
 import com.typicalprojects.CellQuant.util.ImageContainer;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import java.awt.Font;

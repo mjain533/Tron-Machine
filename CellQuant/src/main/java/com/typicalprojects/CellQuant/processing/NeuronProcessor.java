@@ -9,11 +9,11 @@ import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import com.typicalprojects.CellQuant.GUI;
-import com.typicalprojects.CellQuant.SynchronizedProgress;
-import com.typicalprojects.CellQuant.Wizard;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
+import com.typicalprojects.CellQuant.neuronal_migration.Wizard;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.IJ;

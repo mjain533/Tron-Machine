@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant;
+package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -26,12 +26,14 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 
-import com.typicalprojects.CellQuant.BrightnessAdjuster.BrightnessChangeReceiver;
-import com.typicalprojects.CellQuant.PnlDisplay.PnlDisplayFeedbackReceiver;
-import com.typicalprojects.CellQuant.Wizard.Status;
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
+import com.typicalprojects.CellQuant.neuronal_migration.Wizard.Status;
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
+import com.typicalprojects.CellQuant.popup.BrightnessAdjuster;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopupReceiver;
+import com.typicalprojects.CellQuant.popup.BrightnessAdjuster.BrightnessChangeReceiver;
 import com.typicalprojects.CellQuant.processing.NeuronProcessor;
 import com.typicalprojects.CellQuant.processing.ObjectEditableImage;
 import com.typicalprojects.CellQuant.processing.ROIEditableImage;
