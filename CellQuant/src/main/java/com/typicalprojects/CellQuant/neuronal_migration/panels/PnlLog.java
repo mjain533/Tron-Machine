@@ -66,7 +66,7 @@ public class PnlLog implements SynchronizedProgressReceiver {
 	
 
 
-	public void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
+	public synchronized void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
 		
 		if (textLog.getLineCount() > 90) {
 			try {
@@ -83,6 +83,7 @@ public class PnlLog implements SynchronizedProgressReceiver {
 			
 			String newText = task + progressPart + currText.substring(currText.indexOf('\n'));
 			textLog.setText(newText);
+			spLog.getVerticalScrollBar().setValue(0);
 			return;
 		}
 		if (progressSoFar <= totalProgress && progressSoFar != -1 && totalProgress != -1) {

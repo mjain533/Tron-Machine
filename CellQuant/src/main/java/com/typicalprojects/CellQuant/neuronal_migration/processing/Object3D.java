@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.processing;
+package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import ij.measure.Calibration;
 

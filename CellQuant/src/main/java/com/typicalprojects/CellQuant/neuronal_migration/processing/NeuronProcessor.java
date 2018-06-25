@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.processing;
+package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,7 +12,7 @@ import javax.swing.JOptionPane;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Wizard;
 import com.typicalprojects.CellQuant.util.ImageContainer;
-import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -24,32 +24,32 @@ import ij.plugin.ZProjector;
 
 public class NeuronProcessor {
 	
-	private final List<ProspectiveImage> imagesDoneProcessing;
-	private final List<ProspectiveImage> imagesToProcess;
+	private final List<ImagePhantom> imagesDoneProcessing;
+	private final List<ImagePhantom> imagesToProcess;
 	private final Set<Channel> channelsToProcess;
 	private Thread threadProcessor;
 	private volatile boolean cancelled = false;
 	
-	public NeuronProcessor(List<ProspectiveImage> images, final GUI gui, final SynchronizedProgress progressReporter, final Wizard wizard, Set<Channel> chansToProcess) {
+	public NeuronProcessor(List<ImagePhantom> images, final GUI gui, final SynchronizedProgress progressReporter, final Wizard wizard, Set<Channel> chansToProcess) {
 		
 		this.imagesToProcess = images;
-		this.imagesDoneProcessing = new LinkedList<ProspectiveImage>();
+		this.imagesDoneProcessing = new LinkedList<ImagePhantom>();
 		this.channelsToProcess = chansToProcess;
 		
 		threadProcessor = new Thread(new Runnable() {
 			public void run(){
 				
-				Iterator<ProspectiveImage> itr = imagesToProcess.iterator();
+				Iterator<ImagePhantom> itr = imagesToProcess.iterator();
 				
 				while (!cancelled && itr.hasNext()) {
-					ProspectiveImage pi = itr.next();
+					ImagePhantom pi = itr.next();
 					String error = pi.open();
 					if (error != null) {
 						error(error, wizard);
 						return;
 					}
 					ImageContainer container = pi.getIC();
-					progressReporter.setProgress("Processing " + pi.getTitle() + "...", -1, -1);
+					log(progressReporter, "Processing " + pi.getTitle() + "...");
 					
 					
 					List<Channel> channels = new LinkedList<Channel>();
@@ -58,10 +58,12 @@ public class NeuronProcessor {
 					ZProjector projector = new ZProjector();
 					for (Channel chan : container.getChannels()) {
 						channels.add(chan);
-
+						
 						if (channelsToProcess.contains(chan)) {
 
 							Object[] chanProcessed = processChannel(container.getImageChannel(chan, true), progressReporter);
+							if (cancelled)
+								return;
 							images.add((ImagePlus) chanProcessed[0]);							
 							tables.put(chan, (ResultsTable) chanProcessed[1]);
 						} else {
@@ -73,11 +75,11 @@ public class NeuronProcessor {
 						}
 					}
 					
-					progressReporter.setProgress("Saving...", -1, -1);
+					log(progressReporter, "Saving...");
 					ImageContainer newContainer = new ImageContainer(channels, images, container.getTotalImageTitle(), container.getImgFile(), container.getSaveDir(), false, container.getCalibration());
 					newContainer.save(GUI.dateString);
 					newContainer.saveResultsTable(tables, GUI.dateString, false);
-					imagesDoneProcessing.add(new ProspectiveImage(pi.getImageFile(), newContainer.getTotalImageTitle(), gui, newContainer.getSaveDir(), true, newContainer.getCalibration()));
+					imagesDoneProcessing.add(new ImagePhantom(pi.getImageFile(), newContainer.getTotalImageTitle(), gui, newContainer.getSaveDir(), true, newContainer.getCalibration()));
 					
 					newContainer = null;
 					container = null;
@@ -86,7 +88,7 @@ public class NeuronProcessor {
 					
 					itr.remove();
 					System.gc();
-					progressReporter.setProgress("Success.", -1, -1);
+					log(progressReporter, "Success.");
 					
 				}
 				
@@ -99,6 +101,7 @@ public class NeuronProcessor {
 		threadProcessor.setDaemon(true);
 
 	}
+	
 	
 	public void cancelProcessing() {
 		this.cancelled = true;
@@ -121,47 +124,49 @@ public class NeuronProcessor {
 		ImagePlus originalDup = channelDup.duplicate();
 		
 		IJ.run(channelDup, "Unsharp Mask...", "radius=20 mask=0.80 stack");
-		progressReporter.setProgress("Applying unsharp mask...", -1, -1);
+		log(progressReporter, "Applying unsharp mask...");
 		
 		IJ.run(channelDup, "Gaussian Blur...", "sigma=0.50 stack");
-		progressReporter.setProgress("Applying Gaussian Blur...", -1, -1);
+		log(progressReporter, "Applying Gaussian Blur...");
 
 		IJ.run(channelDup, "8-bit", "stack");
-		progressReporter.setProgress("Converting to 8-bit...", -1, -1);
+		log(progressReporter, "Converting to 8-bit...");
 		
 		new Thresholder(channelDup).threshold();
-		progressReporter.setProgress("Thresholding...", -1, -1);
+		log(progressReporter, "Thresholding...");
 		
 		IJ.run("Options...", "iterations=1 count=1 black");
-		progressReporter.setProgress("Setting binary options...", -1, -1);
+		log(progressReporter, "Setting binary options...");
 		
 		IJ.run(channelDup, "Erode", "stack");
-		progressReporter.setProgress("Eroding...", -1, -1);
+		log(progressReporter, "Eroding...");
 		
 		IJ.run(channelDup, "Watershed", "stack");
-		progressReporter.setProgress("Segmenting (watershed)...", -1, -1);
+		log(progressReporter, "Segmenting (watershed)...");
 		
 		Custome3DObjectCounter counter =new Custome3DObjectCounter(channelDup);
-		progressReporter.setProgress("Counting 3D objects...", -1, -1);
+		log(progressReporter, "Counting 3D objects...");
 
-		counter.run(progressReporter);
+		counter.run(progressReporter, this);
+		if (this.cancelled)
+			return null;
 		counter.getStats();
 
-		progressReporter.setProgress("Processing object map...", -1, -1);
+		log(progressReporter, "Processing object map...");
 
 		IJ.setRawThreshold(counter.getObjectMap(), 1, 255, null);
 		IJ.run(counter.getObjectMap(), "Convert to Mask", "method=Default background=Default black");
 		
-		progressReporter.setProgress("Processing center of mass map map...", -1, -1);
+		log(progressReporter, "Processing center of mass map map...");
 		
 		IJ.setRawThreshold(counter.getCOMMap(), 1, 255, null);
 		IJ.run(counter.getCOMMap(), "Convert to Mask", "method=Default background=Default black");
 
-		progressReporter.setProgress("Converting original to 8-bit...", -1, -1);
+		log(progressReporter, "Converting original to 8-bit...");
 
 		IJ.run(originalDup, "8-bit", "stack");
 		
-		progressReporter.setProgress("Merging...", -1, -1);
+		log(progressReporter, "Merging...");
 
 		ImagePlus /*firstTwo*/impFinal = new ImagePlus(channelDup.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalDup.getImageStack(), null, true));
 		//ImageStack stack = new ImageStack(firstTwo.getWidth(), firstTwo.getHeight());
@@ -186,9 +191,22 @@ public class NeuronProcessor {
 		projector.doProjection();
 		impFinal = projector.getProjection();
 		
-		progressReporter.setProgress("Done.", -1,-1);
+		log(progressReporter, "Done.");
 		
 		return new Object[] {impFinal, counter.getStats()};
+	}
+	
+	private void log(SynchronizedProgress progressReporter, String info) {
+		if (this.cancelled)
+			return;
+		
+		progressReporter.setProgress(info, -1, -1);
+
+	}
+	
+	
+	public boolean isCancelled() {
+		return this.cancelled;
 	}
 	
 }

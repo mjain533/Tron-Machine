@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.processing;
+package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -54,10 +54,12 @@ public class Custom3DCounter {
 	float[][] centreOfMass, centroid;
 	int[][] imgPixelIntensities;
 	Vector<Object3D> obj;
+	
+	private NeuronProcessor np;
 
 	boolean gotCentreOfMass=false, gotCentroid=false, gotSurfList=false, gotSurfCoord=false;
 
-	public Custom3DCounter(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, SynchronizedProgress progressID) {
+	public Custom3DCounter(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, SynchronizedProgress progressID, NeuronProcessor np) {
 
 		this.thr = thr;
 		this.width=img.getWidth();
@@ -78,6 +80,8 @@ public class Custom3DCounter {
 		this.imgArray=new int[this.length];
 
 		imgArrayModifier(img);
+		
+		this.np = np;
 
 		findObjects(progressID);
 
@@ -122,7 +126,12 @@ public class Custom3DCounter {
 				}
 			}
 			//IJ.showStatus("Finding structures "+z*100/nbSlices+"%");
-			progressID.setProgress("Step 1/3: Finding structures", z, nbSlices);
+			if (!np.isCancelled()) {
+				progressID.setProgress("Step 1/3: Finding structures", z, nbSlices);
+				
+			} else {
+				return;
+			}
 		}
 
 		IDcount=new int[currID];
@@ -190,7 +199,12 @@ public class Custom3DCounter {
 					currPos++;
 				}
 			}
-			progressID.setProgress("Step 2/3: Connecting structures", z, nbSlices);
+			if (!np.isCancelled()) {
+				progressID.setProgress("Step 2/3: Connecting structures", z, nbSlices);
+				
+			} else {
+				return;
+			}
 		}
 
 		int newCurrID=0;
@@ -205,7 +219,13 @@ public class Custom3DCounter {
 			}else{
 				replaceID(i,0);
 			}
-			progressID.setProgress("Step 3/3: Renumbering structures", i, IDcount.length - 1);
+			
+			if (!np.isCancelled()) {
+				progressID.setProgress("Step 3/3: Renumbering structures", i, IDcount.length - 1);
+				
+			} else {
+				return;
+			}
 		}
 
 		nbObj=newCurrID;

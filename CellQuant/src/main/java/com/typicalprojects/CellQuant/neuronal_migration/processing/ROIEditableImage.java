@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.processing;
+package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
-import com.typicalprojects.CellQuant.processing.Custom3DCounter.Column;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
-import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -308,7 +308,7 @@ public class ROIEditableImage {
 		progress.setProgress("Success. ", -1, -1);
 
 		int col = newTable.getColumnIndex("Grayscale Value");
-		ProspectiveImage pi = new ProspectiveImage(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui, this.ic.getSaveDir(), false, null);
+		ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui, this.ic.getSaveDir(), false, null);
 		pi.open();
 		ZProjector projector = new ZProjector();
 		projector.setImage(pi.getIC().getImageChannel(chan, false));

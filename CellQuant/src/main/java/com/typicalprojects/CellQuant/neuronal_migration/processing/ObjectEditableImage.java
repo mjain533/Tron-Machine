@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.processing;
+package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import java.awt.Font;
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.CellQuant.processing.Custom3DCounter.Column;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImagePanel;
 import com.typicalprojects.CellQuant.util.Point;

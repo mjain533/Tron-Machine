@@ -26,7 +26,7 @@ import javax.swing.border.BevelBorder;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
-import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
 
 public class PnlSelectFiles {
@@ -69,6 +69,7 @@ public class PnlSelectFiles {
 		JLabel lblSelectFileInstruction = new JLabel("<html>Please select an input image or folder of images (must have extension .czi):</html>");
 
 		btnSelectFiles = new JButton("Select File(s)...");
+		btnSelectFiles.setFocusable(false);
 
 		JLabel lblSelectedFiles = new JLabel("Selected Files");
 
@@ -76,24 +77,30 @@ public class PnlSelectFiles {
 		scrollPane.setFocusable(false);
 
 		btnRemoveSelectedFile = new JButton("Remove");
+		btnRemoveSelectedFile.setFocusable(false);
 
 		JSeparator separatorSelectFiles = new JSeparator();
 		separatorSelectFiles.setBackground(Color.GRAY);
 
 		btnGo = new JButton("Go");
+		btnGo.setFocusable(true);
 
 		btnCancelRun = new JButton("Cancel Run");
+		btnCancelRun.setFocusable(false);
 
 		chkAllOutputSingleFolder = new JCheckBox("All output in single folder");
 		chkAllOutputSingleFolder.setSelected(false);
+		chkAllOutputSingleFolder.setFocusable(false);
 
 		btnSelectFilesHelp = new JButton("");
+		btnSelectFilesHelp.setFocusable(false);
 		btnSelectFilesHelp.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
 
 		btnSelectFilesHelp.setForeground(Color.BLUE);
 		btnSelectFilesHelp.setBorderPainted(false);
 		btnSelectFilesHelp.setOpaque(false);
 		btnSelectFilesHelp.setBackground(Color.WHITE);
+		
 
 		GroupLayout gl_lblSelectFiles = new GroupLayout(rawPanel);
 		gl_lblSelectFiles.setHorizontalGroup(
@@ -277,14 +284,14 @@ public class PnlSelectFiles {
 							oneSaveDirectory = directory;
 						}
 						
-						List<ProspectiveImage> futureImages = new LinkedList<ProspectiveImage>();
+						List<ImagePhantom> futureImages = new LinkedList<ImagePhantom>();
 						Enumeration<FileContainer> files = listSelectedFiles.getElements();
 						while (files.hasMoreElements()) {
 							FileContainer container = files.nextElement();
 							
 							String saveDir = (oneSaveDirectory == null ? (container.file.getParent() + File.separator + "Neuron Counter Output " + GUI.dateString) : oneSaveDirectory.getPath());
 							int indexOf = container.file.getName().lastIndexOf('.');
-							futureImages.add(new ProspectiveImage(container.file, container.file.getName().substring(0, indexOf), gui, new File(saveDir), false, null));
+							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui, new File(saveDir), false, null));
 						}
 						gui.getWizard().nextState(futureImages);
 			        	

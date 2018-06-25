@@ -29,16 +29,16 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Wizard.Status;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.NeuronProcessor;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.ObjectEditableImage;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopup;
 import com.typicalprojects.CellQuant.popup.TextInputPopupReceiver;
 import com.typicalprojects.CellQuant.popup.BrightnessAdjuster.BrightnessChangeReceiver;
-import com.typicalprojects.CellQuant.processing.NeuronProcessor;
-import com.typicalprojects.CellQuant.processing.ObjectEditableImage;
-import com.typicalprojects.CellQuant.processing.ROIEditableImage;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
-import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -96,11 +96,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	
 	private TextInputPopup roiNamePopup;
 	
-	private List<ProspectiveImage> imagesForObjectAnalysis = new LinkedList<ProspectiveImage>();
-	private List<ProspectiveImage> imagesForObjectSelection = new LinkedList<ProspectiveImage>();
-	private List<ProspectiveImage> imagesForROICreation = new LinkedList<ProspectiveImage>();
+	private List<ImagePhantom> imagesForObjectAnalysis = new LinkedList<ImagePhantom>();
+	private List<ImagePhantom> imagesForObjectSelection = new LinkedList<ImagePhantom>();
+	private List<ImagePhantom> imagesForROICreation = new LinkedList<ImagePhantom>();
 	private Map<Channel, Integer[]> defMinsMaxes = new HashMap<Channel, Integer[]>();
-	private List<ProspectiveImage> imagesForSliceSelection = null;
+	private List<ImagePhantom> imagesForSliceSelection = null;
 	private int currentState = STATE_DISABLED;
 	private NeuronProcessor neuronProcessor;
 	private JLabel objLblCurrDisp;
@@ -432,7 +432,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		return this.rawPanel;
 	}
 	
-	public void processInputFromTextPopup(String text) {
+	public synchronized void processInputFromTextPopup(String text) {
 		
 		if (text == null || text.equals("")) {
 			
@@ -453,7 +453,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		
 	}
 	
-	private boolean displayNextInfoImage(int lastLowSliceSelection, int lastHighSliceSelection) {
+	private synchronized boolean displayNextInfoImage(int lastLowSliceSelection, int lastHighSliceSelection) {
 		
 		setDisplayState(STATE_DISABLED, "Processing...");
 		
@@ -462,7 +462,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 			ImageContainer newIC = this.imageCurrentlyDisplayed.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
 			newIC.save(GUI.dateString);
-			this.imagesForObjectAnalysis.add(new ProspectiveImage(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, this.imageCurrentlyDisplayed.getSaveDir(), true, newIC.getCalibration()));
+			this.imagesForObjectAnalysis.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, this.imageCurrentlyDisplayed.getSaveDir(), true, newIC.getCalibration()));
 			this.gui.log("Success.");
 			this.imageCurrentlyDisplayed = null;
 		}
@@ -471,7 +471,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.imagesForSliceSelection.isEmpty())
 			return false;
 		
-		ProspectiveImage pi = this.imagesForSliceSelection.remove(0);
+		ImagePhantom pi = this.imagesForSliceSelection.remove(0);
 		String errors = pi.open();
 
 		if (errors != null) {
@@ -493,7 +493,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		return true;
 	}
 	
-	private boolean displayNextObjImage() {
+	private synchronized boolean displayNextObjImage() {
 		setDisplayState(STATE_DISABLED, "Opening image...");
 
 		if (this.imageCurrentlyObjEditing != null) {
@@ -502,7 +502,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			newIC.save(GUI.dateString);
 			newIC.saveResultsTable(this.imageCurrentlyObjEditing.createNewResultsTables(), GUI.dateString, false);
 			
-			this.imagesForROICreation.add(new ProspectiveImage(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, newIC.getSaveDir(), true, newIC.getCalibration()));
+			this.imagesForROICreation.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, newIC.getSaveDir(), true, newIC.getCalibration()));
 			this.gui.log("Success.");
 			this.imageCurrentlyObjEditing = null;
 		}
@@ -511,7 +511,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.imagesForObjectSelection.isEmpty())
 			return false;
 		
-		ProspectiveImage pi = this.imagesForObjectSelection.remove(0);
+		ImagePhantom pi = this.imagesForObjectSelection.remove(0);
 		String errors = pi.open();
 
 		if (errors != null) {
@@ -549,7 +549,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		return true;
 	}
 	
-	private boolean displayNextROISelectImage() {
+	private synchronized boolean displayNextROISelectImage() {
 		this.gui.getBrightnessAdjuster().removeDisplay();
 		this.gui.getBrightnessAdjuster().reset();
 		setDisplayState(STATE_DISABLED, "Processing...");
@@ -576,7 +576,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		}
 
-		ProspectiveImage pi = this.imagesForROICreation.remove(0);
+		ImagePhantom pi = this.imagesForROICreation.remove(0);
 
 		String errors = pi.open();
 
@@ -626,11 +626,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		return true;
 	}
 
-	public void setImagesForSliceSelection(List<ProspectiveImage> images) {
+	public synchronized void setImagesForSliceSelection(List<ImagePhantom> images) {
 		this.imagesForSliceSelection = images;
 	}
 	
-	public void setImagesForObjSelection(List<ProspectiveImage> images) {
+	public synchronized void setImagesForObjSelection(List<ImagePhantom> images) {
 		
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.imagesForObjectAnalysis.clear();;
@@ -638,12 +638,12 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 	}
 
-	public void startSliceSelecting() {
+	public synchronized void startSliceSelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES)
 			displayNextInfoImage(-1,-1);
 	}
 	
-	public void startProcessingImageObjects() {
+	public synchronized void startProcessingImageObjects() {
 		
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.neuronProcessor = new NeuronProcessor(this.imagesForObjectAnalysis, this.gui, this.gui.getProgressReporter(),this.gui.getWizard(), new HashSet<Channel>(GUI.channelsToProcess));
@@ -652,12 +652,12 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		
 	}
 	
-	public void startImageObjectSelecting() {
+	public synchronized void startImageObjectSelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES)
 			displayNextObjImage();
 	}
 	
-	public void startImageROISelecting() {
+	public synchronized void startImageROISelecting() {
 		
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			displayNextROISelectImage();
@@ -899,27 +899,20 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 	}
 	
-	public void cancelNeuronProcessing() {
+	public synchronized void cancelNeuronProcessing() {
+		if (this.neuronProcessor != null) {
+			this.neuronProcessor.cancelProcessing();
+			this.neuronProcessor = null;
+		}
 		this.imageCurrentlyDisplayed = null;
 		this.imageCurrentlyObjEditing = null;
 		this.imageCurrentlyROIEditing = null;
-		if (this.imagesForObjectAnalysis != null) {
-			this.imagesForObjectAnalysis.clear();
-		}
-		if (this.imagesForObjectSelection != null) {
-			this.imagesForObjectSelection.clear();
-		}
-		
-		if (this.imagesForROICreation != null) {
-			this.imagesForROICreation.clear();
-		}
-		
-		if (this.imagesForSliceSelection != null) {
-			this.imagesForSliceSelection.clear();
-		}
-		if (this.neuronProcessor != null) {
-			this.neuronProcessor.cancelProcessing();
-		}
+		this.imagesForObjectAnalysis = new LinkedList<ImagePhantom>();
+		this.imagesForObjectSelection = new LinkedList<ImagePhantom>();
+		this.imagesForROICreation = new LinkedList<ImagePhantom>();
+		this.imagesForSliceSelection = new LinkedList<ImagePhantom>();
+
+		this.infoLblERR.setVisible(false);
 	}
 	
 	public void mouseClickOnImage(Point p) {

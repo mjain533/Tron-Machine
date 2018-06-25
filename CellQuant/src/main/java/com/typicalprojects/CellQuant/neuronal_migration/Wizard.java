@@ -10,7 +10,7 @@ import javax.swing.JOptionPane;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlInstructions.Instruction;
-import com.typicalprojects.CellQuant.util.ProspectiveImage;
+import com.typicalprojects.CellQuant.util.ImagePhantom;
 
 public class Wizard {
 	
@@ -74,10 +74,10 @@ public class Wizard {
 	}
 	
 	public synchronized void cancel() {
-		gui.log("Run canceled.");
 		gui.getInstructionPanel().setInstruction(Instruction.CANCELING);
 		this.gui.getPanelOptions().cancelNeuronProcessing();
 		setStatus(Status.SELECT_FILES);
+		gui.log("Run canceled.");
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -88,7 +88,7 @@ public class Wizard {
 			setStatus(Status.SELECT_FILES);
 			break;
 		case SELECT_FILES:
-			this.gui.getPanelOptions().setImagesForSliceSelection((List<ProspectiveImage>) input[0]);
+			this.gui.getPanelOptions().setImagesForSliceSelection((List<ImagePhantom>) input[0]);
 			setStatus(Status.SELECT_SLICES);
 			break;
 		case SELECT_SLICES:
@@ -97,7 +97,7 @@ public class Wizard {
 			System.gc();
 			break;
 		case PROCESSING_OBJECTS:
-			gui.getPanelOptions().setImagesForObjSelection((List<ProspectiveImage>) input[0]);
+			gui.getPanelOptions().setImagesForObjSelection((List<ImagePhantom>) input[0]);
 			setStatus(Status.SELECT_OB);
 			break;
 		case SELECT_OB:

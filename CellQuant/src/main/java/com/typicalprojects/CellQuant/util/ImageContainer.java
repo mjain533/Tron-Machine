@@ -44,6 +44,9 @@ public class ImageContainer {
 
 		for (int i = 0; i < 4 && i < img.length; i++) {
 
+			if (!GUI.channelMap.containsKey(i)) {
+				continue;
+			}
 			img[i].setIJMenuBar(true);
 			if (!fileTitle.contains("Chan-")) {
 				img[i].setTitle(fileTitle + " Chan-" + GUI.channelMap.get(i).getAbbreviation());

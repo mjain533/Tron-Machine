@@ -16,7 +16,7 @@ import ij.measure.ResultsTable;
 import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
-public class ProspectiveImage {
+public class ImagePhantom {
 	private ImageContainer ic;
 	private File pathToImage;
 	private File saveDir;
@@ -25,7 +25,7 @@ public class ProspectiveImage {
 	private Calibration cal;
 	private boolean intermediates;
 
-	public ProspectiveImage(File imagePath, String titleNoExtension, GUI gui, File saveDir, boolean intermediates, Calibration cal) {
+	public ImagePhantom(File imagePath, String titleNoExtension, GUI gui, File saveDir, boolean intermediates, Calibration cal) {
 		this.title = titleNoExtension;
 		this.pathToImage = imagePath;
 		this.gui = gui;
@@ -83,6 +83,8 @@ public class ProspectiveImage {
 
 		} catch (Exception e) {
 			gui.log("Failed.");
+			System.out.println(e);
+			e.printStackTrace();
 			return (e.getMessage() == null ? "Unknown reason.":e.getMessage());
 
 		}

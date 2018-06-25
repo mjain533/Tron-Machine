@@ -7,8 +7,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import com.typicalprojects.CellQuant.neuronal_migration.GUI;
-
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
@@ -96,7 +94,7 @@ public class TextInputPopup extends JFrame {
 			}
 		});
 		
-		setUIFont(GUI.smallFont);
+		setUIFont(new Font("PingFang TC", Font.BOLD, 13));
 
 	}
 	
