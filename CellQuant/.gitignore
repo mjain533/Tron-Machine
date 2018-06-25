@@ -2,6 +2,4 @@
 target
 target/
 .DS_Store
-*CellQuant-*.jar
-*/CellQuant-*.jar
-../CellQuant-*.jar
+Neuronal_Migration_Resources/
