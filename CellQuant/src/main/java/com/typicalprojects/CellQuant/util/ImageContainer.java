@@ -193,7 +193,7 @@ public class ImageContainer {
 				
 				aw.addSheetFromResultTable(chan.name(), table);
 			}
-			aw.save(new File(getSaveDirectory() + File.separator + "analysis.xlsx"));
+			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
 			return;
 		}
 		for (Entry<Channel, ResultsTable> en : results.entrySet()) {

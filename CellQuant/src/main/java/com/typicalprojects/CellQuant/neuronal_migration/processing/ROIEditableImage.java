@@ -69,7 +69,7 @@ public class ROIEditableImage {
 
 		if (points.size() == 1) {
 			
-			ImagePlus dup = new ImagePlus("dup", this.ic.getImageChannel(channelToDrawROI, false).getProcessor().convertToRGB());
+			ImagePlus dup = new ImagePlus("dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 			
 		
 			dup.getProcessor().setColor(Color.GREEN);
@@ -88,7 +88,7 @@ public class ROIEditableImage {
 			}
 
 
-			ImagePlus dup = new ImagePlus("Dup", this.ic.getImageChannel(channelToDrawROI, false).getProcessor().convertToRGB());
+			ImagePlus dup = new ImagePlus("Dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 
 			dup.getProcessor().setColor(Color.GREEN);
 			dup.getProcessor().drawOverlay(new Overlay(pgr));
@@ -145,7 +145,7 @@ public class ROIEditableImage {
 		return true;
 	}
 
-	public void clearPints() {
+	public void clearPoints() {
 		this.points.clear();
 	}
 

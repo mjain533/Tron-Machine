@@ -1,10 +1,12 @@
 package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
 import java.awt.Color;
+import java.awt.FileDialog;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedList;
@@ -25,6 +27,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
+import com.typicalprojects.CellQuant.neuronal_migration.Preferences;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
 import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
@@ -162,18 +165,29 @@ public class PnlSelectFiles {
 		this.btnSelectFiles.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setApproveButtonText("Add Input Location");
-				fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-				fc.showOpenDialog(null);
-				File file = fc.getSelectedFile();
-				if (file != null) {
-					if (file.isDirectory() || file.getName().toLowerCase().endsWith(".czi")) {
 
-						if (file.isDirectory()) {
-
-							if (file.list().length > 500) {
-								JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> has too many files in it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+				FileDialog fd = new FileDialog(gui.getComponent());
+				if (GUI.lastSelectFileLocation != null) {
+					fd.setDirectory(GUI.lastSelectFileLocation.getPath());
+				}
+				fd.setMode(FileDialog.LOAD);
+				fd.setMultipleMode(false);
+				fd.setVisible(true);
+				
+				File[] file = fd.getFiles();
+				if (file != null && file.length != 0) {
+					if (file[0].isDirectory() || file[0].getName().toLowerCase().endsWith(".czi")) {
+						
+						if (file[0].isDirectory()) {
+							GUI.lastSelectFileLocation = file[0];
+							try {
+								Preferences.writeSettingsFromGUI();
+							} catch (IOException e1) {
+								// TODO shouldn't happen
+								e1.printStackTrace();
+							}
+							if (file[0].list().length > 500) {
+								JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file[0].getName() + "</em> has too many files in it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 
@@ -183,7 +197,7 @@ public class PnlSelectFiles {
 								existingNames.add(en.nextElement().file.getName());
 							}
 
-							File[] subFiles = file.listFiles();
+							File[] subFiles = file[0].listFiles();
 							List<File> filesToCheck = new ArrayList<File>();
 							for (File subFile : subFiles) {
 								if (subFile.isDirectory() || !subFile.exists()) continue;
@@ -191,7 +205,7 @@ public class PnlSelectFiles {
 								filesToCheck.add(subFile);
 							}
 							if (filesToCheck.isEmpty()) {
-								JOptionPane.showMessageDialog(null, "<html>The directory <em>" + file.getName() + "</em> doesn't contain any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(null, "<html>The directory <em>" + file[0].getName() + "</em> doesn't contain any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 							String alreadyExists = null;
@@ -217,16 +231,23 @@ public class PnlSelectFiles {
 								setDisplayState(STATE_FILE_ADDED);
 							}
 						} else {
-							String name = file.getName();
+							GUI.lastSelectFileLocation = file[0].getParentFile();
+							try {
+								Preferences.writeSettingsFromGUI();
+							} catch (IOException e1) {
+								// TODO shouldn't happen
+								e1.printStackTrace();
+							}
+							String name = file[0].getName();
 							Enumeration<FileContainer> en = listSelectedFiles.getElements();
 							while (en.hasMoreElements()) {
 								FileContainer fileContainer = en.nextElement();
 								if (fileContainer.file.getName().equals(name)) {
-									JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> has already been added.<br><br>All files must have unique names.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+									JOptionPane.showMessageDialog(null, "<html>The file <em>" + file[0].getName() + "</em> has already been added.<br><br>All files must have unique names.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 									return;
 								}
 							}
-							listSelectedFiles.addItem(new FileContainer(file));
+							listSelectedFiles.addItem(new FileContainer(file[0]));
 							if (listSelectedFiles.getSelected()== null) {
 								listSelectedFiles.setSelection(0);
 							} 
@@ -237,7 +258,7 @@ public class PnlSelectFiles {
 						}
 
 					} else {
-						JOptionPane.showMessageDialog(null, "<html>You must select a file with extension '.czi' or a folder.<br><br><em>" + file.getName() + "</em> is not valid.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(null, "<html>You must select a file with extension '.czi' or a folder.<br><br><em>" + file[0].getName() + "</em> is not valid.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			}

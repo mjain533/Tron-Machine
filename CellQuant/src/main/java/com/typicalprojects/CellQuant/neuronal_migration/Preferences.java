@@ -19,6 +19,7 @@ import javax.swing.JSeparator;
 import java.awt.Insets;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FileDialog;
 import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -27,7 +28,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 import javax.swing.UIManager;
 import javax.swing.JButton;
@@ -35,7 +42,6 @@ import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -47,7 +53,26 @@ import javax.swing.JTextField;
 
 public class Preferences extends JFrame {
 
-
+	public enum Pref implements Comparable<Pref>{
+		
+		ChannelToProcess("ChProc"), ChannelForROIDraw("ChROI"), OutputLocation("O"), ChannelMapping("Chans"), LastLocation("L");
+		
+		private String tag;
+		
+		private Pref(String tag) {
+			this.tag = tag;
+		}
+		
+		public String getTag() {
+			return this.tag;
+		}
+		
+		public String toString() {
+			return this.tag;
+		}
+		
+	}
+	
 	private static final long serialVersionUID = 6738766494677442465L;
 	private JPanel contentPane;
 	private GUI mainGUI;
@@ -318,26 +343,32 @@ public class Preferences extends JFrame {
 		JButton btnBrowseSavePath = new JButton("Browse...");
 		btnBrowseSavePath.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fc = new JFileChooser();
-				fc.setApproveButtonText("Select Output Folder");
-				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				fc.showOpenDialog(null);
-				File file = fc.getSelectedFile();
-				if (file != null) {
+				System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
+
+				FileDialog fd = new FileDialog(gui.getComponent());
+				fd.setMode(FileDialog.LOAD);
+				fd.setMultipleMode(false);
+				fd.setVisible(true);
+
+
+				File[] file = fd.getFiles();
+				if (file != null && file.length != 0) {
 					File oldFile = GUI.outputLocation;
 					try {
 
 						
-						GUI.outputLocation = file;
+						GUI.outputLocation = file[0];
 						writeSettingsFromGUI();
 						
-						txtSavePath.setText(file.getPath());
+						txtSavePath.setText(file[0].getPath());
 
 					} catch (IOException exception) {
 						GUI.outputLocation = oldFile;
 						JOptionPane.showConfirmDialog(null, "Could not save settings file.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
 					}
 				}
+				System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+
 			}
 		});
 		GroupLayout gl_panel = new GroupLayout(panel);
@@ -457,6 +488,119 @@ public class Preferences extends JFrame {
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
+	
+	public static void readSettingsIntoGUI() throws IOException{
+		
+		GUI.channelMap.clear();
+		GUI.channelsToProcess.clear();
+		List<Pref> prefs = new LinkedList<Pref>(Arrays.asList(Pref.ChannelMapping, Pref.ChannelToProcess, Pref.ChannelForROIDraw, Pref.OutputLocation, Pref.LastLocation));
+
+		Scanner scanner = new Scanner(new File(GUI.folderName + File.separator + GUI.settingsFile));		
+		scanner.nextLine(); // get past the do not touch
+		
+		Map<String, String> keyValues = new HashMap<String, String>();
+		
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+			if (line.equals(""))
+				continue;
+			String[] pieces = line.split(":",2);
+			keyValues.put(pieces[0], pieces[1]);
+		}
+		
+		scanner.close();
+		
+		Iterator<Pref> prefsItr = prefs.iterator();
+		while (prefsItr.hasNext()) {
+			Pref pref = prefsItr.next();
+			
+			if (!keyValues.containsKey(pref.tag)) {
+				continue;
+			}
+			prefsItr.remove();
+			
+			switch (pref) {
+			case ChannelMapping:
+				String[] prefsChannelMap = keyValues.get(pref.tag).split(":");
+				for (int i = 0; i < prefsChannelMap.length; i++) {
+					String[] channelMapping = prefsChannelMap[i].split("-");
+					if (channelMapping[1].equals("None")) {
+						continue;
+					}
+					GUI.channelMap.put(Integer.valueOf(channelMapping[0]), Channel.getChannelByAbbreviation(channelMapping[1]));
+				}
+				break;
+			case ChannelToProcess:
+				String[] prefsChannelProc = keyValues.get(pref.tag).split(",");
+				for (int i = 0; i < prefsChannelProc.length; i++) {
+					GUI.channelsToProcess.add(Channel.getChannelByAbbreviation(prefsChannelProc[i]));
+				}
+				break;
+			case ChannelForROIDraw:
+				GUI.channelForROIDraw = Channel.getChannelByAbbreviation(keyValues.get(pref.tag));
+				break;
+			case OutputLocation:
+				String stringOutputLocation = keyValues.get(pref.tag);
+				if (stringOutputLocation.equals("-")) {
+					GUI.outputLocation = null;
+				} else {
+					File file = new File(stringOutputLocation);
+					if (file.exists() && file.isDirectory()) {
+						GUI.outputLocation = file;
+					} else {
+						GUI.outputLocation = null;
+						Preferences.writeSettingsFromGUI();
+					}
+				}
+				break;
+			case LastLocation:
+				String stringLastLocation = keyValues.get(pref.tag);
+				if (stringLastLocation.equals("-")) {
+					GUI.lastSelectFileLocation = null;
+				} else {
+					File file = new File(stringLastLocation);
+					if (file.exists() && file.isDirectory()) {
+						GUI.lastSelectFileLocation = file;
+					} else {
+						GUI.lastSelectFileLocation = null;
+						Preferences.writeSettingsFromGUI();
+					}
+				}
+				break;
+			}
+			
+		}
+		
+		if (!prefs.isEmpty()) {
+			for (Pref pref : prefs) {
+				switch (pref) {
+				case ChannelMapping:
+					GUI.channelMap.put(0, Channel.GREEN);
+					GUI.channelMap.put(1, Channel.WHITE);
+					GUI.channelMap.put(2, Channel.RED);
+					GUI.channelMap.put(3, Channel.BLUE);
+					break;
+				case ChannelToProcess:
+					GUI.channelsToProcess.add(Channel.RED);
+					GUI.channelsToProcess.add(Channel.GREEN);
+					break;
+				case ChannelForROIDraw:
+					GUI.channelForROIDraw = Channel.BLUE;
+					break;
+				case OutputLocation:
+					GUI.outputLocation = null;
+					break;
+				case LastLocation:
+					GUI.lastSelectFileLocation = null;
+					break;
+				}
+			}
+			
+			writeSettingsFromGUI();
+		}
+
+		
+	}
 
 	public String applyPreferences(boolean resetIfIncorrect) throws IOException {
 		
@@ -477,26 +621,25 @@ public class Preferences extends JFrame {
 			return "Incorrect channel config. At least 1 one channel must be processed.";
 		}
 		
-		GUI.channelMap.clear();
 		GUI.channelsToProcess.clear();
 		GUI.channelForROIDraw = (Channel) this.comBoxChSelectingROI.getSelectedItem();
+		Map<Integer, Channel> newChanMap = new HashMap<Integer, Channel>();
 		if (!this.comBoxCh0.getSelectedItem().equals("None")) {
-			GUI.channelMap.put(0, Channel.getChannelByAbbreviation((String) this.comBoxCh0.getSelectedItem()));
+			newChanMap.put(0, Channel.getChannelByAbbreviation((String) this.comBoxCh0.getSelectedItem()));
 		}
 		if (!this.comBoxCh1.getSelectedItem().equals("None")) {
-			GUI.channelMap.put(1, Channel.getChannelByAbbreviation((String) this.comBoxCh1.getSelectedItem()));
+			newChanMap.put(1, Channel.getChannelByAbbreviation((String) this.comBoxCh1.getSelectedItem()));
 		}
 		if (!this.comBoxCh2.getSelectedItem().equals("None")) {
-			GUI.channelMap.put(2, Channel.getChannelByAbbreviation((String) this.comBoxCh2.getSelectedItem()));
+			newChanMap.put(2, Channel.getChannelByAbbreviation((String) this.comBoxCh2.getSelectedItem()));
 		}
 		if (!this.comBoxCh3.getSelectedItem().equals("None")) {
-			GUI.channelMap.put(3, Channel.getChannelByAbbreviation((String) this.comBoxCh3.getSelectedItem()));
+			newChanMap.put(3, Channel.getChannelByAbbreviation((String) this.comBoxCh3.getSelectedItem()));
 		}
+		
 		if (this.chkB.isSelected() && GUI.channelMap.containsValue(Channel.BLUE)) {
 			GUI.channelsToProcess.add(Channel.BLUE);
 		}
-		
-		
 		if (this.chkR.isSelected() && GUI.channelMap.containsValue(Channel.RED)) {
 			GUI.channelsToProcess.add(Channel.RED);
 		}
@@ -507,11 +650,14 @@ public class Preferences extends JFrame {
 			GUI.channelsToProcess.add(Channel.WHITE);
 		}
 		
-		if (!GUI.channelMap.values().contains(GUI.channelForROIDraw)) {
+		if (!newChanMap.values().contains(GUI.channelForROIDraw)) {
 			return "The channel chosen for drawing ROIs was not assigned a number.";
 		}
 		
-		writeSettingsFromCurrPrefPane();
+		GUI.channelMap.clear();
+		GUI.channelMap.putAll(newChanMap);
+		
+		writeSettingsFromGUI();
 		
 		return null;
 
@@ -559,27 +705,19 @@ public class Preferences extends JFrame {
 
 	}
 	
-	public void writeSettingsFromCurrPrefPane() throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
-		writer.write("DO NOT TOUCH\nChans:0-"+ (String) this.comBoxCh0.getSelectedItem() + ":1-"
-		+ (String) this.comBoxCh1.getSelectedItem() +":2-" 
-				+ (String) this.comBoxCh2.getSelectedItem() +":3-" 
-		+(String) this.comBoxCh3.getSelectedItem() +"\nChProc:"+StringUtils.join(GUI.channelsToProcess, ",") + "\nChROI:" + GUI.channelForROIDraw.getAbbreviation() + "\nO:" + (GUI.outputLocation == null ? "-":GUI.outputLocation.getPath()));
-		writer.close();
-
-	}
-	
 	public static void writeSettingsFromGUI() throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
 		
 		StringBuilder sb = new StringBuilder();
-		sb.append("DO NOT TOUCH\nChans");
+		sb.append("DO NOT TOUCH");
+		sb.append("\n").append(Pref.ChannelMapping.tag);
 		for (int i = 0; i < 4; i++) {
 			sb.append(":").append(i).append("-").append(GUI.channelMap.containsKey(i) ? GUI.channelMap.get(i).getAbbreviation() : "None");
 		}
-		sb.append("\nChProc:").append(StringUtils.join(GUI.channelsToProcess, ","));
-		sb.append("\nChROI:").append(GUI.channelForROIDraw.getAbbreviation());
-		sb.append("\nO:").append(GUI.outputLocation == null ? "-" : GUI.outputLocation.getPath());
+		sb.append("\n").append(Pref.ChannelToProcess.tag).append(":").append(StringUtils.join(GUI.channelsToProcess, ","));
+		sb.append("\n").append(Pref.ChannelForROIDraw.tag).append(":").append(GUI.channelForROIDraw.getAbbreviation());
+		sb.append("\n").append(Pref.OutputLocation.tag).append(":").append(GUI.outputLocation == null ? "-" : GUI.outputLocation.getPath());
+		sb.append("\n").append(Pref.LastLocation.tag).append(":").append(GUI.lastSelectFileLocation == null ? "-" : GUI.lastSelectFileLocation.getPath());
 		writer.write(sb.toString());
 		
 		writer.close();

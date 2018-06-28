@@ -355,7 +355,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnCancelROI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (imageCurrentlyROIEditing != null) {
-					imageCurrentlyROIEditing.clearPints();
+					imageCurrentlyROIEditing.clearPoints();
 					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()));
 				}
 			}

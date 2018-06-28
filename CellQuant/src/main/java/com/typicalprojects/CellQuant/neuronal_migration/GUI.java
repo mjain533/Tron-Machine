@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Scanner;
 import java.awt.event.ActionListener;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -75,6 +74,7 @@ public class GUI  {
 	public static List<Channel> channelsToProcess = new ArrayList<Channel>();
 	public static Channel channelForROIDraw = null;
 	public static File outputLocation = null;
+	public static File lastSelectFileLocation = null;
 	static {
 		channelMap.clear();
 		channelMap.put(0, Channel.GREEN);
@@ -154,47 +154,7 @@ public class GUI  {
 
 		} else {
 
-			channelMap.clear();
-			channelsToProcess.clear();
-			Scanner scanner = new Scanner(settings);
-			scanner.nextLine();
-			String[] prefsChannelMAp = scanner.nextLine().split(":");
-			for (int i = 1; i < prefsChannelMAp.length; i++) {
-				String[] channelMapping = prefsChannelMAp[i].split("-");
-				if (channelMapping[1].equals("None")) {
-					continue;
-				}
-				channelMap.put(Integer.valueOf(channelMapping[0]), Channel.getChannelByAbbreviation(channelMapping[1]));
-			}
-
-			String[] prefsChannelProc = scanner.nextLine().split(":")[1].split(",");
-			for (int i = 0; i < prefsChannelProc.length; i++) {
-				channelsToProcess.add(Channel.getChannelByAbbreviation(prefsChannelProc[i]));
-			}
-
-			channelForROIDraw = Channel.getChannelByAbbreviation(scanner.nextLine().split(":")[1]);
-			
-			if (scanner.hasNextLine()) {
-				String stringOutputLocation = scanner.nextLine().split(":", 2)[1];
-				scanner.close();
-				if (stringOutputLocation.equals("-")) {
-					outputLocation = null;
-				} else {
-					File file = new File(stringOutputLocation);
-					if (file.exists() && file.isDirectory()) {
-						outputLocation = file;
-					} else {
-						outputLocation = null;
-						Preferences.writeSettingsFromGUI();
-					}
-				}
-			} else {
-				scanner.close();
-				outputLocation = null;
-				Preferences.writeSettingsFromGUI();
-			}
-
-			
+			Preferences.readSettingsIntoGUI();	
 
 		}
 		initialize();
