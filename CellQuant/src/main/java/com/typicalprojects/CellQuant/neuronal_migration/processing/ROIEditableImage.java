@@ -68,8 +68,10 @@ public class ROIEditableImage {
 		Object[] obj = convertPointsToArray();
 
 		if (points.size() == 1) {
-
+			
 			ImagePlus dup = new ImagePlus("dup", this.ic.getImageChannel(channelToDrawROI, false).getProcessor().convertToRGB());
+			
+		
 			dup.getProcessor().setColor(Color.GREEN);
 			dup.getProcessor().drawOval((int) ((float[]) obj[0])[0], (int) ((float[]) obj[1])[0], 6, 6);
 			dup.updateImage();
