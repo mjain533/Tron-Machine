@@ -96,7 +96,7 @@ public class ObjectEditableImage {
 				newImages.add(this.ic.getImageChannel(chan, true));
 			}
 		}
-		return new ImageContainer(channels, newImages, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getSaveDir(), false, this.ic.getCalibration());
+		return new ImageContainer(channels, newImages, this.ic.getTotalImageTitle(), this.ic.getImgFile(), false, this.ic.getCalibration());
 
 	}
 	

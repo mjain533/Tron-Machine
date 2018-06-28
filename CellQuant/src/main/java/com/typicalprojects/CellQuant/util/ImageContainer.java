@@ -16,28 +16,22 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 
 public class ImageContainer {
-
+	
+	private static final String INTERMED_FILES = "Intermediate Files";
+	
 	private List<Channel> channels = new ArrayList<Channel>();
 	private List<ImagePlus> images = new ArrayList<ImagePlus>();
 	
 	private String title;
 	private File imgFile;
-	private File storageDir;
-	private File intermediateFilesDir;
 	private Calibration cal;
 
-	public ImageContainer(ImagePlus[] img, String fileTitle, File imgFile, File directoryToSave, Calibration cal) throws IllegalArgumentException{
+	public ImageContainer(ImagePlus[] img, String fileTitle, File imgFile, Calibration cal) throws IllegalArgumentException{
 		this.imgFile = imgFile;
 		this.cal = cal;
-		this.storageDir = directoryToSave;
 		this.title = fileTitle;
-		if (!this.storageDir.isDirectory()) {
-			this.storageDir.mkdir();
-		}
-		this.intermediateFilesDir = new File(this.storageDir.getPath() + File.separator + title + " Intermediate Files");
-		if (!this.intermediateFilesDir.isDirectory()) {
-			this.intermediateFilesDir.mkdir();
-		}
+
+		makeSaveDirectory(title);
 
 		if (img.length == 0)
 			throw new IllegalArgumentException("There are no channels for " + fileTitle + ".");
@@ -62,19 +56,12 @@ public class ImageContainer {
 	}
 	
 	
-	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, String title, File imgFile, File directoryToSave, boolean sameStackSize, Calibration cal) {
+	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, String title, File imgFile, boolean sameStackSize, Calibration cal) {
 		this.cal = cal;
 		this.imgFile = imgFile;
-		this.storageDir = directoryToSave;
 		
-		if (this.storageDir.isDirectory()) {
-			this.storageDir.mkdir();
-		}
+		makeSaveDirectory(title);
 
-		this.intermediateFilesDir = new File(this.storageDir.getPath() + File.separator + title + " Intermediate Files");
-		if (this.intermediateFilesDir.isDirectory()) {
-			this.intermediateFilesDir.mkdir();
-		}
 
 		if (channelsToSet.size() == 0 || channelsToSet.size() != imagesToSet.size()) {
 			
@@ -107,9 +94,6 @@ public class ImageContainer {
 		return this.imgFile;
 	}
 	
-	public File getSaveDir() {
-		return this.storageDir;
-	}
 
 	public String getTotalImageTitle() {
 		return this.title;
@@ -117,7 +101,7 @@ public class ImageContainer {
 
 	private void deleteImgFiles() {
 		for (int i = 0; i < images.size(); i++) {
-			new File(this.intermediateFilesDir + File.separator + images.get(i).getTitle() + ".tiff").delete();
+			new File(this.getIntermediateFilesDirectory().getPath() + File.separator + images.get(i).getTitle() + ".tiff").delete();
 
 		}
 
@@ -180,28 +164,41 @@ public class ImageContainer {
 			newImages[i] = new ImagePlus(img.getTitle(), is);
 		}
 
-		return new ImageContainer(newImages, this.title, this.imgFile, this.storageDir, this.cal);
+		return new ImageContainer(newImages, this.title, this.imgFile, this.cal);
 
 	}
 
 	private void deleteResultsTables(String date) {
 
 		for (Channel chan : GUI.channelsToProcess) {
-			File file = new File(this.storageDir + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
+			File file = new File(getSaveDirectory() + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
 			if (file.exists()) {
 				file.delete();
 			}
 		}
 	}
 
-	public void saveResultsTable(Map<Channel, ResultsTable> results, String date, boolean csv) {
+	public void saveResultsTable(Map<Channel, ResultsTable> results, String date, boolean excel) {
 
 		deleteResultsTables(date);
 
-		String ext = csv ? ".csv" : ".txt";
+		String ext = excel ? ".xlsx" : ".txt";
+		
+		if (excel) {
+			AdvancedWorkbook aw = new AdvancedWorkbook();
+			for (Channel chan : GUI.channelsToProcess) {
+				ResultsTable table = results.get(chan);
+				if (table == null)
+					continue;
+				
+				aw.addSheetFromResultTable(chan.name(), table);
+			}
+			aw.save(new File(getSaveDirectory() + File.separator + "analysis.xlsx"));
+			return;
+		}
 		for (Entry<Channel, ResultsTable> en : results.entrySet()) {
 			try {
-				en.getValue().saveAs(this.storageDir + File.separator + getImageChannel(en.getKey(), false).getTitle() + ext);
+				en.getValue().saveAs(this.getSaveDirectory().getPath() + File.separator + getImageChannel(en.getKey(), false).getTitle() + ext);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -216,7 +213,7 @@ public class ImageContainer {
 		try {
 			for (int i = 0; i < images.size(); i++) {
 
-				String savePath = this.intermediateFilesDir + File.separator + images.get(i).getTitle() + ".tiff";
+				String savePath = this.getIntermediateFilesDirectory().getPath() + File.separator + images.get(i).getTitle() + ".tiff";
 				
 				if (images.get(i).getStackSize() > 1) {
 					new FileSaver(images.get(i)).saveAsTiffStack(savePath);
@@ -231,9 +228,6 @@ public class ImageContainer {
 
 	}
 	
-	public File getIntermediateFileDir() {
-		return this.intermediateFilesDir;
-	}
 	
 
 	public enum Channel {
@@ -280,6 +274,55 @@ public class ImageContainer {
 	
 	public synchronized int getMax(Channel channel) {
 		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMax();
+	}
+	
+	private static void makeSaveDirectory(String title) {
+		if (GUI.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		File file = new File(GUI.outputLocation.getPath() + File.separator + title + " " + GUI.dateString);
+		if (!file.isDirectory()) {
+			file.mkdir();
+		}
+		File intermed = new File(file.getPath() + File.separator + INTERMED_FILES);
+		if (!intermed.isDirectory()) {
+			intermed.mkdir();
+		}
+	}
+	
+	public File getSaveDirectory() throws IllegalStateException{
+		
+		if (GUI.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		return new File(GUI.outputLocation.getPath() + File.separator + this.title + " " + GUI.dateString);
+	}
+	
+	public File getIntermediateFilesDirectory()throws IllegalStateException {
+		if (GUI.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		return new File(GUI.outputLocation.getPath() + File.separator + this.title + " " + GUI.dateString + File.separator + INTERMED_FILES);
+
+	}
+	
+	public static File getSaveDirectory(String imageTitle) throws IllegalStateException {
+		if (GUI.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		makeSaveDirectory(imageTitle);
+		return new File(GUI.outputLocation.getPath() + File.separator + imageTitle + " " + GUI.dateString);
+
+	}
+	
+	
+	public static File getIntermediateFilesDirectory(String imageTitle) throws IllegalStateException {
+		if (GUI.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		makeSaveDirectory(imageTitle);
+		return new File(GUI.outputLocation.getPath() + File.separator + imageTitle + " " + GUI.dateString + File.separator + INTERMED_FILES);
+
 	}
 	
 }

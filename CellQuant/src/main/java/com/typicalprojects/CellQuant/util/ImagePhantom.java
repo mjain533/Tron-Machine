@@ -19,17 +19,15 @@ import loci.plugins.in.ImporterOptions;
 public class ImagePhantom {
 	private ImageContainer ic;
 	private File pathToImage;
-	private File saveDir;
 	private GUI gui;
 	private String title;
 	private Calibration cal;
 	private boolean intermediates;
 
-	public ImagePhantom(File imagePath, String titleNoExtension, GUI gui, File saveDir, boolean intermediates, Calibration cal) {
+	public ImagePhantom(File imagePath, String titleNoExtension, GUI gui, boolean intermediates, Calibration cal) {
 		this.title = titleNoExtension;
 		this.pathToImage = imagePath;
 		this.gui = gui;
-		this.saveDir = saveDir;
 		this.cal = cal;
 		this.intermediates = intermediates;
 	}
@@ -52,7 +50,7 @@ public class ImagePhantom {
 				ImagePlus[]  ip= BF.openImagePlus(io);
 				//System.out.println(ip[0].getCalibration().getY(40));
 				this.cal = ip[0].getCalibration();
-				ic = new ImageContainer(ip, this.title, this.pathToImage, this.saveDir, this.cal);
+				ic = new ImageContainer(ip, this.title, this.pathToImage, this.cal);
 				gui.log("Success.");
 				return null;
 
@@ -62,7 +60,7 @@ public class ImagePhantom {
 				List<Channel> potentialChannels = new ArrayList<Channel>(GUI.channelMap.values());
 				List<Channel> channels = new ArrayList<Channel>();
 				List<ImagePlus> images = new ArrayList<ImagePlus>();
-				File intermediateFilesDir = new File(this.saveDir.getPath() + File.separator + title + " Intermediate Files");
+				File intermediateFilesDir = ImageContainer.getIntermediateFilesDirectory(title);
 				
 				for (Channel chan : potentialChannels){
 					File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
@@ -75,7 +73,7 @@ public class ImagePhantom {
 					}
 
 				}
-				ic = new ImageContainer(channels, images, title, this.pathToImage, this.saveDir, false, this.cal);
+				ic = new ImageContainer(channels, images, title, this.pathToImage, false, this.cal);
 				gui.log("Success.");
 				return null;
 
@@ -97,7 +95,7 @@ public class ImagePhantom {
 		Map<Channel, ResultsTable> results = new HashMap<Channel, ResultsTable>();
 		
 		for (Channel chan : GUI.channelsToProcess) {
-			results.put(chan, ResultsTable.open2(this.saveDir + File.separator + this.ic.getImageChannel(chan, false).getTitle() + ".txt"));
+			results.put(chan, ResultsTable.open2(ImageContainer.getSaveDirectory(this.title) + File.separator + this.ic.getImageChannel(chan, false).getTitle() + ".txt"));
 
 		}		
 

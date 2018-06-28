@@ -16,9 +16,7 @@ import javax.swing.WindowConstants;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -76,6 +74,7 @@ public class GUI  {
 	public static Map<Integer, ImageContainer.Channel> channelMap = new HashMap<Integer, ImageContainer.Channel>();
 	public static List<Channel> channelsToProcess = new ArrayList<Channel>();
 	public static Channel channelForROIDraw = null;
+	public static File outputLocation = null;
 	static {
 		channelMap.clear();
 		channelMap.put(0, Channel.GREEN);
@@ -139,9 +138,6 @@ public class GUI  {
 					}
 
 				}
-				BufferedWriter writer = new BufferedWriter(new FileWriter(settings));
-				writer.write("DO NOT TOUCH\nChans:0-G:1-W:2-R:3-B\nChProc:R,G\nChROI:B");
-				writer.close();
 				channelMap.clear();
 				channelMap.put(0, Channel.GREEN);
 				channelMap.put(1, Channel.WHITE);
@@ -151,6 +147,8 @@ public class GUI  {
 				channelsToProcess.add(Channel.RED);
 				channelsToProcess.add(Channel.GREEN);
 				channelForROIDraw = Channel.BLUE;
+				GUI.outputLocation = null;
+				Preferences.writeSettingsFromGUI();
 
 			}
 
@@ -175,7 +173,28 @@ public class GUI  {
 			}
 
 			channelForROIDraw = Channel.getChannelByAbbreviation(scanner.nextLine().split(":")[1]);
-			scanner.close();
+			
+			if (scanner.hasNextLine()) {
+				String stringOutputLocation = scanner.nextLine().split(":", 2)[1];
+				scanner.close();
+				if (stringOutputLocation.equals("-")) {
+					outputLocation = null;
+				} else {
+					File file = new File(stringOutputLocation);
+					if (file.exists() && file.isDirectory()) {
+						outputLocation = file;
+					} else {
+						outputLocation = null;
+						Preferences.writeSettingsFromGUI();
+					}
+				}
+			} else {
+				scanner.close();
+				outputLocation = null;
+				Preferences.writeSettingsFromGUI();
+			}
+
+			
 
 		}
 		initialize();
@@ -408,7 +427,7 @@ public class GUI  {
 	}
 
 	public void doExit() {
-		// TODO
+		//TODO
 		System.exit(0);
 	}
 

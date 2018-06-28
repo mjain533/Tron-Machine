@@ -12,6 +12,7 @@ import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
 import java.awt.Font;
@@ -22,6 +23,7 @@ import javax.swing.border.BevelBorder;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class MainFrame extends JFrame {
 
@@ -60,7 +62,7 @@ public class MainFrame extends JFrame {
 
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 450, 250);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		this.setResizable(false);
@@ -79,8 +81,9 @@ public class MainFrame extends JFrame {
 		panel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		contentPane.add(panel, BorderLayout.CENTER);
 		
-		JButton btnNewButton = new JButton("<html><center>Quantify Neuronal Migration</center></html>")  ;
-		btnNewButton.addActionListener(new ActionListener() {
+		JButton btnQuantifyMigration = new JButton("<html><center>Quantify Neuronal Migration</center></html>")  ;
+		btnQuantifyMigration.setOpaque(true);
+		btnQuantifyMigration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				setVisible(false);
 				EventQueue.invokeLater(new Runnable() {
@@ -101,25 +104,40 @@ public class MainFrame extends JFrame {
 				
 			}
 		});
-		btnNewButton.setFont(btnNewButton.getFont().deriveFont(btnNewButton.getFont().getStyle() | Font.BOLD));
-		btnNewButton.setFocusable(false);
-		btnNewButton.setIconTextGap(0);
-		btnNewButton.setAlignmentY(0.0f);
+		btnQuantifyMigration.setFont(btnQuantifyMigration.getFont().deriveFont(btnQuantifyMigration.getFont().getStyle() | Font.BOLD));
+		btnQuantifyMigration.setFocusable(false);
+		btnQuantifyMigration.setIconTextGap(0);
+		btnQuantifyMigration.setAlignmentY(0.0f);
+		
+		JButton btnQuantifyNeurites = new JButton("<html><center>Quantify Neurite Outgrowth</center></html>");
+		btnQuantifyNeurites.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(null, "Neurite processor not yet finished. Coming soon.", "Incomplete Program", JOptionPane.WARNING_MESSAGE);
+			}
+		});;
+		btnQuantifyNeurites.setIconTextGap(0);
+		btnQuantifyNeurites.setFont(btnQuantifyNeurites.getFont().deriveFont(btnQuantifyNeurites.getFont().getStyle() | Font.BOLD));
+		btnQuantifyNeurites.setFocusable(false);
+		btnQuantifyNeurites.setAlignmentY(0.0f);
 		
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
-			gl_panel.createParallelGroup(Alignment.LEADING)
-				.addGroup(Alignment.TRAILING, gl_panel.createSequentialGroup()
-					.addGap(127)
-					.addComponent(btnNewButton, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
-					.addGap(122))
+			gl_panel.createParallelGroup(Alignment.TRAILING)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addGap(35)
+					.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 177, GroupLayout.PREFERRED_SIZE)
+					.addGap(31))
 		);
 		gl_panel.setVerticalGroup(
 			gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
-					.addGap(64)
-					.addComponent(btnNewButton, GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE)
-					.addGap(59))
+					.addGap(37)
+					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+						.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
+						.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE))
+					.addGap(37))
 		);
 		panel.setLayout(gl_panel);
 		
@@ -129,5 +147,4 @@ public class MainFrame extends JFrame {
 	public void reshow() {
 		setVisible(true);
 	}
-	
 }

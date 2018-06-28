@@ -28,12 +28,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.UIManager;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -41,6 +43,7 @@ import javax.swing.JCheckBox;
 import java.awt.Font;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JTextField;
 
 public class Preferences extends JFrame {
 
@@ -58,6 +61,7 @@ public class Preferences extends JFrame {
 	private JComboBox<String> comBoxCh1;
 	private JComboBox<String> comBoxCh0;
 	private JComboBox<Channel> comBoxChSelectingROI;
+	private JTextField txtSavePath;
 
 	/**
 	 * Create the frame.
@@ -70,7 +74,6 @@ public class Preferences extends JFrame {
 		addWindowListener(new WindowAdapter(){
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
-				setAlwaysOnTop(false);
 
 				if (JOptionPane.showConfirmDialog(null, "Do you want to apply changes?", "Exit Preferences", 
 						JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
@@ -95,13 +98,12 @@ public class Preferences extends JFrame {
 					removeDisplay();
 				}
 
-				setAlwaysOnTop(true);
 			}
 		});
 
 
 		setTitle("Preferences");
-		setBounds(100, 100, 600, 350);
+		setBounds(100, 100, 600, 380);
 		setResizable(false);
 		contentPane = new JPanel();
 		contentPane.setVisible(true);
@@ -110,9 +112,9 @@ public class Preferences extends JFrame {
 		setVisible(false);
 		GridBagLayout gbl_contentPane = new GridBagLayout();
 		gbl_contentPane.columnWidths = new int[]{0, 0};
-		gbl_contentPane.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+		gbl_contentPane.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
 		gbl_contentPane.columnWeights = new double[]{1.0, Double.MIN_VALUE};
-		gbl_contentPane.rowWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, Double.MIN_VALUE};
+		gbl_contentPane.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE};
 		contentPane.setLayout(gbl_contentPane);
 		JLabel label = new JLabel("<html>These preferences are stored in the settings.txt file in the folder named \"Neuronal_Migration_Resources\" within the directory of this program. If you delete this file, preferences will be lost.</html>");
 		label.setFont(new Font("PingFang TC", Font.BOLD, 14));
@@ -141,7 +143,7 @@ public class Preferences extends JFrame {
 		contentPane.add(separator, gbc_separator);
 
 		JLabel lblChannelConfig = new JLabel("1. Channel Configuration");
-		lblChannelConfig.setFont(new Font("PingFang TC", Font.BOLD, 13));
+		lblChannelConfig.setFont(GUI.smallFont);
 		GridBagConstraints gbc_lblChannelConfig = new GridBagConstraints();
 		gbc_lblChannelConfig.insets = new Insets(0, 0, 5, 0);
 		gbc_lblChannelConfig.anchor = GridBagConstraints.WEST;
@@ -159,7 +161,7 @@ public class Preferences extends JFrame {
 		contentPane.add(pnlChannelConfig, gbc_pnlChannelConfig);
 
 		JLabel lblChan0 = new JLabel("Chan 0:");
-		lblChan0.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChan0.setFont(GUI.smallPlainFont);
 		
 		List<String> values = new ArrayList<String>();
 		for (Channel chan : Channel.values()) {
@@ -168,32 +170,28 @@ public class Preferences extends JFrame {
 		values.add("None");
 		comBoxCh0 = new JComboBox<String>();
 		comBoxCh0.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
-		comBoxCh0.setSelectedItem(values.get(0));
 
 		JLabel lblChan1 = new JLabel("Chan 1:");
-		lblChan1.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChan1.setFont(GUI.smallPlainFont);
 
 		comBoxCh1 = new JComboBox<String>();
 		comBoxCh1.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
-		comBoxCh1.setSelectedItem(values.get(1));
 
 		JLabel lblChan2 = new JLabel("Chan 2:");
-		lblChan2.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChan2.setFont(GUI.smallPlainFont);
 
 		comBoxCh2 = new JComboBox<String>();
 		comBoxCh2.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
-		comBoxCh2.setSelectedItem(values.get(2));
 
 
 		JLabel lblChan3 = new JLabel("Chan 3:");
-		lblChan3.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChan3.setFont(GUI.smallPlainFont);
 
 		comBoxCh3 = new JComboBox<String>();
 		comBoxCh3.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
-		comBoxCh3.setSelectedItem(values.get(3));
 
 		JLabel lblChannelProcess = new JLabel("Channels to Process:");
-		lblChannelProcess.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChannelProcess.setFont(GUI.smallPlainFont);
 
 		chkG = new JCheckBox("G");
 		if (GUI.channelsToProcess.contains(Channel.GREEN)) {
@@ -216,7 +214,7 @@ public class Preferences extends JFrame {
 		}
 
 		JLabel lblChannelSelectROI = new JLabel("Channel to Select ROIs");
-		lblChannelSelectROI.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		lblChannelSelectROI.setFont(GUI.smallPlainFont);
 
 		comBoxChSelectingROI = new JComboBox<Channel>();
 		comBoxChSelectingROI.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
@@ -290,24 +288,99 @@ public class Preferences extends JFrame {
 
 		lblError = new JLabel("Error");
 		lblError.setVisible(false);
+		
+		JLabel lblSaveLocation = new JLabel("2. Save Location");
+		lblSaveLocation.setFont(GUI.smallFont);
+		GridBagConstraints gbc_lblSaveLocation = new GridBagConstraints();
+		gbc_lblSaveLocation.anchor = GridBagConstraints.WEST;
+		gbc_lblSaveLocation.insets = new Insets(0, 0, 5, 0);
+		gbc_lblSaveLocation.gridx = 0;
+		gbc_lblSaveLocation.gridy = 4;
+		contentPane.add(lblSaveLocation, gbc_lblSaveLocation);
+		
+		JPanel panel = new JPanel();
+		panel.setBorder(new EmptyBorder(0, 10, 0, 0));
+		GridBagConstraints gbc_panel = new GridBagConstraints();
+		gbc_panel.anchor = GridBagConstraints.NORTH;
+		gbc_panel.insets = new Insets(0, 0, 5, 0);
+		gbc_panel.fill = GridBagConstraints.HORIZONTAL;
+		gbc_panel.gridx = 0;
+		gbc_panel.gridy = 5;
+		contentPane.add(panel, gbc_panel);
+		
+		JLabel lblSavePath = new JLabel("Path:");
+		lblSavePath.setFont(GUI.smallPlainFont);
+		
+		txtSavePath = new JTextField();
+		txtSavePath.setEditable(false);
+		txtSavePath.setColumns(10);
+		
+		JButton btnBrowseSavePath = new JButton("Browse...");
+		btnBrowseSavePath.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser();
+				fc.setApproveButtonText("Select Output Folder");
+				fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fc.showOpenDialog(null);
+				File file = fc.getSelectedFile();
+				if (file != null) {
+					File oldFile = GUI.outputLocation;
+					try {
+
+						
+						GUI.outputLocation = file;
+						writeSettingsFromGUI();
+						
+						txtSavePath.setText(file.getPath());
+
+					} catch (IOException exception) {
+						GUI.outputLocation = oldFile;
+						JOptionPane.showConfirmDialog(null, "Could not save settings file.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+		});
+		GroupLayout gl_panel = new GroupLayout(panel);
+		gl_panel.setHorizontalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblSavePath)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(txtSavePath, GroupLayout.DEFAULT_SIZE, 404, Short.MAX_VALUE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(btnBrowseSavePath))
+		);
+		gl_panel.setVerticalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_panel.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblSavePath)
+						.addComponent(txtSavePath, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(btnBrowseSavePath))
+					.addContainerGap(22, Short.MAX_VALUE))
+		);
+		panel.setLayout(gl_panel);
 		lblError.setFont(GUI.smallFont);
 		lblError.setForeground(Color.RED);
 		GridBagConstraints gbc_lblError = new GridBagConstraints();
 		gbc_lblError.insets = new Insets(0, 0, 5, 0);
 		gbc_lblError.gridx = 0;
-		gbc_lblError.gridy = 5;
+		gbc_lblError.gridy = 6;
 		contentPane.add(lblError, gbc_lblError);
 
 		JPanel panel_1 = new JPanel();
-		panel_1.setMinimumSize(new Dimension(10, 5));
+		panel_1.setMinimumSize(new Dimension(10, 40));
 		panel_1.setBorder(null);
 		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
 		gbc_panel_1.fill = GridBagConstraints.BOTH;
 		gbc_panel_1.gridx = 0;
-		gbc_panel_1.gridy = 6;
+		gbc_panel_1.gridy = 7;
 		contentPane.add(panel_1, gbc_panel_1);
 
 		JButton btnApplyClose = new JButton("Apply and Close");
+		btnApplyClose.setFocusCycleRoot(true);
 		btnApplyClose.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -333,7 +406,6 @@ public class Preferences extends JFrame {
 			}
 		});
 		btnApplyClose.setHorizontalAlignment(SwingConstants.RIGHT);
-		panel_1.add(btnApplyClose);
 
 		JButton btnNewButton_1 = new JButton("Cancel");
 		btnNewButton_1.addActionListener(new ActionListener() {
@@ -344,8 +416,26 @@ public class Preferences extends JFrame {
 
 			}
 		});
-		panel_1.add(btnNewButton_1);
-		setAlwaysOnTop(true);
+		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
+		gl_panel_1.setHorizontalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addGap(171)
+					.addComponent(btnNewButton_1)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(btnApplyClose)
+					.addContainerGap(171, Short.MAX_VALUE))
+		);
+		gl_panel_1.setVerticalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnNewButton_1)
+						.addComponent(btnApplyClose))
+					.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+		);
+		panel_1.setLayout(gl_panel_1);
 
 		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
 		while (keys.hasMoreElements()) {
@@ -420,14 +510,8 @@ public class Preferences extends JFrame {
 		if (!GUI.channelMap.values().contains(GUI.channelForROIDraw)) {
 			return "The channel chosen for drawing ROIs was not assigned a number.";
 		}
-
-		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
-		writer.write("DO NOT TOUCH\nChans:0-"+ (String) this.comBoxCh0.getSelectedItem() + ":1-"
-		+ (String) this.comBoxCh1.getSelectedItem() +":2-" 
-				+ (String) this.comBoxCh2.getSelectedItem() +":3-" 
-		+(String) this.comBoxCh3.getSelectedItem() +"\nChProc:"+StringUtils.join(GUI.channelsToProcess, ",") + "\nChROI:" + GUI.channelForROIDraw.getAbbreviation());
-
-		writer.close();
+		
+		writeSettingsFromCurrPrefPane();
 		
 		return null;
 
@@ -438,28 +522,28 @@ public class Preferences extends JFrame {
 		if (GUI.channelMap.get(0) == null) {
 			this.comBoxCh0.setSelectedItem("None");
 		} else {
-			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(0));
+			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(0).getAbbreviation());
 
 		}
 		
 		if (GUI.channelMap.get(1) == null) {
-			this.comBoxCh0.setSelectedItem("None");
+			this.comBoxCh1.setSelectedItem("None");
 		} else {
-			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(1));
+			this.comBoxCh1.setSelectedItem(GUI.channelMap.get(1).getAbbreviation());
 
 		}
 		
 		if (GUI.channelMap.get(2) == null) {
-			this.comBoxCh0.setSelectedItem("None");
+			this.comBoxCh2.setSelectedItem("None");
 		} else {
-			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(2));
+			this.comBoxCh2.setSelectedItem(GUI.channelMap.get(2).getAbbreviation());
 
 		}
 		
 		if (GUI.channelMap.get(3) == null) {
-			this.comBoxCh0.setSelectedItem("None");
+			this.comBoxCh3.setSelectedItem("None");
 		} else {
-			this.comBoxCh0.setSelectedItem(GUI.channelMap.get(3));
+			this.comBoxCh3.setSelectedItem(GUI.channelMap.get(3).getAbbreviation());
 
 		}
 		this.chkG.setSelected(GUI.channelsToProcess.contains(Channel.GREEN));
@@ -467,7 +551,39 @@ public class Preferences extends JFrame {
 		this.chkW.setSelected(GUI.channelsToProcess.contains(Channel.WHITE));
 		this.chkB.setSelected(GUI.channelsToProcess.contains(Channel.BLUE));
 		this.comBoxChSelectingROI.setSelectedItem(GUI.channelForROIDraw);
+		if (GUI.outputLocation == null) {
+			this.txtSavePath.setText("");
+		} else {
+			this.txtSavePath.setText(GUI.outputLocation.getPath());
+		}
 
 	}
+	
+	public void writeSettingsFromCurrPrefPane() throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
+		writer.write("DO NOT TOUCH\nChans:0-"+ (String) this.comBoxCh0.getSelectedItem() + ":1-"
+		+ (String) this.comBoxCh1.getSelectedItem() +":2-" 
+				+ (String) this.comBoxCh2.getSelectedItem() +":3-" 
+		+(String) this.comBoxCh3.getSelectedItem() +"\nChProc:"+StringUtils.join(GUI.channelsToProcess, ",") + "\nChROI:" + GUI.channelForROIDraw.getAbbreviation() + "\nO:" + (GUI.outputLocation == null ? "-":GUI.outputLocation.getPath()));
+		writer.close();
 
+	}
+	
+	public static void writeSettingsFromGUI() throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("DO NOT TOUCH\nChans");
+		for (int i = 0; i < 4; i++) {
+			sb.append(":").append(i).append("-").append(GUI.channelMap.containsKey(i) ? GUI.channelMap.get(i).getAbbreviation() : "None");
+		}
+		sb.append("\nChProc:").append(StringUtils.join(GUI.channelsToProcess, ","));
+		sb.append("\nChROI:").append(GUI.channelForROIDraw.getAbbreviation());
+		sb.append("\nO:").append(GUI.outputLocation == null ? "-" : GUI.outputLocation.getPath());
+		writer.write(sb.toString());
+		
+		writer.close();
+
+	}
+	
 }

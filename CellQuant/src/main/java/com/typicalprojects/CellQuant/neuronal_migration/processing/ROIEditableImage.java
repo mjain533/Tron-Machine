@@ -211,13 +211,13 @@ public class ROIEditableImage {
 		}
 
 
-		return new ImageContainer(channels, images, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getSaveDir(), true, this.ic.getCalibration());
+		return new ImageContainer(channels, images, this.ic.getTotalImageTitle(), this.ic.getImgFile(), true, this.ic.getCalibration());
 
 	}
 
 	public void saveROIs() {
 		for (PolygonRoi roi : this.roi_polygons) {
-			RoiEncoder.save(roi, this.ic.getSaveDir() + File.separator + ic.getTotalImageTitle() + " Intermediate Files" + File.separator + roi.getName() +".roi");
+			RoiEncoder.save(roi, this.ic.getIntermediateFilesDirectory() + File.separator + roi.getName() +".roi");
 		}
 	}
 
@@ -250,8 +250,7 @@ public class ROIEditableImage {
 
 
 		for (String roiName : this.roi_names) {
-			newTable.setHeading(counter, "Distance from " + roiName + " (pixels)");
-			newTable.setHeading(counter + 1, "Distance from " + roiName + " (" + cal.getUnits() +")");
+			newTable.setHeading(counter, "Distance from " + roiName + " (" + cal.getUnits() +")");
 			Map<Integer, Integer> pts = new HashMap<Integer, Integer>();
 
 			Polygon p = this.roi_polygons.get(this.roi_names.indexOf(roiName)).getPolygon();
@@ -262,7 +261,7 @@ public class ROIEditableImage {
 
 			coords.add(pts);
 
-			counter = counter + 2;
+			counter++;
 
 		}
 
@@ -276,9 +275,8 @@ public class ROIEditableImage {
 				newTable.addValue(1, xObjValues[i]);
 				newTable.addValue(2, yObjValues[i]);
 
-				int r = 0;
+				int r = 3;
 				for (Map<Integer, Integer> coordinatePts : coords) {
-
 
 					double shortestDist = Double.MAX_VALUE;
 
@@ -290,13 +288,11 @@ public class ROIEditableImage {
 					}
 
 					if (yObjValues[i] > coordinatePts.get((int)xObjValues[i])) {
-						newTable.addValue(r + 3, shortestDist);
-						newTable.addValue(r + 4, cal.getX(shortestDist)); // could be X or Y, just for conversion
+						newTable.addValue(r, cal.getX(shortestDist)); // could be X or Y, just for conversion
 					} else {
-						newTable.addValue(r + 3, -1 * shortestDist);
-						newTable.addValue(r + 4, -1 * cal.getX(shortestDist));
+						newTable.addValue(r, -1 * cal.getX(shortestDist));
 					}
-					r = r + 2;
+					r++;
 				}
 
 
@@ -308,7 +304,7 @@ public class ROIEditableImage {
 		progress.setProgress("Success. ", -1, -1);
 
 		int col = newTable.getColumnIndex("Grayscale Value");
-		ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui, this.ic.getSaveDir(), false, null);
+		ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui, false, null);
 		pi.open();
 		ZProjector projector = new ZProjector();
 		projector.setImage(pi.getIC().getImageChannel(chan, false));
@@ -317,6 +313,7 @@ public class ROIEditableImage {
 		projector.doProjection();
 		progress.setProgress("Recording grayscale values...", -1, -1);
 		ImageProcessor ip = projector.getProjection().getProcessor();
+		System.out.println(newTable.getLastColumn());
 
 		for (int i = 0; i < xObjValues.length; i++) {
 

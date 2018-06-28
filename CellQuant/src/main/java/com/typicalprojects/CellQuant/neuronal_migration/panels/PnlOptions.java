@@ -462,7 +462,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 			ImageContainer newIC = this.imageCurrentlyDisplayed.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
 			newIC.save(GUI.dateString);
-			this.imagesForObjectAnalysis.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, this.imageCurrentlyDisplayed.getSaveDir(), true, newIC.getCalibration()));
+			this.imagesForObjectAnalysis.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, true, newIC.getCalibration()));
 			this.gui.log("Success.");
 			this.imageCurrentlyDisplayed = null;
 		}
@@ -502,7 +502,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			newIC.save(GUI.dateString);
 			newIC.saveResultsTable(this.imageCurrentlyObjEditing.createNewResultsTables(), GUI.dateString, false);
 			
-			this.imagesForROICreation.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, newIC.getSaveDir(), true, newIC.getCalibration()));
+			this.imagesForROICreation.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui, true, newIC.getCalibration()));
 			this.gui.log("Success.");
 			this.imageCurrentlyObjEditing = null;
 		}
