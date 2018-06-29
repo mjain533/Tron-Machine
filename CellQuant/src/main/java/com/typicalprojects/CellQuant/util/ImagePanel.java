@@ -21,6 +21,11 @@ public class ImagePanel extends JPanel{
 	private volatile int pastWidth;
 	private volatile int posX;
 	private volatile int posY;
+	private Zoom zoom;
+	private int zoomWidth;
+	private int zoomHeight;
+	private int zoomX;
+	private int zoomY;
 
 	public ImagePanel() {
 		super();
@@ -40,9 +45,63 @@ public class ImagePanel extends JPanel{
 		
 	}
 	
-	public synchronized void setImage(BufferedImage ig) {
+	public BufferedImage getImage() {
+		return this.image;
+	}
+	
+	
+	public synchronized void setImage(BufferedImage ig, int xCenter, int yCenter, Zoom zoom) {
 		this.image = ig;
 		this.pastHeight = -1;
+		if (zoom != null && this.zoom != zoom) {
+			if (zoom.equals(Zoom.ZOOM_100)) {
+				this.zoom = null;
+				zoomWidth = -1;
+				zoomHeight = -1;
+				zoomX = -1;
+				zoomY = -1;
+			} else  {
+
+				if (this.zoom == null || this.zoom.equals(Zoom.ZOOM_100)) {
+					zoomWidth = this.image.getWidth();
+					zoomHeight = this.image.getHeight();
+					zoomX = 0;
+					zoomY = 0;
+					this.zoom = Zoom.ZOOM_100;
+				}
+
+				int zoomDiff = Math.subtractExact(zoom.getLevel(), this.zoom.getLevel());
+				if (zoomDiff > 0) {
+					// zoom in
+					for (int numZooms = 0; numZooms < zoomDiff; numZooms++) {
+						
+						double modedX = (zoomWidth * (xCenter / ((double) this.getWidth()))) + zoomX;
+						double modedY = (zoomHeight * (yCenter / ((double) this.getHeight()))) + zoomY;
+						int[] zoomStats = Zoom.zoomIn(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
+						this.zoomX = zoomStats[0];
+						this.zoomY = zoomStats[1];
+						this.zoomWidth = zoomStats[2];
+						this.zoomHeight = zoomStats[3];
+					}
+				} else {
+					for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
+						int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight);
+						this.zoomX = zoomStats[0];
+						this.zoomY = zoomStats[1];
+						this.zoomWidth = zoomStats[2];
+						this.zoomHeight = zoomStats[3];
+					}
+				}
+				
+			}
+		} else {
+			this.zoom = null;
+			zoomWidth = -1;
+			zoomHeight = -1;
+			zoomX = -1;
+			zoomY = -1;
+		}
+		this.zoom = zoom;
 		repaint();
 	}
 
@@ -94,7 +153,13 @@ public class ImagePanel extends JPanel{
 				this.posY = 0;
 			}*/
 			
-			scaled = image.getScaledInstance(this.imgWidth, this.imgHeight, Image.SCALE_SMOOTH);
+			BufferedImage zoomedIg = image;
+			if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+				zoomedIg = image.getSubimage(zoomX, zoomY, zoomWidth, zoomHeight);
+			
+			}
+			
+			scaled = zoomedIg.getScaledInstance(this.imgWidth, this.imgHeight, Image.SCALE_SMOOTH);
 			g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters  
 		}
 

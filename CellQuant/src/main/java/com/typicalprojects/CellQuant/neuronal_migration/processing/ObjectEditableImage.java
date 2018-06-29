@@ -12,6 +12,7 @@ import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCount
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImagePanel;
 import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.Zoom;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
@@ -26,7 +27,10 @@ public class ObjectEditableImage {
 	private ImageContainer ic;
 	private Map<Channel, ImagePlus> images = new HashMap<Channel, ImagePlus>();
 	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
-
+	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
+	private int fontSize = Custome3DObjectCounter.opResultFontSize;
+	private Zoom zoom = Zoom.ZOOM_100;
+	
 	private ImagePanel imagePnl;
 
 	public ObjectEditableImage(ImagePanel ip, ImageContainer ic, Map<Channel, ImagePlus> images, Map<Channel, ResultsTable> results) {
@@ -55,7 +59,7 @@ public class ObjectEditableImage {
 		p.fromObjCounter = false;
 		this.points.get(chan).add(p);
 		
-		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage());
+		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 
 
 	}
@@ -64,7 +68,7 @@ public class ObjectEditableImage {
 
 		boolean removed = this.points.get(chan).remove(p);
 
-		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage());
+		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 		return removed;
 
 	}
@@ -73,7 +77,7 @@ public class ObjectEditableImage {
 
 		boolean removed = this.points.get(chan).remove(pointNum - 1) != null;
 
-		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage());
+		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 		
 		return removed;
 
@@ -148,14 +152,13 @@ public class ObjectEditableImage {
 	}
 
 	public ImagePlus getImgWithDots(Channel chan){
-
-		int dotSize = Custome3DObjectCounter.opResultDotsSize;
-		int fontSize = Custome3DObjectCounter.opResultFontSize;
-
+		
+		
+		
 		ImagePlus stack = this.ic.getImageChannel(chan, true);
 
 		ImagePlus img=NewImage.createImage(stack.getTitle(), stack.getWidth(), stack.getHeight(),1,8, 1);
-
+		
 		List<Point> chanPoints = this.points.get(chan);
 		ImageProcessor ip=img.getProcessor();
 
@@ -202,6 +205,34 @@ public class ObjectEditableImage {
 		stack.getProcessor().drawOverlay(new Overlay(roi));
 		stack.updateImage();
 		return stack;
+	}
+	
+	public void setFontSize(int fontSize) {
+		this.fontSize = fontSize;
+	}
+	
+	public void setDotSize(int dotSize) {
+		this.dotSize = dotSize;
+	}
+	
+	public void clearZoom() {
+		this.zoom = Zoom.ZOOM_100;
+	}
+	
+	public Zoom getZoom() {
+		return this.zoom;
+	}
+	
+	public void setZoom(Zoom newZoom) {
+		this.zoom = newZoom;
+	}
+	
+	public Zoom getNextZoom() {
+		return this.zoom.getNextZoomLevel();
+	}
+	
+	public Zoom getPreviousZoomLevel() {
+		return this.zoom.getPreviousZoomLevel();
 	}
 
 }

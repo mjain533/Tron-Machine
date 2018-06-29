@@ -159,8 +159,7 @@ public class NeuronProcessor {
 		counter.getStats();
 
 		log(progressReporter, "Processing object map...");
-
-		IJ.setRawThreshold(counter.getObjectMap(), 1, 255, null);
+		IJ.setRawThreshold(counter.getObjectMap(), 1, 65535, null);
 		IJ.run(counter.getObjectMap(), "Convert to Mask", "method=Default background=Default black");
 
 		log(progressReporter, "Processing center of mass map map...");
@@ -173,7 +172,7 @@ public class NeuronProcessor {
 		IJ.run(originalDup, "8-bit", "stack");
 
 		log(progressReporter, "Merging...");
-
+		counter.getObjectMap();
 		ImagePlus /*firstTwo*/impFinal = new ImagePlus(channelDup.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalDup.getImageStack(), null, true));
 		//ImageStack stack = new ImageStack(firstTwo.getWidth(), firstTwo.getHeight());
 
@@ -196,7 +195,6 @@ public class NeuronProcessor {
 		projector.setMethod(ZProjector.MAX_METHOD);
 		projector.doProjection();
 		impFinal = projector.getProjection();
-
 		log(progressReporter, "Done.");
 		System.gc();
 		return new Object[] {impFinal, counter.getStats()};

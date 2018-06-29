@@ -43,6 +43,7 @@ public class ImageContainer {
 			}
 			img[i].setIJMenuBar(true);
 			if (!fileTitle.contains("Chan-")) {
+				
 				img[i].setTitle(fileTitle + " Chan-" + GUI.channelMap.get(i).getAbbreviation());
 			}
 			img[i].setCalibration(cal);

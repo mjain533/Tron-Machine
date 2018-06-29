@@ -42,6 +42,7 @@ import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
 import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
+import com.typicalprojects.CellQuant.util.Zoom;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
@@ -358,7 +359,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			public void actionPerformed(ActionEvent e) {
 				if (imageCurrentlyROIEditing != null) {
 					imageCurrentlyROIEditing.clearPoints();
-					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()));
+					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 				}
 			}
 		});
@@ -445,7 +446,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				JOptionPane.showMessageDialog(gui.getComponent(), "Error: Either this name is already taken, or you didn't select any points.", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
 			}
 			this.distListROI.addItem(text);
-			this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()));
+			this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 		}
 		
 		distBtnAddROI.setEnabled(true);
@@ -485,7 +486,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		ImageContainer ic = pi.getIC();
 		this.gui.getPanelDisplay().setSliceSlider(true, 1, ic.getStackSize(GUI.channelForROIDraw));
 		this.gui.getPanelDisplay().setChannelSlider(true, ic.getChannels());
-		this.gui.getPanelDisplay().setImage(ic.getImage(0, 1, false));
+		this.gui.getPanelDisplay().setImage(ic.getImage(0, 1, false), Zoom.ZOOM_100, -1, -1);
 		this.infoTxtDisplaying.setText(ic.getTotalImageTitle());
 		this.infoTxtLowSlice.setText("" + 1);
 		this.infoTxtHighSlice.setText("" + ic.getStackSize(GUI.channelForROIDraw));
@@ -540,7 +541,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 		
 		this.gui.getPanelDisplay().setChannelSlider(true, chans);
-		this.gui.getPanelDisplay().setImage(this.imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage());
+		this.gui.getPanelDisplay().setImage(this.imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 		this.objTxtCurrDisp.setText(ic.getTotalImageTitle());
 		this.objTxtRemove.setText("");
 		this.objBtnNext.setEnabled(true);
@@ -607,7 +608,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 		this.gui.getPanelDisplay().setChannelSlider(true, channelsForROISelection);
 
-		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(GUI.channelForROIDraw));
+		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(GUI.channelForROIDraw), Zoom.ZOOM_100, -1, -1);
 		this.distTxtCurrDisp.setText(ic.getTotalImageTitle());
 		this.distBtnNext.setEnabled(true);
 		this.distBtnCancelROI.setEnabled(true);
@@ -872,7 +873,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	public void sliderSliceChanged(int slice) {
 		if(imageCurrentlyDisplayed != null)
 		{
-			this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(gui.getPanelDisplay().getSliderSelectedChannel(), slice, false));
+			this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(gui.getPanelDisplay().getSliderSelectedChannel(), slice, false), Zoom.ZOOM_100, -1, -1);
 		}
 	}
 
@@ -880,23 +881,23 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (currentState == STATE_INFO) {
 			if(imageCurrentlyDisplayed != null)
 			{
-				this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage());
+				this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 			}
 
 		} else if (currentState == STATE_OBJ) {
 			if(imageCurrentlyObjEditing != null)
 			{
-				this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage());
+				this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 			}
 		} else if (currentState == STATE_COUNT_DIST) {
 			if (imageCurrentlyROIEditing != null) {
 				if (!GUI.channelsToProcess.contains(chan)) {
 					Integer[] minMax = this.defMinsMaxes.get(chan);
 					this.gui.getBrightnessAdjuster().setValues(minMax[0], minMax[1], this.imageCurrentlyROIEditing.getContainer().getMin(chan), this.imageCurrentlyROIEditing.getContainer().getMax(chan));
-					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan));
+					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 				} else {
 					this.gui.getBrightnessAdjuster().reset();
-					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan));
+					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 				}
 			}
 		}
@@ -930,7 +931,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			
 			if (p != null && imageCurrentlyROIEditing != null) {
 				imageCurrentlyROIEditing.addPoint(p);
-				gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()));
+				gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 			}
 
 		}		
@@ -942,7 +943,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 		Channel chan = gui.getPanelDisplay().getSliderSelectedChannel();
 		this.imageCurrentlyROIEditing.getContainer().applyMinMax(chan, min, max);
-		gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan));
+		gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
+	}
+	
+	public ObjectEditableImage getObjectEditableImage() {
+		return this.imageCurrentlyObjEditing;
 	}
 	
 }
