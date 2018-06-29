@@ -7,6 +7,7 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -223,17 +224,17 @@ public class ROIEditableImage {
 		}
 	}
 
-	public Map<Channel, ResultsTable> process(SynchronizedProgress progress) {		
+	public Map<Channel, ResultsTable> process(SynchronizedProgress progress, List<Analyzer.Calculation> calculations) {		
 
 		Map<Channel, ResultsTable> map = new HashMap<Channel, ResultsTable>();
 		for (Entry<Channel, ResultsTable> en : this.tables.entrySet()) {
-			map.put(en.getKey(), calculateDistances(en.getValue(), en.getKey(), progress));
+			map.put(en.getKey(), calculateDistances(en.getValue(), en.getKey(), progress, calculations));
 		}
 		return map;
 	}
 
 	@SuppressWarnings("deprecation")
-	private ResultsTable calculateDistances(ResultsTable input, Channel chan, SynchronizedProgress progress) {
+	private ResultsTable calculateDistances(ResultsTable input, Channel chan, SynchronizedProgress progress, List<Analyzer.Calculation> calculations) {
 
 		float[] ids = input.getColumn(input.getColumnIndex("ID"));
 		float[] xObjValues = input.getColumn(input.getColumnIndex(Column.X.getTitle()));
@@ -268,6 +269,7 @@ public class ROIEditableImage {
 		}
 
 		newTable.setHeading(counter, "Grayscale Value");
+		counter++;
 
 		try {
 			for (int i = 0; i < xObjValues.length; i++) {
@@ -322,8 +324,27 @@ public class ROIEditableImage {
 			newTable.setValue(col, i, ip.getPixelValue((int) xObjValues[i], (int) yObjValues[i]) );
 
 		}
+		
+		if (!calculations.isEmpty()) {
+			progress.setProgress("Running further calculations...", -1, -1);
+			if (calculations.contains(Analyzer.Calculation.PERCENT_MIGRATION) && this.roi_names.size() > 1) {
+				
+				for (int i = 1; i < this.roi_names.size(); i++) {
+					newTable.setHeading(counter, "%migrated " + this.roi_names.get(0) + " to " + this.roi_names.get(i));
+					double[] firstLineDist = newTable.getColumnAsDoubles(3);
+					double[] secondLineDist = newTable.getColumnAsDoubles(3 + i);
+					for (int j = 0; j < firstLineDist.length && j < secondLineDist.length; j++) {
+						newTable.setValue(counter, j, Analyzer.calculate(Analyzer.Calculation.PERCENT_MIGRATION, firstLineDist[j], secondLineDist[j]));
+					}
+					counter++;
+				}
 
+			}
+		}
+		
 		progress.setProgress("Done.", -1, -1);
+		
+		
 
 		System.gc();
 

@@ -128,7 +128,6 @@ public class Custom3DCounter {
 			//IJ.showStatus("Finding structures "+z*100/nbSlices+"%");
 			if (!np.isCancelled()) {
 				progressID.setProgress("Step 1/3: Finding structures", z, nbSlices);
-				
 			} else {
 				return;
 			}
@@ -136,9 +135,9 @@ public class Custom3DCounter {
 
 		IDcount=new int[currID];
 		for (int i=0; i<length; i++) IDcount[objID[i]]++;
-
 		IDisAtEdge=new boolean[currID];
 		Arrays.fill(IDisAtEdge, false);
+
 		/*
 		 *Connecting structures:
 		 *The first tagging of structure may have led to shearing apart pieces of a same structure

@@ -20,7 +20,7 @@ public class AdvancedWorkbook {
 	private XSSFWorkbook workbook = new XSSFWorkbook();
 	
 	public AdvancedWorkbook() {
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	public void addSheetFromResultTable(String name, ResultsTable table){
@@ -56,6 +56,10 @@ public class AdvancedWorkbook {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	public XSSFSheet getSheet(String name) {
+		return workbook.getSheet(name);
 	}
 	
 	public boolean save(File saveFile) {

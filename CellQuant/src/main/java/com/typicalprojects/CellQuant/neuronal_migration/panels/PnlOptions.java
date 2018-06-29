@@ -7,6 +7,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -29,6 +30,7 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Wizard.Status;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
+import com.typicalprojects.CellQuant.neuronal_migration.processing.Analyzer;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.NeuronProcessor;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.ObjectEditableImage;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.ROIEditableImage;
@@ -558,7 +560,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.imageCurrentlyROIEditing != null) {
 			this.gui.log("Calculating Distances from Rois...");
 			
-			Map<Channel, ResultsTable> results = imageCurrentlyROIEditing.process(this.gui.getProgressReporter());
+			List<Analyzer.Calculation> calculationsToComplete = Arrays.asList(Analyzer.Calculation.PERCENT_MIGRATION);
+			Map<Channel, ResultsTable> results = imageCurrentlyROIEditing.process(this.gui.getProgressReporter(), calculationsToComplete);
 			this.gui.log("Saving resources...");
 			this.imageCurrentlyROIEditing.saveROIs();
 			ImageContainer newIC = this.imageCurrentlyROIEditing.getNewImage();

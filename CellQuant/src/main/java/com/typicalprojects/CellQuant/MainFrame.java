@@ -22,6 +22,8 @@ import javax.swing.JButton;
 import javax.swing.border.BevelBorder;
 
 import java.awt.event.ActionListener;
+import java.util.LinkedList;
+import java.util.List;
 import java.awt.event.ActionEvent;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
@@ -32,7 +34,7 @@ public class MainFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = 8653687111169656048L;
 	private JPanel contentPane;
-	
+
 	private static MainFrame SINGLETON = null;;
 	private GUI guiWindow;
 
@@ -40,15 +42,12 @@ public class MainFrame extends JFrame {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-				
+
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
-				try {
-					SINGLETON = new MainFrame();
-					SINGLETON.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				SINGLETON = new MainFrame();
+				SINGLETON.setVisible(true);
+
 			}
 		});
 	}
@@ -58,29 +57,29 @@ public class MainFrame extends JFrame {
 	 */
 	public MainFrame() {
 		setTitle("The TRON Machine");
-		
 
-		
+
+
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 250);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		this.setResizable(false);
-		
+
 		contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
-		
+
 		JLabel lblNewLabel = new JLabel("Please select a program.");
 		lblNewLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
 		lblNewLabel.setFont(lblNewLabel.getFont().deriveFont(lblNewLabel.getFont().getStyle() | Font.BOLD, lblNewLabel.getFont().getSize() + 3f));
 		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		contentPane.add(lblNewLabel, BorderLayout.NORTH);
-		
+
 		JPanel panel = new JPanel();
 		panel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		contentPane.add(panel, BorderLayout.CENTER);
-		
+
 		JButton btnQuantifyMigration = new JButton("<html><center>Quantify Neuronal Migration</center></html>")  ;
 		btnQuantifyMigration.setOpaque(true);
 		btnQuantifyMigration.addActionListener(new ActionListener() {
@@ -89,26 +88,26 @@ public class MainFrame extends JFrame {
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							
+
 							if (guiWindow == null) {
 								guiWindow = new GUI(SINGLETON);
 							}
-							
+
 							guiWindow.show();
-							
+
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
 					}
 				});
-				
+
 			}
 		});
 		btnQuantifyMigration.setFont(btnQuantifyMigration.getFont().deriveFont(btnQuantifyMigration.getFont().getStyle() | Font.BOLD));
 		btnQuantifyMigration.setFocusable(false);
 		btnQuantifyMigration.setIconTextGap(0);
 		btnQuantifyMigration.setAlignmentY(0.0f);
-		
+
 		JButton btnQuantifyNeurites = new JButton("<html><center>Quantify Neurite Outgrowth</center></html>");
 		btnQuantifyNeurites.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -119,31 +118,31 @@ public class MainFrame extends JFrame {
 		btnQuantifyNeurites.setFont(btnQuantifyNeurites.getFont().deriveFont(btnQuantifyNeurites.getFont().getStyle() | Font.BOLD));
 		btnQuantifyNeurites.setFocusable(false);
 		btnQuantifyNeurites.setAlignmentY(0.0f);
-		
+
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
-			gl_panel.createParallelGroup(Alignment.TRAILING)
+				gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
-					.addGap(35)
-					.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 177, GroupLayout.PREFERRED_SIZE)
-					.addGap(31))
-		);
+						.addGap(35)
+						.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 177, GroupLayout.PREFERRED_SIZE)
+						.addGap(31))
+				);
 		gl_panel.setVerticalGroup(
-			gl_panel.createParallelGroup(Alignment.TRAILING)
+				gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
-					.addGap(37)
-					.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-						.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
-						.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE))
-					.addGap(37))
-		);
+						.addGap(37)
+						.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+								.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
+								.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE))
+						.addGap(37))
+				);
 		panel.setLayout(gl_panel);
-		
+
 
 	}
-	
+
 	public void reshow() {
 		setVisible(true);
 	}
