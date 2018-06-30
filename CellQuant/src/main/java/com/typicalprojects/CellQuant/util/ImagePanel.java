@@ -34,12 +34,24 @@ public class ImagePanel extends JPanel{
 	public synchronized Point getPixelPoint(int x, int y) {
 		
 		if (x >= posX && x <= (posX + imgWidth - 1) && y >= posY && y <= (posY + imgHeight - 1)) {
-
-			double xRatio = (x - posX) / (double) imgWidth;
-			double yRatio = (y - posY) / (double) imgHeight;
-			return new Point((int) (xRatio * (double) image.getWidth()), (int) (yRatio * (double) image.getHeight()), null);
 			
+			if (this.zoom != null && this.zoom != Zoom.ZOOM_100) {
+				double modedX = (zoomWidth * ((x - posX) / (double) imgWidth)) + zoomX;
+				double modedY = (zoomHeight * ((y - posY) / (double) imgHeight)) + zoomY;
+				//double xImg = ((modedX - posX) / (double) imgWidth) * image.getWidth();
+				//double yImg = ((modedY - posY) / (double) imgHeight) * (double) image.getHeight();
+
+				return new Point((int) modedX, (int)modedY, null);
+				
+			} else {
+				double xImg = ((x - posX) / (double) imgWidth) * image.getWidth();
+				double yImg = ((y - posY) / (double) imgHeight) * (double) image.getHeight();
+				return new Point((int) xImg, (int)yImg, null);
+
+			}
+
 		} else {
+			System.out.println("fail");
 			return null;
 		}
 		
@@ -54,6 +66,7 @@ public class ImagePanel extends JPanel{
 		this.image = ig;
 		this.pastHeight = -1;
 		if (zoom != null && this.zoom != zoom) {
+			System.out.println("rezoomed " + zoom + " " + this.zoom);
 			if (zoom.equals(Zoom.ZOOM_100)) {
 				this.zoom = null;
 				zoomWidth = -1;
@@ -94,12 +107,6 @@ public class ImagePanel extends JPanel{
 				}
 				
 			}
-		} else {
-			this.zoom = null;
-			zoomWidth = -1;
-			zoomHeight = -1;
-			zoomX = -1;
-			zoomY = -1;
 		}
 		this.zoom = zoom;
 		repaint();
