@@ -225,6 +225,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		objBtnRemove = new JButton("Remove");
 
 		objBtnNext = new JButton("Next");
+		objBtnNext.setFocusable(false);
 		
 		// Slices
 		
@@ -247,6 +248,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		infoTxtHighSlice.setColumns(10);
 
 		infoBtnNext = new JButton("Next");
+		infoBtnNext.setFocusable(false);
 
 		infoLblERR = new JLabel("ERROR: Invalid slice selection.");
 		infoLblERR.setForeground(Color.RED);
@@ -313,7 +315,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				try {
 					num = Integer.parseInt(text);
 				} catch (Exception exc) {
-					JOptionPane.showConfirmDialog(null,  "Error: Value must be an integer.", "Invalid Input", JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null,  "Error: Value must be an integer.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				
