@@ -173,7 +173,7 @@ public class ObjectEditableImage {
 		List<Point> chanPoints = this.points.get(chan);
 		ImageProcessor ip= stack.getProcessor().convertToRGB();
 		
-		ip.setColor(Color.MAGENTA);
+		ip.setColor(Color.BLUE);
 		ip.setLineWidth(newDotSize);
 		
 
@@ -181,9 +181,9 @@ public class ObjectEditableImage {
 			if (point != null && point.fromObjCounter) {
 				ip.drawDot(point.x, point.y);
 			} else {
-				ip.setColor(Color.MAGENTA);
+				ip.setColor(Color.BLUE);
 				ip.drawDot(point.x, point.y);
-				ip.setColor(Color.MAGENTA);
+				ip.setColor(Color.BLUE);
 			}
 		}
 		/*for (int y=0; y<stack.getHeight(); y++){
