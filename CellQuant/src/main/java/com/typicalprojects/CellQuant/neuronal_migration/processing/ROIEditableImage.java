@@ -3,11 +3,9 @@ package com.typicalprojects.CellQuant.neuronal_migration.processing;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,21 +76,24 @@ public class ROIEditableImage {
 			
 		
 			dup.getProcessor().setColor(Color.GREEN);
-			dup.getProcessor().drawOval((int) ((float[]) obj[0])[0], (int) ((float[]) obj[1])[0], 6, 6);
+			int size = (int) (Math.max(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
+			dup.getProcessor().fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
 			dup.updateImage();
 			return dup.getBufferedImage();
 
 		} else {
+			ImagePlus dup = new ImagePlus("Dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 
 			PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
 			pgr.setStrokeColor(Color.GREEN);
 			pgr.setFillColor(Color.GREEN);
-			pgr.setStrokeWidth(3);
+			double size = Math.max(dup.getDimensions()[0], dup.getDimensions()[1] );
+
+			pgr.setStrokeWidth(size / 300.0);
 			if (points.size() > 2) {
 				pgr.fitSplineForStraightening();;
 			}
 
-			ImagePlus dup = new ImagePlus("Dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 
 			dup.getProcessor().setColor(Color.GREEN);
 			dup.getProcessor().drawOverlay(new Overlay(pgr));
@@ -136,7 +137,9 @@ public class ROIEditableImage {
 		PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
 		pgr.setStrokeColor(Color.GREEN);
 		pgr.setFillColor(Color.GREEN);
-		pgr.setStrokeWidth(3);
+		double size = Math.max(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
+
+		pgr.setStrokeWidth(size / 300.0);
 		System.out.println("SPLINED");
 		pgr.fitSplineForStraightening();
 		pgr.setName(name);
@@ -183,26 +186,25 @@ public class ROIEditableImage {
 				channels.add(chan);
 				ImagePlus roiImg = this.ic.getImageChannel(chan, true);
 
-				int startPixVal = 256;
 
 				roiImg.setProcessor(roiImg.getProcessor().convertToColorProcessor());
 				ImageProcessor ip = roiImg.getProcessor();
-				ip.setColor(Color.WHITE);
-				ip.setValue(256);
 				ip.setLineWidth(3);
 				ip.setFont(new Font("Arial", Font.BOLD, 20));
 
 				for (int i = 0; i < this.roi_names.size(); i++) {
 					String name = this.roi_names.get(i);
 					PolygonRoi roi = this.roi_polygons.get(i);
-					roi.setStrokeWidth(3);
+					roi.setFillColor(Color.GREEN);
+					
+					roi.setStrokeWidth(1000 / 300.0);
 					ip.drawOverlay(new Overlay(roi));
-					Rectangle rect = roi.getBounds();
-					ip.drawString(name, (int) (((double) (rect.x + rect.width)) / 2.0), rect.y, Color.RED);
-					startPixVal = startPixVal - 10;
-					if (startPixVal < 50) {
-						startPixVal = 256 - (50-startPixVal);
-					}
+					int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
+					middleY= Math.min(middleY, roiImg.getDimensions()[1] - 4);
+					int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+					ip.setColor(Color.RED);
+					ip.drawString(name, middleX, middleY, Color.BLACK);
+
 				}
 
 				roiImg.updateImage();

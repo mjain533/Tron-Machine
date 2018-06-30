@@ -11,6 +11,7 @@ public enum Zoom {
 	}
 	
 	public static int[] zoomIn(int upperLeftX, int upperLeftY, int xDim, int yDim, int width, int height, int xCenter, int yCenter) {
+		
 		int[] output = new int[4];
 		
 		int newUpperLeftX = (int) (xCenter - (width / 4.0));

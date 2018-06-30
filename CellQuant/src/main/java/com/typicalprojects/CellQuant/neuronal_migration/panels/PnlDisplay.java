@@ -8,6 +8,8 @@ import java.awt.KeyboardFocusManager;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.swing.GroupLayout;
@@ -173,7 +175,8 @@ public class PnlDisplay  {
 									if (!oei.getZoom().equals(Zoom.ZOOM_100)) {
 										Zoom zoom = oei.getPreviousZoomLevel();
 										oei.setZoom(zoom);
-										pnlImage.setImage(pnlImage.getImage(), -1, -1, zoom);
+										pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), -1, -1, zoom);
+
 									}
 
 								}
@@ -185,6 +188,8 @@ public class PnlDisplay  {
 				}
 			}
 		});
+
+
 		this.pnlImage.addMouseListener(new MouseListener() {
 
 			public void mouseClicked(MouseEvent e) {
@@ -212,7 +217,7 @@ public class PnlDisplay  {
 
 								oei.setZoom(zoom);
 
-								pnlImage.setImage(pnlImage.getImage(), e.getX(), e.getY(), zoom);
+								pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), e.getX(), e.getY(), zoom);
 							}
 						}
 
@@ -233,6 +238,8 @@ public class PnlDisplay  {
 			public void mouseExited(MouseEvent e) {	
 				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
+
+			
 		});
 
 	}

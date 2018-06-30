@@ -1,5 +1,6 @@
 package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -153,24 +154,37 @@ public class ObjectEditableImage {
 
 	public ImagePlus getImgWithDots(Channel chan){
 		
+		int newFontSize = this.fontSize;
+		int newDotSize = this.dotSize;
+		if (this.zoom !=null && !this.zoom.equals(Zoom.ZOOM_100)) {
+			for (int j = 0; j < this.zoom.getLevel() - Zoom.ZOOM_100.getLevel(); j++) {
+				newFontSize = (int) (newFontSize / 1.2);
+				newDotSize = (int) (newDotSize / 1.2);
+
+			}
+		}
 		
+		System.out.println(newDotSize);
+		System.out.println(newFontSize);
 		
 		ImagePlus stack = this.ic.getImageChannel(chan, true);
 
-		ImagePlus img=NewImage.createImage(stack.getTitle(), stack.getWidth(), stack.getHeight(),1,8, 1);
+		//ImagePlus img=NewImage.createImage(stack.getTitle(), stack.getWidth(), stack.getHeight(),1,32, 1);
 		
 		List<Point> chanPoints = this.points.get(chan);
-		ImageProcessor ip=img.getProcessor();
-
-		ip.setValue(256);
-		ip.setLineWidth(dotSize);
+		ImageProcessor ip= stack.getProcessor().convertToRGB();
+		
+		ip.setColor(Color.CYAN);
+		ip.setLineWidth(newDotSize);
 		
 
 		for (Point point : chanPoints) {
-			if (point.fromObjCounter) {
+			if (point != null && point.fromObjCounter) {
 				ip.drawDot(point.x, point.y);
 			} else {
-				ip.drawRect(Math.max(point.x - 1, 0), Math.max(point.y - 1, 0), 2, 2);
+				ip.setColor(Color.CYAN);
+				ip.drawDot(point.x, point.y);
+				ip.setColor(Color.CYAN);
 			}
 		}
 		/*for (int y=0; y<stack.getHeight(); y++){
@@ -187,17 +201,23 @@ public class ObjectEditableImage {
 		}
 		img.updateImage();*/
 
-		ip.setValue(256);
-		ip.setFont(new Font("Arial", Font.BOLD, fontSize));
+		ip.setColor(Color.MAGENTA);;
+		ip.setFont(new Font("Arial", Font.BOLD, newFontSize));
 		int counter = 1;
 		for (Point point : chanPoints) {
-			ip.drawString(""+counter, point.x, point.y);
+			if (point != null && point.fromObjCounter) {
+				ip.drawString(""+counter, point.x, point.y);
+			} else {
+				ip.setColor(Color.MAGENTA);
+				ip.drawString(""+counter, point.x, point.y);
+				ip.setColor(Color.MAGENTA);
+			}
 			counter++;
 
 		}
 
-		img.setDisplayRange(1, 256);
-		img.updateImage();
+		//img.setDisplayRange(1, Integer.MAX_VALUE);
+		//img.updateImage();
 		
 		ImageRoi roi = new ImageRoi(0, 0, ip);
 		roi.setZeroTransparent(true);
