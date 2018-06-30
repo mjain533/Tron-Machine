@@ -87,6 +87,7 @@ public class PnlDisplay  {
 		sldrSlice.setOrientation(SwingConstants.VERTICAL);
 		sldrSlice.setBounds(0, 23, 35, 190);
 		pnlSliderSlice.add(sldrSlice);
+		sldrSlice.setFocusable(false);
 
 
 		lblSliceNum = new JLabel("10");
@@ -112,6 +113,7 @@ public class PnlDisplay  {
 		sldrChan.setBounds(0, 23, 35, 190);
 		sldrChan.setInverted(true);
 		sldrChan.setOrientation(SwingConstants.VERTICAL);
+		sldrChan.setFocusable(false);
 		pnlSliderChan.add(sldrChan);
 
 		lblChanNum = new JLabel("10");
@@ -166,7 +168,7 @@ public class PnlDisplay  {
 					case KeyEvent.KEY_RELEASED:
 						if (ke.getKeyCode() == KeyEvent.VK_SHIFT) {
 							shiftPressed = false;
-						} else if (ke.getKeyCode() == KeyEvent.VK_DOWN) {
+						} else if (ke.getKeyCode() == KeyEvent.VK_DOWN || ke.getKeyCode() == KeyEvent.VK_BACK_SPACE || ke.getKeyCode() == KeyEvent.VK_ESCAPE) {
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
@@ -179,7 +181,7 @@ public class PnlDisplay  {
 
 								}
 							}
-						}
+						} else if (ke.getKeyCode() == KeyEvent.VK_SPACE)
 						break;
 					}
 					return false;
