@@ -18,7 +18,6 @@ import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
-import ij.gui.NewImage;
 import ij.gui.Overlay;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
@@ -174,7 +173,7 @@ public class ObjectEditableImage {
 		List<Point> chanPoints = this.points.get(chan);
 		ImageProcessor ip= stack.getProcessor().convertToRGB();
 		
-		ip.setColor(Color.CYAN);
+		ip.setColor(Color.MAGENTA);
 		ip.setLineWidth(newDotSize);
 		
 
@@ -182,9 +181,9 @@ public class ObjectEditableImage {
 			if (point != null && point.fromObjCounter) {
 				ip.drawDot(point.x, point.y);
 			} else {
-				ip.setColor(Color.CYAN);
+				ip.setColor(Color.MAGENTA);
 				ip.drawDot(point.x, point.y);
-				ip.setColor(Color.CYAN);
+				ip.setColor(Color.MAGENTA);
 			}
 		}
 		/*for (int y=0; y<stack.getHeight(); y++){
@@ -201,16 +200,16 @@ public class ObjectEditableImage {
 		}
 		img.updateImage();*/
 
-		ip.setColor(Color.MAGENTA);;
+		ip.setColor(Color.WHITE);;
 		ip.setFont(new Font("Arial", Font.BOLD, newFontSize));
 		int counter = 1;
 		for (Point point : chanPoints) {
 			if (point != null && point.fromObjCounter) {
 				ip.drawString(""+counter, point.x, point.y);
 			} else {
-				ip.setColor(Color.MAGENTA);
+				ip.setColor(Color.WHITE);
 				ip.drawString(""+counter, point.x, point.y);
-				ip.setColor(Color.MAGENTA);
+				ip.setColor(Color.WHITE);
 			}
 			counter++;
 

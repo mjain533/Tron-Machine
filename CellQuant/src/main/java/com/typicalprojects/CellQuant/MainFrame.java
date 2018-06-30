@@ -22,8 +22,6 @@ import javax.swing.JButton;
 import javax.swing.border.BevelBorder;
 
 import java.awt.event.ActionListener;
-import java.util.LinkedList;
-import java.util.List;
 import java.awt.event.ActionEvent;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
