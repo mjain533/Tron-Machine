@@ -111,7 +111,7 @@ public class TextInputPopup extends JFrame {
 	public void display(Component component) {
 		this.txtInput.setText("");
 		this.setLocationRelativeTo(component);
-		this.txtInput.setRequestFocusEnabled(true);
+		this.txtInput.grabFocus();
 		
 		this.setVisible(true);
 	}

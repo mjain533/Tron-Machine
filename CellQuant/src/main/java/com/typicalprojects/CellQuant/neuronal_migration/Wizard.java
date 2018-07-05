@@ -51,8 +51,8 @@ public class Wizard {
 			break;
 		case PROCESSING_OBJECTS:
 			gui.getInstructionPanel().setInstruction(Instruction.PROCESSING_OBJECTS);
-			gui.getPanelDisplay().setDisplayState(false, "Processing images...");
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Processing images...");
+			gui.getPanelDisplay().setDisplayState(false, "Processing images...");
 
 			gui.getPanelOptions().startProcessingImageObjects();
 			break;

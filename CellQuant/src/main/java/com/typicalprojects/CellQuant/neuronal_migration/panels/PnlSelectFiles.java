@@ -66,7 +66,7 @@ public class PnlSelectFiles {
 				+ "processing, then one single output folder will be created within that directory, simply named "
 				+ "Neuron Counter Output [DATE].</html>";
 
-		this.helpPopup = new HelpPopup(300, 500, message, gui.getComponent());
+		this.helpPopup = new HelpPopup(300, 500, message);
 
 		JLabel lblSelectFileInstruction = new JLabel("<html>Please select an input image or folder of images (must have extension .czi):</html>");
 
@@ -267,7 +267,7 @@ public class PnlSelectFiles {
 		this.btnSelectFilesHelp.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				helpPopup.display();				
+				helpPopup.display(gui.getComponent());				
 			}
 
 		});
@@ -307,7 +307,7 @@ public class PnlSelectFiles {
 							FileContainer container = files.nextElement();
 
 							int indexOf = container.file.getName().lastIndexOf('.');
-							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui, false, null));
+							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getProgressReporter(), null));
 						}
 						gui.getWizard().nextState(futureImages);
 

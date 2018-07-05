@@ -15,6 +15,11 @@ public class SynchronizedProgress {
 		this.task = task;
 	}
 	
+	public synchronized void setProgress(String task) {
+		this.receiver.applyProgress(this.task, task, -1, -1);
+		this.task = task;
+	}
+	
 	public interface SynchronizedProgressReceiver {
 		
 		public void applyProgress(String previousTask, String task, int progressSoFar, int totalProgress);

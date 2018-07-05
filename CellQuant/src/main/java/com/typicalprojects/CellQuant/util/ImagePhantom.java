@@ -2,67 +2,66 @@ package com.typicalprojects.CellQuant.util;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.measure.Calibration;
-import ij.measure.ResultsTable;
 import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
 public class ImagePhantom {
 	private ImageContainer ic;
-	private File pathToImage;
-	private GUI gui;
+	private File imageFile;
+	private SynchronizedProgress logger;
 	private String title;
 	private Calibration cal;
-	private boolean intermediates;
 
-	public ImagePhantom(File imagePath, String titleNoExtension, GUI gui, boolean intermediates, Calibration cal) {
+	public ImagePhantom(File imageFile, String titleNoExtension, SynchronizedProgress logger, Calibration cal) {
 		this.title = titleNoExtension;
-		this.pathToImage = imagePath;
-		this.gui = gui;
+		this.imageFile = imageFile;
+		this.logger = logger;
 		this.cal = cal;
-		this.intermediates = intermediates;
 	}
 
 	public File getImageFile() {
-		return this.pathToImage;
+		return this.imageFile;
 	}
 	public String getTitle() {
 		return this.title;
 	}
 
-	public String open() {
+	public String open(Map<Integer, Channel> validChannels, File resaveOutputDir, String timeOfRun, boolean intermediates) {
 		// As one CZI
-		gui.log("Opening " + title + " ...");
+		logger.setProgress("Opening " + title + " ...");
 		try {
-			if (!this.intermediates) {
+			if (!intermediates) {
 				ImporterOptions io = new ImporterOptions();
-				io.setId(pathToImage.getPath());
+				io.setId(imageFile.getPath());
 				io.setSplitChannels(true);
 				ImagePlus[]  ip= BF.openImagePlus(io);
 				//System.out.println(ip[0].getCalibration().getY(40));
 				this.cal = ip[0].getCalibration();
-				ic = new ImageContainer(ip, this.title, this.pathToImage, this.cal);
-				gui.log("Success.");
+				if (ip.length != validChannels.size()) {
+					logger.setProgress("Failed to open.");
+					return "Incorrect channel configuration. Please use Preferences to specify channel mapping.";
+				}
+				ic = new ImageContainer(ip, this.title, this.imageFile, this.cal, validChannels, resaveOutputDir, timeOfRun);
+				logger.setProgress("Success.");
 				return null;
 
 			} else {
 
 				Opener opener = new Opener();
-				List<Channel> potentialChannels = new ArrayList<Channel>(GUI.channelMap.values());
 				List<Channel> channels = new ArrayList<Channel>();
 				List<ImagePlus> images = new ArrayList<ImagePlus>();
-				File intermediateFilesDir = ImageContainer.getIntermediateFilesDirectory(title);
+				File intermediateFilesDir = ImageContainer.getIntermediateFilesDirectory(title, resaveOutputDir, timeOfRun);
 				
-				for (Channel chan : potentialChannels){
+				
+				for (Channel chan : validChannels.values()){
 					File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
 					if (file.exists()) {
 						channels.add(chan);
@@ -73,14 +72,18 @@ public class ImagePhantom {
 					}
 
 				}
-				ic = new ImageContainer(channels, images, title, this.pathToImage, false, this.cal);
-				gui.log("Success.");
+				if (channels.size() != validChannels.size()) {
+					logger.setProgress("Failed to open.");
+					return "Incorrect channel configuration. Please use Preferences to specify channel mapping.";
+				}
+				ic = new ImageContainer(channels, images, title, this.imageFile, this.cal, resaveOutputDir, timeOfRun);
+				logger.setProgress("Success.");
 				return null;
 
 			}
 
 		} catch (Exception e) {
-			gui.log("Failed.");
+			logger.setProgress("Failed to open.");
 			System.out.println(e);
 			e.printStackTrace();
 			return (e.getMessage() == null ? "Unknown reason.":e.getMessage());
@@ -90,18 +93,6 @@ public class ImagePhantom {
 
 	}
 
-	public Map<Channel, ResultsTable> tryToOpenResultsTables() {
-		
-		Map<Channel, ResultsTable> results = new HashMap<Channel, ResultsTable>();
-		
-		for (Channel chan : GUI.channelsToProcess) {
-			results.put(chan, ResultsTable.open2(ImageContainer.getSaveDirectory(this.title) + File.separator + this.ic.getImageChannel(chan, false).getTitle() + ".txt"));
-
-		}		
-
-		return results;
-
-	}
 
 
 	public ImageContainer getIC() {

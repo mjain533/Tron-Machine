@@ -63,8 +63,6 @@ public class PnlLog implements SynchronizedProgressReceiver {
 	public JPanel getRawPanel(){ 
 		return this.rawPanel;
 	}
-	
-
 
 	public synchronized void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
 		
@@ -83,7 +81,6 @@ public class PnlLog implements SynchronizedProgressReceiver {
 			
 			String newText = task + progressPart + currText.substring(currText.indexOf('\n'));
 			textLog.setText(newText);
-			spLog.getVerticalScrollBar().setValue(0);
 			return;
 		}
 		if (progressSoFar <= totalProgress && progressSoFar != -1 && totalProgress != -1) {

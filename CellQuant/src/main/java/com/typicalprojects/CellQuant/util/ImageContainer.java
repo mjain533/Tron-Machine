@@ -3,11 +3,11 @@ package com.typicalprojects.CellQuant.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -25,29 +25,33 @@ public class ImageContainer {
 	private String title;
 	private File imgFile;
 	private Calibration cal;
+	private File outputLocation;
+	private String timeOfRun;
 
-	public ImageContainer(ImagePlus[] img, String fileTitle, File imgFile, Calibration cal) throws IllegalArgumentException{
+	public ImageContainer(ImagePlus[] img, String fileTitle, File imgFile, Calibration cal, Map<Integer, Channel> validChannels, File outputLocation, String timeOfRun) throws IllegalArgumentException{
 		this.imgFile = imgFile;
 		this.cal = cal;
 		this.title = fileTitle;
+		this.outputLocation = outputLocation;
+		this.timeOfRun = timeOfRun;
 
-		makeSaveDirectory(title);
+		makeSaveDirectory(this.title, this.outputLocation,this.timeOfRun);
 
 		if (img.length == 0)
 			throw new IllegalArgumentException("There are no channels for " + fileTitle + ".");
 
 		for (int i = 0; i < 4 && i < img.length; i++) {
 
-			if (!GUI.channelMap.containsKey(i)) {
+			if (!validChannels.containsKey(i)) {
 				continue;
 			}
 			img[i].setIJMenuBar(true);
 			if (!fileTitle.contains("Chan-")) {
 				
-				img[i].setTitle(fileTitle + " Chan-" + GUI.channelMap.get(i).getAbbreviation());
+				img[i].setTitle(fileTitle + " Chan-" + validChannels.get(i).getAbbreviation());
 			}
 			img[i].setCalibration(cal);
-			channels.add(GUI.channelMap.get(i));
+			channels.add(validChannels.get(i));
 			images.add(img[i]);
 
 		}
@@ -56,12 +60,42 @@ public class ImageContainer {
 
 	}
 	
+	private ImageContainer(List<ImagePlus> newImages, List<Channel> newChannels, ImageContainer container) throws IllegalArgumentException{
+		this.imgFile = container.imgFile;
+		this.cal = container.cal;
+		this.title = container.title;
+		this.outputLocation = container.outputLocation;
+		this.timeOfRun = container.timeOfRun;
+
+		makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
+
+		if (newImages.size() == 0)
+			throw new IllegalArgumentException("There are no channels for " + this.title + ".");
+
+		for (int i = 0; i < newImages.size(); i++) {
+
+			if (!newImages.get(i).getTitle().contains("Chan-")) {
+				
+				newImages.get(i).setTitle(this.title + " Chan-" + newChannels.get(i).getAbbreviation());
+			}
+			newImages.get(i).setCalibration(cal);
+			this.channels.add(newChannels.get(i));
+			this.images.add(newImages.get(i));
+
+		}
+		
+		deleteImgFiles();
+
+	}
 	
-	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, String title, File imgFile, boolean sameStackSize, Calibration cal) {
+	
+	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, String title, File imgFile, Calibration cal, File outputLocation, String timeOfRun) {
 		this.cal = cal;
 		this.imgFile = imgFile;
+		this.outputLocation = outputLocation;
+		this.timeOfRun = timeOfRun;
 		
-		makeSaveDirectory(title);
+		makeSaveDirectory(title, outputLocation, timeOfRun);
 
 
 		if (channelsToSet.size() == 0 || channelsToSet.size() != imagesToSet.size()) {
@@ -150,7 +184,7 @@ public class ImageContainer {
 
 	public ImageContainer setSliceRegion(int lowSlice, int highSlice) {
 
-		ImagePlus[] newImages = new ImagePlus[images.size()];
+		List<ImagePlus> newImages = new ArrayList<ImagePlus>();
 
 		for (int i = 0; i < images.size(); i++) {
 			ImagePlus img = images.get(i);
@@ -162,16 +196,16 @@ public class ImageContainer {
 			for (int s = lowSlice; s > 1; s--) {
 				is.deleteSlice(1);
 			}
-			newImages[i] = new ImagePlus(img.getTitle(), is);
+			newImages.add(new ImagePlus(img.getTitle(), is));
 		}
 
-		return new ImageContainer(newImages, this.title, this.imgFile, this.cal);
+		return new ImageContainer(newImages, this.channels, this);
 
 	}
 
 	private void deleteResultsTables(String date) {
 
-		for (Channel chan : GUI.channelsToProcess) {
+		for (Channel chan : Channel.values()) {
 			File file = new File(getSaveDirectory() + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
 			if (file.exists()) {
 				file.delete();
@@ -187,13 +221,12 @@ public class ImageContainer {
 		
 		if (excel) {
 			AdvancedWorkbook aw = new AdvancedWorkbook();
-			for (Channel chan : GUI.channelsToProcess) {
-				ResultsTable table = results.get(chan);
-				if (table == null)
+			for (Entry<Channel, ResultsTable> en : results.entrySet()) {
+				if (en.getValue() == null)
 					continue;
-				
-				aw.addSheetFromResultTable(chan.name(), table);
+				aw.addSheetFromResultTable(en.getKey().name(), en.getValue());
 			}
+
 			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
 			return;
 		}
@@ -226,6 +259,19 @@ public class ImageContainer {
 			e.printStackTrace();
 		}
 
+
+	}
+	
+	public Map<Channel, ResultsTable> tryToOpenResultsTables(List<Channel> channelsToOpenResults) {
+		
+		Map<Channel, ResultsTable> results = new HashMap<Channel, ResultsTable>();
+		
+		for (Channel chan : channelsToOpenResults) {
+			results.put(chan, ResultsTable.open2(getSaveDirectory(this.title, this.outputLocation, this.timeOfRun) + File.separator + getImageChannel(chan, false).getTitle() + ".txt"));
+
+		}		
+
+		return results;
 
 	}
 	
@@ -277,11 +323,8 @@ public class ImageContainer {
 		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMax();
 	}
 	
-	private static void makeSaveDirectory(String title) {
-		if (GUI.outputLocation == null) {
-			throw new IllegalStateException();
-		}
-		File file = new File(GUI.outputLocation.getPath() + File.separator + title + " " + GUI.dateString);
+	private static void makeSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) {
+		File file = new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
 		if (!file.isDirectory()) {
 			file.mkdir();
 		}
@@ -293,36 +336,34 @@ public class ImageContainer {
 	
 	public File getSaveDirectory() throws IllegalStateException{
 		
-		if (GUI.outputLocation == null) {
+		if (this.outputLocation == null) {
 			throw new IllegalStateException();
 		}
-		return new File(GUI.outputLocation.getPath() + File.separator + this.title + " " + GUI.dateString);
+		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun);
 	}
 	
 	public File getIntermediateFilesDirectory()throws IllegalStateException {
-		if (GUI.outputLocation == null) {
+		if (this.outputLocation == null) {
 			throw new IllegalStateException();
 		}
-		return new File(GUI.outputLocation.getPath() + File.separator + this.title + " " + GUI.dateString + File.separator + INTERMED_FILES);
+		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun + File.separator + INTERMED_FILES);
 
 	}
 	
-	public static File getSaveDirectory(String imageTitle) throws IllegalStateException {
-		if (GUI.outputLocation == null) {
-			throw new IllegalStateException();
-		}
-		makeSaveDirectory(imageTitle);
-		return new File(GUI.outputLocation.getPath() + File.separator + imageTitle + " " + GUI.dateString);
+	public static File getSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
+
+		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
+		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
 
 	}
 	
 	
-	public static File getIntermediateFilesDirectory(String imageTitle) throws IllegalStateException {
-		if (GUI.outputLocation == null) {
+	public static File getIntermediateFilesDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
+		if (outputLocation == null) {
 			throw new IllegalStateException();
 		}
-		makeSaveDirectory(imageTitle);
-		return new File(GUI.outputLocation.getPath() + File.separator + imageTitle + " " + GUI.dateString + File.separator + INTERMED_FILES);
+		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
+		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun + File.separator + INTERMED_FILES);
 
 	}
 	

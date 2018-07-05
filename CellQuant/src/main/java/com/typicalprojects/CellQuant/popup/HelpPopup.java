@@ -27,7 +27,8 @@ public class HelpPopup extends JFrame {
 	 */
 	private static final long serialVersionUID = 3705358982414585334L;
 	private JPanel contentPane;
-	private Component relative;
+	private int height;
+	private int width;
 
 	
 	/*public static void main(String[] args) {
@@ -46,7 +47,9 @@ public class HelpPopup extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public HelpPopup(int height, int width, String message, Component reference) {
+	public HelpPopup(int height, int width, String message) {
+		this.height = height;
+		this.width = width;
 		setFont(new Font("PingFang TC", Font.PLAIN, 13));
 		setTitle("Help");
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
@@ -56,7 +59,6 @@ public class HelpPopup extends JFrame {
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		
-		this.setLocationRelativeTo(reference);
 		JLabel lblIcon = new JLabel("");
 		lblIcon.setFocusable(false);
 		lblIcon.setVerticalAlignment(SwingConstants.TOP);
@@ -110,8 +112,9 @@ public class HelpPopup extends JFrame {
 		});
 	}
 	
-	public void display() {
-		this.setLocationRelativeTo(relative);
+	public void display(Component component) {
+		this.setBounds(100, 100, this.width, this.height);
+		this.setLocationRelativeTo(component);
 		this.setVisible(true);
 	}
 

@@ -44,7 +44,7 @@ public class NeuronProcessor {
 
 					while (!cancelled && itr.hasNext()) {
 						ImagePhantom pi = itr.next();
-						String error = pi.open();
+						String error = pi.open(GUI.channelMap, GUI.outputLocation, GUI.dateString, true);
 						if (error != null) {
 							error(error, wizard);
 							return;
@@ -77,10 +77,11 @@ public class NeuronProcessor {
 						}
 
 						log(progressReporter, "Saving...");
-						ImageContainer newContainer = new ImageContainer(channels, images, container.getTotalImageTitle(), container.getImgFile(), false, container.getCalibration());
+
+						ImageContainer newContainer = new ImageContainer(channels, images, container.getTotalImageTitle(), container.getImgFile(), container.getCalibration(), GUI.outputLocation, GUI.dateString);
 						newContainer.save(GUI.dateString);
 						newContainer.saveResultsTable(tables, GUI.dateString, false);
-						imagesDoneProcessing.add(new ImagePhantom(pi.getImageFile(), newContainer.getTotalImageTitle(), gui, true, newContainer.getCalibration()));
+						imagesDoneProcessing.add(new ImagePhantom(pi.getImageFile(), newContainer.getTotalImageTitle(), gui.getProgressReporter(), newContainer.getCalibration()));
 
 						newContainer = null;
 						container = null;

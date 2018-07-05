@@ -15,8 +15,8 @@ public class ImagePanel extends JPanel{
 	private static final long serialVersionUID = 3219505730380857923L;
 	private BufferedImage image;
 	private Image scaled;
-	private volatile int imgHeight;
-	private volatile int imgWidth;
+	private volatile int imgPartHeight;
+	private volatile int imgPartWidth;
 	private volatile int pastHeight;
 	private volatile int pastWidth;
 	private volatile int posX;
@@ -26,6 +26,7 @@ public class ImagePanel extends JPanel{
 	private int zoomHeight;
 	private int zoomX;
 	private int zoomY;
+	private boolean zoomDiffNeedsUpdate = false;
 
 	public ImagePanel() {
 		super();
@@ -33,32 +34,67 @@ public class ImagePanel extends JPanel{
 	
 	public synchronized Point getPixelPoint(int x, int y) {
 		
-		if (x >= posX && x <= (posX + imgWidth - 1) && y >= posY && y <= (posY + imgHeight - 1)) {
+		if (x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1)) {
 			
 			if (this.zoom != null && this.zoom != Zoom.ZOOM_100) {
-				double modedX = (zoomWidth * ((x - posX) / (double) imgWidth)) + zoomX;
-				double modedY = (zoomHeight * ((y - posY) / (double) imgHeight)) + zoomY;
+				double modedX = (zoomWidth * ((x - posX) / (double) imgPartWidth)) + zoomX;
+				double modedY = (zoomHeight * ((y - posY) / (double) imgPartHeight)) + zoomY;
 				//double xImg = ((modedX - posX) / (double) imgWidth) * image.getWidth();
 				//double yImg = ((modedY - posY) / (double) imgHeight) * (double) image.getHeight();
 
 				return new Point((int) modedX, (int)modedY, null);
 				
 			} else {
-				double xImg = ((x - posX) / (double) imgWidth) * image.getWidth();
-				double yImg = ((y - posY) / (double) imgHeight) * (double) image.getHeight();
+				double xImg = ((x - posX) / (double) imgPartWidth) * (double) image.getWidth();
+				double yImg = ((y - posY) / (double) imgPartHeight) * (double) image.getHeight();
 				return new Point((int) xImg, (int)yImg, null);
 
 			}
 
 		} else {
-			System.out.println("fail");
 			return null;
 		}
 		
 	}
 	
+	/**
+	 * 1 = left
+	 * 2 = up
+	 * 3 = right
+	 * 4 = down
+	 * 
+	 * @param direction
+	 */
+	public void shiftImage(int direction) {
+		
+		if (this.zoom == null || this.zoom == Zoom.ZOOM_100)
+			return;
+		
+		int shiftAmount = (int) (Math.max(this.zoomHeight, this.zoomWidth) / 10.0);
+		switch (direction) {
+		case 1:
+			this.zoomX = Math.max(0, this.zoomX - shiftAmount);
+			break;
+		case 2:
+			this.zoomY = Math.max(0, this.zoomY - shiftAmount);
+			break;
+		case 3:
+			this.zoomX = Math.min(this.image.getWidth() - this.zoomWidth, this.zoomX + shiftAmount);
+			break;
+		case 4:
+			this.zoomY = Math.min(this.image.getHeight() - this.zoomHeight, this.zoomY + shiftAmount);
+			break;
+		}
+		this.zoomDiffNeedsUpdate = true;
+		repaint();
+	}
+	
 	public BufferedImage getImage() {
 		return this.image;
+	}
+	
+	public boolean screenPositionIsInImage(int x, int y) {
+		return x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1);
 	}
 	
 	
@@ -66,13 +102,14 @@ public class ImagePanel extends JPanel{
 		this.image = ig;
 		this.pastHeight = -1;
 		if (zoom != null && this.zoom != zoom) {
-			System.out.println("rezoomed " + zoom + " " + this.zoom);
 			if (zoom.equals(Zoom.ZOOM_100)) {
 				this.zoom = null;
 				zoomWidth = -1;
 				zoomHeight = -1;
 				zoomX = -1;
 				zoomY = -1;
+				this.zoom = zoom;
+				this.zoomDiffNeedsUpdate = true;
 			} else  {
 
 				if (this.zoom == null || this.zoom.equals(Zoom.ZOOM_100)) {
@@ -80,25 +117,47 @@ public class ImagePanel extends JPanel{
 					zoomHeight = this.image.getHeight();
 					zoomX = 0;
 					zoomY = 0;
-					this.zoom = Zoom.ZOOM_100;
+					this.zoom = Zoom.ZOOM_100; // will be changed
 				}
 
 				int zoomDiff = Math.subtractExact(zoom.getLevel(), this.zoom.getLevel());
-				if (zoomDiff > 0) {
-					// zoom in
-					for (int numZooms = 0; numZooms < zoomDiff; numZooms++) {
+				
+				if (xCenter >= posX && xCenter <= (posX + imgPartWidth - 1) && yCenter >= posY && yCenter <= (posY + imgPartHeight - 1)) {
+					if (zoomDiff > 0) {
+						// zoom in
+						if (xCenter >= posX && xCenter <= (posX + imgPartWidth - 1) && yCenter >= posY && yCenter <= (posY + imgPartHeight - 1)) {
+							for (int numZooms = 0; numZooms < zoomDiff; numZooms++) {
+								//if (x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1))
+								//double modedX = (((double) zoomWidth) * ((xCenter + 1) / ((double) this.getWidth()))) + zoomX;
+								double modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
+								double modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
+								int[] zoomStats = Zoom.zoomIn(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
+								this.zoomX = zoomStats[0];
+								this.zoomY = zoomStats[1];
+								this.zoomWidth = zoomStats[2];
+								this.zoomHeight = zoomStats[3];
+							}
+						}
 						
-						double modedX = (zoomWidth * (xCenter / ((double) this.getWidth()))) + zoomX;
-						double modedY = (zoomHeight * (yCenter / ((double) this.getHeight()))) + zoomY;
-						int[] zoomStats = Zoom.zoomIn(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
-						this.zoomX = zoomStats[0];
-						this.zoomY = zoomStats[1];
-						this.zoomWidth = zoomStats[2];
-						this.zoomHeight = zoomStats[3];
+					} else {
+						double modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
+						double modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
+
+						for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
+							int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
+							this.zoomX = zoomStats[0];
+							this.zoomY = zoomStats[1];
+							this.zoomWidth = zoomStats[2];
+							this.zoomHeight = zoomStats[3];
+						}
+
 					}
-				} else {
+					this.zoom = zoom;
+					this.zoomDiffNeedsUpdate = true;
+
+				} else if (zoomDiff < 0) {
 					for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
-						int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight);
+						int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, -1, -1);
 						this.zoomX = zoomStats[0];
 						this.zoomY = zoomStats[1];
 						this.zoomWidth = zoomStats[2];
@@ -108,19 +167,22 @@ public class ImagePanel extends JPanel{
 				
 			}
 		}
-		this.zoom = zoom;
 		repaint();
 	}
 
 	public synchronized void paintComponent(Graphics g) {
 
 		super.paintComponent(g);
-		
 		if (image != null) {
-			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight) {
+			BufferedImage zoomedIg = image;
+			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight && !this.zoomDiffNeedsUpdate) {
 				g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters 
 				return;
+			} else if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+				zoomedIg = image.getSubimage(zoomX, zoomY, zoomWidth, zoomHeight);
 			}
+			this.zoomDiffNeedsUpdate = false;
+
 			pastHeight = getHeight();
 			pastWidth = getWidth();
 			
@@ -128,46 +190,22 @@ public class ImagePanel extends JPanel{
 			
 			if (image.getWidth() * r < pastWidth) {
 				// height is limiting
-				this.imgHeight = pastHeight;
-				this.imgWidth = (int) (image.getWidth() * r);
-				this.posX = (pastWidth - this.imgWidth) / 2;
+				this.imgPartHeight = pastHeight;
+				this.imgPartWidth = (int) (image.getWidth() * r);
+				this.posX = (pastWidth - this.imgPartWidth) / 2;
 				this.posY = 0;
 			} else {
 				// width is limiting
-				this.imgHeight = (int) (image.getHeight() * (((double) pastWidth) / image.getWidth()));
-				this.imgWidth = pastWidth;
+				this.imgPartHeight = (int) (image.getHeight() * (((double) pastWidth) / image.getWidth()));
+				this.imgPartWidth = pastWidth;
 				this.posX = 0;
-				this.posY = ((pastHeight - this.imgHeight) / 2);
+				this.posY = ((pastHeight - this.imgPartHeight) / 2);
 			}
-			
-			
-			/*if (pastWidth > pastHeight) {
-				this.imgHeight = pastHeight;
-				this.imgWidth = pastHeight;
-				this.posX = (pastWidth - pastHeight) / 2;
-				this.posY = 0;
 
-			} else if (pastWidth < pastHeight) {
-				this.imgHeight = pastWidth;
-				this.imgWidth = pastWidth;
-				this.posX = 0;
-				this.posY = (pastHeight - pastWidth) / 2;
 
-			} else {
-				this.imgHeight = pastHeight;
-				this.imgWidth = pastWidth;
-				this.posX = 0;
-				this.posY = 0;
-			}*/
-			
-			BufferedImage zoomedIg = image;
-			if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
-				zoomedIg = image.getSubimage(zoomX, zoomY, zoomWidth, zoomHeight);
-			
-			}
-			
-			scaled = zoomedIg.getScaledInstance(this.imgWidth, this.imgHeight, Image.SCALE_SMOOTH);
+			scaled = zoomedIg.getScaledInstance(this.imgPartWidth, this.imgPartHeight, Image.SCALE_SMOOTH);
 			g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters  
+			return;
 		}
 
 

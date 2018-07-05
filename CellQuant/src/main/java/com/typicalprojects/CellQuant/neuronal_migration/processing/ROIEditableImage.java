@@ -58,6 +58,15 @@ public class ROIEditableImage {
 	public boolean hasROIs() {
 		return !this.roi_names.isEmpty();
 	}
+	
+	public boolean hasCreatedValidROIPoints() {
+		if (this.points.size() > 1) 
+			return true;
+		else
+			return false;
+				
+		
+	}
 
 
 	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
@@ -217,7 +226,7 @@ public class ROIEditableImage {
 		}
 
 
-		return new ImageContainer(channels, images, this.ic.getTotalImageTitle(), this.ic.getImgFile(), true, this.ic.getCalibration());
+		return new ImageContainer(channels, images, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
 
@@ -323,8 +332,8 @@ public class ROIEditableImage {
 			progress.setProgress("Success. ", -1, -1);
 
 			int col = newTable.getColumnIndex("Grayscale Value");
-			ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui, false, null);
-			pi.open();
+			ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui.getProgressReporter(), null);
+			pi.open(GUI.channelMap, GUI.outputLocation, GUI.dateString, true);
 			ZProjector projector = new ZProjector();
 			projector.setImage(pi.getIC().getImageChannel(chan, false));
 			pi = null;
@@ -364,7 +373,7 @@ public class ROIEditableImage {
 			System.gc();
 			return newTable;
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "<html>SHOW THIS TO JUSTIN:<br><br> " + StringUtils.join(e.getStackTrace(), "<br>") + "</html>", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this.gui.getComponent(), "<html>SHOW THIS TO JUSTIN:<br><br> " + StringUtils.join(e.getStackTrace(), "<br>") + "</html>", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 		
 

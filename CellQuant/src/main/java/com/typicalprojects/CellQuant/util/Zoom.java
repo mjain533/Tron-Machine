@@ -14,10 +14,16 @@ public enum Zoom {
 		
 		int[] output = new int[4];
 		
-		int newUpperLeftX = (int) (xCenter - (width / 4.0));
-		int newUpperLeftY = (int) (yCenter - (height / 4.0));
 		output[2] = (int) (width / 2.0);
 		output[3] = (int) (height / 2.0);
+		
+		double amountToSubtractX = output[2] * ( (xCenter - upperLeftX) / ((double) width));
+		double amountToSubtractY = output[3] * ( (yCenter - upperLeftY) / ((double) height));
+
+		
+		int newUpperLeftX = (int) (xCenter - amountToSubtractX);
+		int newUpperLeftY = (int) (yCenter - amountToSubtractY);
+
 
 		if (newUpperLeftX < 0) {
 			newUpperLeftX = 0;
@@ -31,19 +37,30 @@ public enum Zoom {
 			newUpperLeftY = yDim - output[3];
 		}
 		
-		
 		output[0] = newUpperLeftX;
 		output[1] = newUpperLeftY;
 		return output;
 	}
 	
-	public static int[] zoomOut(int upperLeftX, int upperLeftY, int xDim, int yDim, int width, int height) {
+	public static int[] zoomOut(int upperLeftX, int upperLeftY, int xDim, int yDim, int width, int height, int xCenter, int yCenter) {
 		int[] output = new int[4];
 
-		int newUpperLeftX = (int) (upperLeftX - (width / 2.0));
-		int newUpperLeftY = (int) (upperLeftY - (height / 2.0));
 		output[2] = width * 2;
 		output[3] = height * 2;
+		
+		int newUpperLeftX;
+		int newUpperLeftY;
+		if (xCenter != -1 && yCenter != -1) {
+			double amountToSubtractX = output[2] * ( (xCenter - upperLeftX) / ((double) width));
+			double amountToSubtractY = output[3] * ( (yCenter - upperLeftY) / ((double) height));
+
+			newUpperLeftX = (int) (xCenter - amountToSubtractX);
+			newUpperLeftY = (int) (yCenter - amountToSubtractY);
+		} else {
+			newUpperLeftX = (int) (upperLeftX - (width / 2.0));
+			newUpperLeftY = (int) (upperLeftY - (height / 2.0));
+		}
+		
 
 		if (newUpperLeftX < 0) {
 			newUpperLeftX = 0;

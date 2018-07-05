@@ -131,24 +131,27 @@ public class GUI  {
 				try {
 					settings.createNewFile();
 					fileCreated = true;
+					channelMap.clear();
+					channelMap.put(0, Channel.GREEN);
+					channelMap.put(1, Channel.WHITE);
+					channelMap.put(2, Channel.RED);
+					channelMap.put(3, Channel.BLUE);
+					channelsToProcess.clear();
+					channelsToProcess.add(Channel.RED);
+					channelsToProcess.add(Channel.GREEN);
+					channelForROIDraw = Channel.BLUE;
+					GUI.outputLocation = null;
+					Preferences.writeSettingsFromGUI();
 				} catch (IOException e) {
-					if (JOptionPane.showInternalConfirmDialog(null, "A directory for holding contents of this application could not be created on your computer."
+					e.printStackTrace();
+					System.out.println(e.getMessage());
+					if (JOptionPane.showConfirmDialog(null, "A directory for holding contents of this application could not be created on your computer."
 							+ " Would you like to retry?", "Could not create file.", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.CANCEL_OPTION ) {
 						doExit();
 					}
 
 				}
-				channelMap.clear();
-				channelMap.put(0, Channel.GREEN);
-				channelMap.put(1, Channel.WHITE);
-				channelMap.put(2, Channel.RED);
-				channelMap.put(3, Channel.BLUE);
-				channelsToProcess.clear();
-				channelsToProcess.add(Channel.RED);
-				channelsToProcess.add(Channel.GREEN);
-				channelForROIDraw = Channel.BLUE;
-				GUI.outputLocation = null;
-				Preferences.writeSettingsFromGUI();
+				
 
 			}
 

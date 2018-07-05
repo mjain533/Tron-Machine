@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
+import java.awt.MouseInfo;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -56,11 +57,12 @@ public class PnlDisplay  {
 	private JLabel lblChanSlider;
 	private JPanel pnlSliderChan;
 	private JComponent pnlSliderSlice;
+	private int lastSelectedSlice;
+	private Channel lastSelectedChan;
 
 	private PnlDisplayFeedbackReceiver outputHandler;
 	private boolean changing = false;
 
-	private boolean shiftPressed = false;
 
 	public PnlDisplay(GUI gui, PnlDisplayFeedbackReceiver sliderOutputHandler) {
 		this.outputHandler = sliderOutputHandler;
@@ -136,7 +138,13 @@ public class PnlDisplay  {
 			public void stateChanged(ChangeEvent e) {
 
 				if (changing) return;
+				
+				
 				int slice = getSliderSelectedSlice();
+				if (slice == lastSelectedSlice)
+					return;
+				
+				lastSelectedSlice = slice;
 				lblSliceNum.setText(slice + "");
 				outputHandler.sliderSliceChanged(getSliderSelectedSlice());
 			}
@@ -147,6 +155,10 @@ public class PnlDisplay  {
 				if (changing) return;
 
 				Channel chan = getSliderSelectedChannel();
+				if (chan == lastSelectedChan)
+					return;
+				
+				lastSelectedChan = chan;
 				lblChanNum.setText(chan.getAbbreviation());
 				outputHandler.sliderChanChanged(chan);
 
@@ -160,29 +172,93 @@ public class PnlDisplay  {
 				synchronized (PnlDisplay.class) {
 					switch (ke.getID()) {
 					case KeyEvent.KEY_PRESSED:
-						if (ke.getKeyCode() == KeyEvent.VK_SHIFT) {
-							shiftPressed = true;
-						}
+						
 						break;
 
 					case KeyEvent.KEY_RELEASED:
-						if (ke.getKeyCode() == KeyEvent.VK_SHIFT) {
-							shiftPressed = false;
-						} else if (ke.getKeyCode() == KeyEvent.VK_DOWN || ke.getKeyCode() == KeyEvent.VK_BACK_SPACE || ke.getKeyCode() == KeyEvent.VK_ESCAPE) {
+						switch (ke.getKeyCode()) {
+						case KeyEvent.VK_SHIFT:
+
+							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
+								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
+								if (oei == null)
+									break;
+								
+								
+								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
+								SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
+								//if  (javaPoint.x < 0 || javaPoint.x >= pnlImage.getWidth() || javaPoint.y < 0 || javaPoint.y >= pnlImage.getHeight()) {
+								//	break;
+								//}
+								Zoom zoom = oei.getNextZoom();
+
+								if (zoom != null) {
+									
+									if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
+									
+										oei.setZoom(zoom);
+
+										pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
+
+									}
+								}
+
+							}
+							break;
+						case KeyEvent.VK_SPACE:
+						case KeyEvent.VK_ESCAPE:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
+									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
+									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
+
 									if (!oei.getZoom().equals(Zoom.ZOOM_100)) {
 										Zoom zoom = oei.getPreviousZoomLevel();
 										oei.setZoom(zoom);
-										pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), -1, -1, zoom);
+										if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
+											pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
+										} else {
+											pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), -1, -1, zoom);
+										}
 
 									}
 
 								}
 							}
-						} else if (ke.getKeyCode() == KeyEvent.VK_SPACE)
+							break;
+						case KeyEvent.VK_A:
+							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+								gui.getPanelOptions().triggerROIAddButton();
+							} else if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								getImagePanel().shiftImage(1);
+							}
+							break;
+						case KeyEvent.VK_C:
+							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+								gui.getPanelOptions().triggerROIClearButton();
+							}
+							break;
+						case KeyEvent.VK_W:
+							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								getImagePanel().shiftImage(2);
+							}
+							break;
+						case KeyEvent.VK_S:
+							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								getImagePanel().shiftImage(4);
+							}
+							break;
+						case KeyEvent.VK_D:
+							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								getImagePanel().shiftImage(3);
+							}
+							break;
+						default:
+							break;
+						}
 						break;
+					
 					}
 					return false;
 				}
@@ -193,41 +269,38 @@ public class PnlDisplay  {
 		this.pnlImage.addMouseListener(new MouseListener() {
 
 			public void mouseClicked(MouseEvent e) {
-
+				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 
 			}
 
 			public void mousePressed(MouseEvent e) {	
+				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+
 			}
 
 			public void mouseReleased(MouseEvent e) {
-				if (gui.getWizard().getStatus() == Status.SELECT_OB && shiftPressed) {
-					ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-					if (oei != null) {
-						if (SwingUtilities.isRightMouseButton(e)) {
-							if (!oei.getZoom().equals(Zoom.ZOOM_100)) {
-								Zoom zoom = oei.getPreviousZoomLevel();
-								oei.setZoom(zoom);
-								pnlImage.setImage(pnlImage.getImage(), -1, -1, zoom);
-							}
-						} else {
-							Zoom zoom = oei.getNextZoom();
+				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
 
-							if (zoom != null) {
-
-								oei.setZoom(zoom);
-
-								pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), e.getX(), e.getY(), zoom);
+				if (gui.getWizard().getStatus() == Status.SELECT_OB) {
+					if (SwingUtilities.isRightMouseButton(e)){
+						
+						ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
+						
+						if (oei != null) {
+							Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
+							Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
+							if (closest != null) {
+								oei.removePoint(getSliderSelectedChannel(), closest);
 							}
 						}
-
-
+						
+					} else {
+						int x = e.getX();
+						int y = e.getY();
+						Point p = pnlImage.getPixelPoint(x, y);
+						outputHandler.mouseClickOnImage(p);
 					}
-				} else {
-					int x = e.getX();
-					int y = e.getY();
-					Point p = pnlImage.getPixelPoint(x, y);
-					outputHandler.mouseClickOnImage(p);
+					
 				}
 			}
 
@@ -308,6 +381,7 @@ public class PnlDisplay  {
 			this.lblSliceNum.setText("--");
 			this.sldrSlice.setEnabled(false);
 		}
+		this.lastSelectedSlice = this.sldrSlice.getValue();
 
 		this.sldrSlice.setMinorTickSpacing(1);
 		this.sldrSlice.setSnapToTicks(true);
@@ -330,6 +404,9 @@ public class PnlDisplay  {
 			this.lblSliceNum.setText("--");
 			this.sldrSlice.setEnabled(false);
 		}
+		
+		
+		this.lastSelectedSlice = this.sldrSlice.getValue();
 
 		this.sldrSlice.updateUI();
 
@@ -345,6 +422,8 @@ public class PnlDisplay  {
 			this.sldrChan.setMinimum(0);
 			this.sldrChan.setMaximum(chans.size()-1);
 			this.sldrChan.setValue(0);
+			this.lastSelectedChan = chans.get(0);
+
 			this.lblChanNum.setText(chans.get(0).getAbbreviation());
 			this.sldrChan.setEnabled(true);
 
@@ -352,6 +431,7 @@ public class PnlDisplay  {
 			this.chanSelection = null;
 			this.sldrChan.setMinimum(1);
 			this.sldrChan.setMaximum(2);
+			this.lastSelectedChan = null;
 			this.sldrChan.setValue(1);
 			this.lblChanNum.setText("--");
 			this.sldrChan.setEnabled(false);
@@ -387,8 +467,6 @@ public class PnlDisplay  {
 		if (this.chanSelection == null) return null;
 		return this.chanSelection.get(this.sldrChan.getValue()); 
 	}
-
-
 
 	public interface PnlDisplayFeedbackReceiver {
 

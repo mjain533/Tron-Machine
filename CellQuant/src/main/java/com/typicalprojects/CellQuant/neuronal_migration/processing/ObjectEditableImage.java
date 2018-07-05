@@ -2,13 +2,19 @@ package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Polygon;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import java.util.Set;
+
+import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImagePanel;
@@ -19,6 +25,8 @@ import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
 import ij.gui.Overlay;
+import ij.gui.PolygonRoi;
+import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
@@ -30,6 +38,8 @@ public class ObjectEditableImage {
 	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
 	private int fontSize = Custome3DObjectCounter.opResultFontSize;
 	private Zoom zoom = Zoom.ZOOM_100;
+	private boolean creatingDeletionZone;
+	private List<Point> deletionZone = new ArrayList<Point>();
 	
 	private ImagePanel imagePnl;
 
@@ -53,7 +63,64 @@ public class ObjectEditableImage {
 
 		this.images = images;
 	}
+	
+	public boolean deleteObjectsWithinDeletionZone(Channel chanToDisplayAfterward) {
+		
+		Object[] obj = convertDeletionPointsToArray(true);
+		if (obj == null) {
+			System.out.println("called null");
+			this.deletionZone.clear();
+			this.creatingDeletionZone = false;
+			
+			this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
+			
+			return false;
 
+		}
+		
+		Polygon pg = new PolygonRoi((float[]) obj[0], (float[]) obj[1], this.deletionZone.size(), Roi.POLYLINE).getPolygon() ;
+		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
+			Iterator<Point> channelPtsItr = en.getValue().iterator();
+			while (channelPtsItr.hasNext()) {
+				Point chnlPt = channelPtsItr.next();
+				if (pg.contains(chnlPt.x, chnlPt.y)) {
+					channelPtsItr.remove();
+				}
+			}
+		}
+
+		this.deletionZone.clear();
+		this.creatingDeletionZone = false;
+		
+		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
+		
+		return true;
+	}
+	
+	public void addDeletionZonePoint(Point p, Channel chanToDisplayAfterward) {
+		p.fromObjCounter = false;
+		this.creatingDeletionZone = true;
+		this.deletionZone.add(p);
+		
+		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
+
+	}
+	
+	public void cancelDeletionZone(Channel chanToDisplayAfterward) {
+		this.deletionZone.clear();
+		this.creatingDeletionZone = false;
+		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
+
+	}
+	
+	public boolean isCreatingDeletionZone() {
+		return this.creatingDeletionZone;
+	}
+	
+	public void setCreatingDeletionZone(boolean creatingDeletionZone) {
+		this.creatingDeletionZone = creatingDeletionZone;
+	}
+	
 	public void addPoint(Channel chan, Point p) {
 		
 		p.fromObjCounter = false;
@@ -62,6 +129,31 @@ public class ObjectEditableImage {
 		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 
 
+	}
+	
+	public Point getNearestPoint(Channel chan, Point p) {
+		int range = this.dotSize;
+		if (this.zoom !=null && !this.zoom.equals(Zoom.ZOOM_100)) {
+			for (int j = 0; j < this.zoom.getLevel() - Zoom.ZOOM_100.getLevel(); j++) {
+				range = (int) (range / 1.2);
+			}
+		}
+		List<Point> chanPoints = this.points.get(chan);
+		Point currClosest = null;
+		double dist = -1;
+		for (Point chanPoint : chanPoints) {
+			if (Math.abs(chanPoint.x - p.x) < range && Math.abs(chanPoint.y - p.y) < range) {
+				
+				double newDist = Math.sqrt(Math.pow(chanPoint.x - p.x, 2) + Math.pow(chanPoint.y - p.y, 2));
+				if (newDist < dist || dist < 0) {
+					dist = newDist;
+					currClosest = chanPoint;
+				}
+			}
+		}
+		
+		return currClosest;
+		
 	}
 
 	public boolean removePoint(Channel chan, Point p) {
@@ -73,11 +165,35 @@ public class ObjectEditableImage {
 
 	}
 	
+	public boolean removePoints(Channel chan, Set<Integer> points) {
+		boolean validPoints = true;
+
+		try {
+			List<Integer> pointsList = new ArrayList<Integer>(points);
+			pointsList.sort(null);
+			for (int i = pointsList.size() - 1; i >= 0; i--) {
+				validPoints = this.points.get(chan).remove((int) pointsList.get(i) - 1) != null ? validPoints : false;
+			}
+			this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
+
+		}catch(Exception e) {
+			validPoints = false;
+		}
+
+		return validPoints;
+		
+	}
+	
 	public boolean removePoint(Channel chan, int pointNum) {
+		boolean removed = false;
+		try {
+			removed = this.points.get(chan).remove(pointNum - 1) != null;
 
-		boolean removed = this.points.get(chan).remove(pointNum - 1) != null;
+			this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 
-		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
+		} catch (Exception e) {
+			removed = false;
+		}
 		
 		return removed;
 
@@ -100,7 +216,7 @@ public class ObjectEditableImage {
 				newImages.add(this.ic.getImageChannel(chan, true));
 			}
 		}
-		return new ImageContainer(channels, newImages, this.ic.getTotalImageTitle(), this.ic.getImgFile(), false, this.ic.getCalibration());
+		return new ImageContainer(channels, newImages, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
 	
@@ -163,8 +279,6 @@ public class ObjectEditableImage {
 			}
 		}
 		
-		System.out.println(newDotSize);
-		System.out.println(newFontSize);
 		
 		ImagePlus stack = this.ic.getImageChannel(chan, true);
 
@@ -200,16 +314,16 @@ public class ObjectEditableImage {
 		}
 		img.updateImage();*/
 
-		ip.setColor(Color.WHITE);;
+		ip.setColor(Color.LIGHT_GRAY);
 		ip.setFont(new Font("Arial", Font.BOLD, newFontSize));
 		int counter = 1;
 		for (Point point : chanPoints) {
 			if (point != null && point.fromObjCounter) {
 				ip.drawString(""+counter, point.x, point.y);
 			} else {
-				ip.setColor(Color.WHITE);
+				ip.setColor(Color.LIGHT_GRAY);
 				ip.drawString(""+counter, point.x, point.y);
-				ip.setColor(Color.WHITE);
+				ip.setColor(Color.LIGHT_GRAY);
 			}
 			counter++;
 
@@ -223,6 +337,38 @@ public class ObjectEditableImage {
 		roi.setOpacity(1.0);
 		stack.getProcessor().drawOverlay(new Overlay(roi));
 		stack.updateImage();
+		
+		if (this.creatingDeletionZone) {
+			
+			Object[] obj = convertDeletionPointsToArray(false);
+			
+			if (obj != null) {
+				if (this.deletionZone.size() == 1) {
+					
+					stack.getProcessor().setColor(Color.GREEN);
+					int size = (int) (Math.max(stack.getDimensions()[0], stack.getDimensions()[1] ) / 100.0);
+					stack.getProcessor().fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
+					stack.updateImage();
+
+				} else {
+					System.out.println(Arrays.toString((float[]) obj[0]));
+					PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], this.deletionZone.size(), Roi.POLYLINE) ;
+					pgr.setStrokeColor(Color.GREEN);
+					pgr.setFillColor(Color.GREEN);
+					double size = Math.max(stack.getDimensions()[0], stack.getDimensions()[1] );
+
+					pgr.setStrokeWidth(size / 300.0);
+
+					stack.getProcessor().setColor(Color.GREEN);
+					stack.getProcessor().drawOverlay(new Overlay(pgr));
+					stack.updateImage();
+
+				}
+			}
+			
+			
+		}
+
 		return stack;
 	}
 	
@@ -252,6 +398,41 @@ public class ObjectEditableImage {
 	
 	public Zoom getPreviousZoomLevel() {
 		return this.zoom.getPreviousZoomLevel();
+	}
+	
+	private Object[] convertDeletionPointsToArray(boolean finished) {
+		
+		if (finished) {
+			if (this.deletionZone.size() <= 2) {
+				return null;
+			}
+			float[] xCoords = new float[this.deletionZone.size() + 1];
+			float[] yCoords = new float[this.deletionZone.size() + 1];
+			int counter = 0;
+			for (Point p : this.deletionZone) {
+				xCoords[counter] = p.x;
+				yCoords[counter] = p.y;
+				counter++;
+			}
+			xCoords[deletionZone.size()] = xCoords[0];
+			yCoords[deletionZone.size()] = xCoords[0];
+
+			return new Object[] {xCoords, yCoords};
+		} else {
+			if (this.deletionZone.isEmpty()) {
+				return null;
+			}
+			float[] xCoords = new float[this.deletionZone.size()];
+			float[] yCoords = new float[this.deletionZone.size()];
+			int counter = 0;
+			for (Point p : this.deletionZone) {
+				xCoords[counter] = p.x;
+				yCoords[counter] = p.y;
+				counter++;
+			}
+			return new Object[] {xCoords, yCoords};
+		}
+		
 	}
 
 }
