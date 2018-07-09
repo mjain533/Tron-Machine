@@ -301,6 +301,11 @@ public class PnlDisplay  {
 						outputHandler.mouseClickOnImage(p);
 					}
 					
+				} else if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+					int x = e.getX();
+					int y = e.getY();
+					Point p = pnlImage.getPixelPoint(x, y);
+					outputHandler.mouseClickOnImage(p);
 				}
 			}
 
