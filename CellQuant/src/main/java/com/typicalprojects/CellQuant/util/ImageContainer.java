@@ -158,6 +158,8 @@ public class ImageContainer {
 	public ImagePlus getImageChannel(Channel channel, boolean duplicate) {
 
 		int indexOf = channels.indexOf(channel);
+		if (indexOf < 0)
+			return null;
 
 		return (duplicate ? images.get(indexOf).duplicate() : images.get(indexOf));
 	}
@@ -206,9 +208,13 @@ public class ImageContainer {
 	private void deleteResultsTables(String date) {
 
 		for (Channel chan : Channel.values()) {
-			File file = new File(getSaveDirectory() + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
-			if (file.exists()) {
-				file.delete();
+			ImagePlus potential = getImageChannel(chan, false);
+			if (potential != null) {
+				File file = new File(getSaveDirectory() + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
+				if (file.exists()) {
+					file.delete();
+				}
+
 			}
 		}
 	}

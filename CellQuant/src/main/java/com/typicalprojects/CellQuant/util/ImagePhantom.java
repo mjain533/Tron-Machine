@@ -43,7 +43,6 @@ public class ImagePhantom {
 				io.setId(imageFile.getPath());
 				io.setSplitChannels(true);
 				ImagePlus[]  ip= BF.openImagePlus(io);
-				//System.out.println(ip[0].getCalibration().getY(40));
 				this.cal = ip[0].getCalibration();
 				if (ip.length != validChannels.size()) {
 					logger.setProgress("Failed to open.");
@@ -63,6 +62,7 @@ public class ImagePhantom {
 				
 				for (Channel chan : validChannels.values()){
 					File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
+					
 					if (file.exists()) {
 						channels.add(chan);
 						ImagePlus ip = opener.openImage(file.getPath());

@@ -149,7 +149,6 @@ public class ROIEditableImage {
 		double size = Math.max(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
 
 		pgr.setStrokeWidth(size / 300.0);
-		System.out.println("SPLINED");
 		pgr.fitSplineForStraightening();
 		pgr.setName(name);
 		this.roi_names.add(name);
@@ -332,16 +331,14 @@ public class ROIEditableImage {
 			progress.setProgress("Success. ", -1, -1);
 
 			int col = newTable.getColumnIndex("Grayscale Value");
-			ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui.getProgressReporter(), null);
-			pi.open(GUI.channelMap, GUI.outputLocation, GUI.dateString, true);
 			ZProjector projector = new ZProjector();
-			projector.setImage(pi.getIC().getImageChannel(chan, false));
-			pi = null;
+			projector.setImage(
+					this.ic.
+					getImageChannel(chan, false));
 			projector.setMethod(ZProjector.MAX_METHOD);
 			projector.doProjection();
 			progress.setProgress("Recording grayscale values...", -1, -1);
 			ImageProcessor ip = projector.getProjection().getProcessor();
-			System.out.println(newTable.getLastColumn());
 
 			for (int i = 0; i < xObjValues.length; i++) {
 
@@ -373,6 +370,7 @@ public class ROIEditableImage {
 			System.gc();
 			return newTable;
 		} catch (Exception e) {
+			e.printStackTrace();
 			JOptionPane.showMessageDialog(this.gui.getComponent(), "<html>SHOW THIS TO JUSTIN:<br><br> " + StringUtils.join(e.getStackTrace(), "<br>") + "</html>", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 		

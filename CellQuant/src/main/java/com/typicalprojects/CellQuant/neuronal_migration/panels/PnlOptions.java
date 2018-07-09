@@ -640,12 +640,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			List<Analyzer.Calculation> calculationsToComplete = Arrays.asList(Analyzer.Calculation.PERCENT_MIGRATION);
 			Map<Channel, ResultsTable> results = imageCurrentlyROIEditing.process(this.gui.getProgressReporter(), calculationsToComplete);
 			this.gui.log("Saving resources...");
+		
 			this.imageCurrentlyROIEditing.saveROIs();
 			ImageContainer newIC = this.imageCurrentlyROIEditing.getNewImage();
-
 			newIC.save(GUI.dateString);
 			newIC.saveResultsTable(results, GUI.dateString, true);
-
 			this.gui.log("Success.");
 			this.imageCurrentlyROIEditing = null;
 		}
