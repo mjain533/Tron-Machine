@@ -100,9 +100,11 @@ public class GUI  {
 	private volatile Wizard wizard;
 	private JMenuItem mntmPreferences;
 	private JMenuItem mntmBrightnessAdj;
+	private JMenuItem mntmSummaryStats;
 
 	private Preferences prefs;
 	private BrightnessAdjuster brightnessAdjuster;
+	private StatsGUI statsGUI;
 
 
 	/**
@@ -213,6 +215,7 @@ public class GUI  {
 				}
 			}
 		});
+		
 		mntmPreferences = new JMenuItem("Preferences");
 		prefs = new Preferences(this);
 		mntmPreferences.addActionListener(new ActionListener() {
@@ -240,6 +243,52 @@ public class GUI  {
 		//mntmExit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
 		mnFile.add(mntmExit);
 
+		JMenu mnOptions = new JMenu("Options");
+		mnOptions.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		menuBar.add(mnOptions);
+		mntmBrightnessAdj = new JMenuItem("Adjust Brightness");
+		mntmBrightnessAdj.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				EventQueue.invokeLater(new Runnable() {
+					public void run() {
+						try {
+							brightnessAdjuster.display(quantFrame);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+			}
+		});
+		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.META_MASK));
+		mnOptions.add(mntmBrightnessAdj);
+		
+		JMenu mnProcess = new JMenu("Process");
+		mnProcess.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		menuBar.add(mnProcess);
+
+		this.mntmSummaryStats = new JMenuItem("Summary Stats");
+		mnProcess.add(this.mntmSummaryStats);
+		this.statsGUI = new StatsGUI(this);
+		this.mntmSummaryStats.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				EventQueue.invokeLater(new Runnable() {
+					public void run() {
+						try {
+							statsGUI.display(quantFrame);
+							unfocusTemporarily();
+						} catch (Exception e) {
+						}
+					}
+				});
+
+			}
+		});
+		mntmSummaryStats.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.META_MASK));
+
 		JMenu mnNavigation = new JMenu("Navigation");
 		mnNavigation.setFont(smallFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnNavigation);
@@ -265,31 +314,7 @@ public class GUI  {
 			}
 		});
 		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.META_MASK));
-
-
-		JMenu mnOptions = new JMenu("Options");
-		mnOptions.setFont(smallFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnOptions);
-		mntmBrightnessAdj = new JMenuItem("Adjust Brightness");
-		mntmBrightnessAdj.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-
-				EventQueue.invokeLater(new Runnable() {
-					public void run() {
-						try {
-							brightnessAdjuster.display(quantFrame);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				});
-
-			}
-		});
-		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.META_MASK));
-		mnOptions.add(mntmBrightnessAdj);
-
-		//Credits
+		
 		final Properties properties = new Properties();
 		try {
 			properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
@@ -439,10 +464,14 @@ public class GUI  {
 
 	}
 
-	public void setPreferencesOptionEnabled(boolean enabled) {
+	public void setMenuItemsEnabledDuringRun(boolean enabled) {
 		this.mntmPreferences.setEnabled(enabled);
+		
 		this.prefs.removeDisplay();
+		this.statsGUI.removeDisplay();
+		this.statsGUI.resetFields();
 		this.prefs.resetPreferences();
 	}
+	
 
 }

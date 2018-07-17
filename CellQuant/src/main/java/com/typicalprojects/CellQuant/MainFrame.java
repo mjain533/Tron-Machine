@@ -17,8 +17,6 @@ import javax.swing.SwingConstants;
 
 import java.awt.Font;
 import javax.swing.JButton;
-
-
 import javax.swing.border.BevelBorder;
 
 import java.awt.event.ActionListener;
@@ -34,6 +32,7 @@ public class MainFrame extends JFrame {
 	private JPanel contentPane;
 
 	private static MainFrame SINGLETON = null;;
+	//private static WaitingFrame waitingFrame = new WaitingFrame();
 	private GUI guiWindow;
 
 	/**
@@ -82,14 +81,15 @@ public class MainFrame extends JFrame {
 		btnQuantifyMigration.setOpaque(true);
 		btnQuantifyMigration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				setVisible(false);
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-
+							//waitingFrame.show(SINGLETON);
+							setVisible(false);
 							if (guiWindow == null) {
 								guiWindow = new GUI(SINGLETON);
 							}
+							//waitingFrame.disappear();
 
 							guiWindow.show();
 
@@ -137,6 +137,7 @@ public class MainFrame extends JFrame {
 						.addGap(37))
 				);
 		panel.setLayout(gl_panel);
+
 
 
 	}

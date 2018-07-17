@@ -705,6 +705,10 @@ public class Preferences extends JFrame {
 
 	}
 	
+	public boolean isDisplaying() {
+		return this.isVisible();
+	}
+	
 	public static void writeSettingsFromGUI() throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(new File(GUI.folderName + File.separator + GUI.settingsFile)));
 		

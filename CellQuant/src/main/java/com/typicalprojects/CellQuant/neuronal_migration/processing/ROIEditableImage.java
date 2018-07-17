@@ -331,17 +331,16 @@ public class ROIEditableImage {
 			progress.setProgress("Success. ", -1, -1);
 
 			int col = newTable.getColumnIndex("Grayscale Value");
+			ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui.getProgressReporter(), null);
+			pi.open(GUI.channelMap, GUI.outputLocation, GUI.dateString, false);
 			ZProjector projector = new ZProjector();
 			projector.setImage(
-					this.ic.
-					getImageChannel(chan, false));
+					pi.getIC().getImageChannel(chan, false));
 			projector.setMethod(ZProjector.MAX_METHOD);
 			projector.doProjection();
 			progress.setProgress("Recording grayscale values...", -1, -1);
 			ImageProcessor ip = projector.getProjection().getProcessor();
-
 			for (int i = 0; i < xObjValues.length; i++) {
-
 				newTable.setValue(col, i, ip.getPixelValue((int) xObjValues[i], (int) yObjValues[i]) );
 
 			}

@@ -230,7 +230,7 @@ public class ImageContainer {
 			for (Entry<Channel, ResultsTable> en : results.entrySet()) {
 				if (en.getValue() == null)
 					continue;
-				aw.addSheetFromResultTable(en.getKey().name(), en.getValue());
+				aw.addSheetFromNeuronCounterResultTable(en.getKey().name(), en.getValue());
 			}
 
 			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));

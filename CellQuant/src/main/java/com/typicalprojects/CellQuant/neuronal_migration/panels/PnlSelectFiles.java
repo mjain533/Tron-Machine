@@ -28,6 +28,7 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Preferences;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
+import com.typicalprojects.CellQuant.util.FileContainer;
 import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
 
@@ -368,18 +369,7 @@ public class PnlSelectFiles {
 		}
 	}
 
-	private class FileContainer {
-
-		private File file;
-
-		private FileContainer(File file) {
-			this.file = file;
-		}
-
-		public String toString() {
-			return file.getName();
-		}
-
-	}
+	
 
 }
+

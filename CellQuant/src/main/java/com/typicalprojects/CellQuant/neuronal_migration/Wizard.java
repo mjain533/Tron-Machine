@@ -30,7 +30,7 @@ public class Wizard {
 			gui.getInstructionPanel().setInstruction(Instruction.SETUP);
 			break;
 		case SELECT_FILES:
-			this.gui.setPreferencesOptionEnabled(true);
+			this.gui.setMenuItemsEnabledDuringRun(true);
 			this.gui.setBrightnessAdjustOptionEnabled(false);
 			this.gui.getPanelOptions().cancelNeuronProcessing();
 			DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH-mm-ss");
@@ -42,7 +42,7 @@ public class Wizard {
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_FILE); // THIS LAST
 			break;
 		case SELECT_SLICES:
-			this.gui.setPreferencesOptionEnabled(false);
+			this.gui.setMenuItemsEnabledDuringRun(false);
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_SLICES);
 			gui.getSelectFilesPanel().setDisplayState(PnlSelectFiles.STATE_FILES_RUNNING);
 			gui.getPanelDisplay().setDisplayState(false, "Image opening...");
