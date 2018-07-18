@@ -9,12 +9,15 @@ import javax.swing.JPanel;
 import javax.swing.JRootPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.BoxLayout;
 import javax.swing.SwingConstants;
 import java.awt.Font;
 
 public class WaitingFrame extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3324734901445002689L;
 	private JPanel contentPane;
 
 	/**

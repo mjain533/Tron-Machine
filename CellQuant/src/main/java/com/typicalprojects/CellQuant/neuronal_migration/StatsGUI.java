@@ -12,8 +12,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -133,10 +133,12 @@ public class StatsGUI extends JFrame {
 
 				List<FileContainer> inputFiles = new ArrayList<FileContainer>();
 				File[] files = fd.getFiles();
+				File lastOutputLocation = null;
 				if (files != null && files.length != 0) {
 					for (int i = 0; i < files.length; i++) {
 						if (!files[i].isDirectory())
 							continue;
+						lastOutputLocation = files[i];
 						File[] analysisFile = files[i].listFiles(new FilenameFilter() {
 							public boolean accept(File directory, String fileName) {
 								return fileName.endsWith(".xlsx");
@@ -165,6 +167,16 @@ public class StatsGUI extends JFrame {
 				} else {
 					btnProcess.setEnabled(false);
 				}
+				if (lastOutputLocation != null) {
+					GUI.lastSelectFileLocation = lastOutputLocation;
+					try {
+						Preferences.writeSettingsFromGUI();
+					} catch (IOException e1) {
+						// TODO shouldn't happen
+						e1.printStackTrace();
+					}
+				}
+
 			}
 		});
 

@@ -90,6 +90,7 @@ public class PnlDisplay  {
 		sldrSlice.setBounds(0, 23, 35, 190);
 		pnlSliderSlice.add(sldrSlice);
 		sldrSlice.setFocusable(false);
+		sldrSlice.setBackground(colorEnabled);
 
 
 		lblSliceNum = new JLabel("10");
@@ -116,6 +117,7 @@ public class PnlDisplay  {
 		sldrChan.setInverted(true);
 		sldrChan.setOrientation(SwingConstants.VERTICAL);
 		sldrChan.setFocusable(false);
+		sldrChan.setBackground(colorEnabled);
 		pnlSliderChan.add(sldrChan);
 
 		lblChanNum = new JLabel("10");
@@ -212,7 +214,8 @@ public class PnlDisplay  {
 								if (oei != null) {
 									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
-
+									getImagePanel().grabFocus();
+									ke.consume();
 									if (!oei.getZoom().equals(Zoom.ZOOM_100)) {
 										Zoom zoom = oei.getPreviousZoomLevel();
 										oei.setZoom(zoom);
@@ -228,29 +231,43 @@ public class PnlDisplay  {
 							}
 							break;
 						case KeyEvent.VK_A:
+							
 							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+								ke.consume();
 								gui.getPanelOptions().triggerROIAddButton();
 							} else if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								getImagePanel().grabFocus();
+								ke.consume();
 								getImagePanel().shiftImage(1);
 							}
 							break;
 						case KeyEvent.VK_C:
 							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+								ke.consume();
+								getImagePanel().grabFocus();
+
 								gui.getPanelOptions().triggerROIClearButton();
 							}
 							break;
 						case KeyEvent.VK_W:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								ke.consume();
+								getImagePanel().grabFocus();
+
 								getImagePanel().shiftImage(2);
 							}
 							break;
 						case KeyEvent.VK_S:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								ke.consume();
+								getImagePanel().grabFocus();
 								getImagePanel().shiftImage(4);
 							}
 							break;
 						case KeyEvent.VK_D:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
+								ke.consume();
+								getImagePanel().grabFocus();
 								getImagePanel().shiftImage(3);
 							}
 							break;

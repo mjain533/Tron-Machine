@@ -48,10 +48,10 @@ public class TextInputPopup extends JFrame {
 		contentPane.add(panel, BorderLayout.CENTER);
 		
 		JLabel lblPrompt = new JLabel(prompt);
-		lblPrompt.setFont(new Font("PingFang TC", Font.PLAIN, 14));
+		lblPrompt.setFont(new Font("PingFang TC", Font.BOLD, 14));
 		
 		txtInput = new JTextField();
-		txtInput.setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		txtInput.setFont(new Font("PingFang TC", Font.BOLD, 13));
 		txtInput.setColumns(10);
 		
 		btnDone = new JButton("Done");
@@ -99,7 +99,7 @@ public class TextInputPopup extends JFrame {
 	}
 	
 	public static void setUIFont (java.awt.Font f){
-		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
+		java.util.Enumeration<Object> keys = UIManager.getLookAndFeelDefaults().keys();
 		while (keys.hasMoreElements()) {
 			Object key = keys.nextElement();
 			Object value = UIManager.get (key);

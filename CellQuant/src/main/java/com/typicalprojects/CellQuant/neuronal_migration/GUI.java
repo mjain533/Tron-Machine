@@ -10,6 +10,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 
@@ -114,6 +115,7 @@ public class GUI  {
 	 */
 	public GUI(MainFrame parent) throws IOException {
 		
+
 		this.parentFrame = parent;
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();
@@ -180,8 +182,8 @@ public class GUI  {
 		quantFrame = new JFrame();
 		quantFrame.setTitle("The TRON Machine - Neuronal Migration");
 		quantFrame.setFocusable(false);
-		quantFrame.setMinimumSize(new Dimension(750, 700));
-		quantFrame.setPreferredSize(new Dimension(750, 700));
+		quantFrame.setMinimumSize(new Dimension(750, 750));
+		quantFrame.setPreferredSize(new Dimension(750, 720));
 		quantFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		quantFrame.setLocationRelativeTo(null);
 		quantFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -324,7 +326,7 @@ public class GUI  {
 		}
 		System.out.println(properties.getProperty("version"));
 		System.out.println(properties.getProperty("artifactId"));
-		JLabel lblAttributes = new JLabel("Developed by Justin Carrington for the Dent Lab. Version "+ properties.getProperty("version")+".");
+		JLabel lblAttributes = new JLabel("Developed by Justin Carrington, Russ Taylor, Kendra Taylor, and Erik Dent. Copyright 2018. Version "+ properties.getProperty("version")+".");
 		lblAttributes.setFont(new Font("PingFang TC", Font.BOLD, 13));
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
 		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
@@ -378,7 +380,7 @@ public class GUI  {
 								.addGroup(gl_pnlCONTENT.createSequentialGroup()
 										.addComponent(pnlInstructions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/300, GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(pnlLog.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addPreferredGap(ComponentPlacement.RELATED)
@@ -395,7 +397,7 @@ public class GUI  {
 	}
 
 	public static void setUIFont (java.awt.Font f){
-		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
+		java.util.Enumeration<Object> keys = UIManager.getLookAndFeelDefaults().keys();
 		while (keys.hasMoreElements()) {
 			Object key = keys.nextElement();
 			Object value = UIManager.get (key);

@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -113,6 +114,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private JLabel objLblCurrDisp;
 	private JLabel objLblInstructions;
 	private JLabel objLblRemove;
+	private OBJSelectMeta objSelectMeta;
 	private JScrollPane distSP;
 	private SimpleJList<String> distListROI;
 	private JLabel distLblInstruction;
@@ -130,7 +132,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		String message = "<html><h3><em>Removing Objects</em></h3>"
 				+ "Type object numbers in the text field after 'Rmv:' and click Remove to delete objects. You may enter a single number, a range of numbers (i.e. 1-5), or a combination of both separated by commas and no spaces (i.e. 1-5,7,9,11-15). "
-				+ "Points can also be removed by right clicking them on the image itself. You may remove large chunks of objects in a region by clicking 'Pick...' and then drawing a polygon by clicking points on the image. Points within the polygon will be removed. "
+				+ "Points can also be removed by right clicking them on the image itself. You may remove large chunks of objects in a region by clicking 'Pick Mult.' and then drawing a polygon by clicking points on the image. Points within the polygon will be removed. "
 				+ "The polygon's start and end points don't need to line up exactly. A line will be drawn between your start and end points to finish the shape, but make sure the start and end points are close. Points in this region will be removed from all processed channels."
 				+ "<br>"
 				+ "<h3><em>Adding Objects</em></h3>"
@@ -141,7 +143,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				+ "You can navigate while zoomed using A (left), W (up), S (down), D (right), and zoom out using the space bar."
 				+ "</html>";
 
-		this.objHelpPopup = new HelpPopup(520, 600, message);
+		this.objHelpPopup = new HelpPopup(540, 600, message);
 
 		String message2 = "<html>Click on the image to start adding points to the ROI. Then, click 'Add' in the "
 				+ "panel below the image to add the region. You can delete this region via the 'Delete' button.<br><br>"
@@ -187,7 +189,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		distBtnDeleteROI = new JButton("Delete");
 		distBtnDeleteROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
-		distBtnCancelROI.setFocusable(false);
+		distBtnDeleteROI.setFocusable(false);
+		distBtnDeleteROI.setMargin(new Insets(0, -30, 0, -30));
+
 
 		distSP = new JScrollPane();
 		distSP.setFocusable(false);
@@ -217,8 +221,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		objTxtCurrDisp = new JTextField();
 		objTxtCurrDisp.setColumns(10);
-		objTxtCurrDisp.setEditable(false);
+		objTxtCurrDisp.setFocusable(false);
 
+		this.objSelectMeta = new OBJSelectMeta();
 
 		objLblInstructions = new JLabel("Click image to add points. Remove below.");
 
@@ -232,15 +237,22 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		objBtnHelp.setBorderPainted(false);
 		objBtnHelp.setOpaque(false);
 		objBtnHelp.setBackground(Color.WHITE);
+		objBtnHelp.setFocusable(false);
 
 		objTxtRemove = new JTextField();
 		objTxtRemove.setColumns(10);
+		objTxtRemove.setFocusable(true);
+		objTxtRemove.setEnabled(true);
+		objTxtRemove.setEditable(true);
 
 		objBtnRemove = new JButton("Remove");
 
 		objBtnNext = new JButton("Next");
-		objBtnPick = new JButton("Pick...");
+		objBtnNext.setMargin(new Insets(0,5,0,5));
+		objBtnPick = new JButton("Pick Mult");
+		objBtnPick.setMargin(new Insets(0,0,0,0));
 		objBtnRemove.setFocusable(false);
+		objBtnRemove.setMargin(new Insets(0,0,0,0));
 		objBtnPick.setFocusable(false);
 		objBtnNext.setFocusable(false);
 
@@ -326,9 +338,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				
 				if (objBtnRemove.getText().equals("Cancel")) {
 					objBtnNext.setEnabled(true);
-					objBtnPick.setText("Pick...");
+					objBtnPick.setText("Pick Mult.");
 					objBtnRemove.setText("Remove");
-					objTxtRemove.setEditable(true);
+					objTxtRemove.setEnabled(true);
 					if (imageCurrentlyObjEditing != null) {
 						imageCurrentlyObjEditing.cancelDeletionZone(gui.getPanelDisplay().getSliderSelectedChannel());
 					}
@@ -379,20 +391,20 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.objBtnPick.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				if (objBtnPick.getText().equals("Pick...")) {
+				if (objBtnPick.getText().equals("Pick Mult.")) {
 					if (imageCurrentlyObjEditing != null) {
 						objBtnNext.setEnabled(false);
 						objBtnRemove.setText("Cancel");
 						objBtnPick.setText("Done");
-						objTxtRemove.setEditable(false);
+						objTxtRemove.setEnabled(false);
 						imageCurrentlyObjEditing.setCreatingDeletionZone(true);
 					}
 
 				} else {
 					objBtnNext.setEnabled(true);
-					objBtnPick.setText("Pick...");
+					objBtnPick.setText("Pick Mult.");
 					objBtnRemove.setText("Remove");
-					objTxtRemove.setEditable(true);
+					objTxtRemove.setEnabled(true);
 					boolean occurred = imageCurrentlyObjEditing.deleteObjectsWithinDeletionZone(gui.getPanelDisplay().getSliderSelectedChannel());
 					if (!occurred) {
 						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html><body><p style='width: 200px;'>No objects were removed because you didn't select at least 3 points for the bounding region.</p></body></html", "Error Removing Points", JOptionPane.ERROR_MESSAGE);
@@ -411,7 +423,19 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					public void run(){
 						try {
 							objBtnNext.setEnabled(false);
+							objTxtRemove.setEnabled(false);
 
+
+							Channel chan = objSelectMeta.getChannelNotLookedAt();
+							if (chan != null) {
+								if (JOptionPane.showConfirmDialog(gui.getPanelDisplay().getImagePanel(), "<html>You have not yet looked at the "+ chan.name() + " channel yet.<br><br>Are you sure you want to continue?</html>", "Confirm Skip Channel", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+									objBtnNext.setEnabled(true);
+									objTxtRemove.setEnabled(true);
+									return;
+
+								}
+							}
+							
 							if (currThread != null && !displayNextObjImage()) {
 
 								gui.getWizard().nextState();
@@ -419,6 +443,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 							}
 
 							objBtnNext.setEnabled(true);
+							objTxtRemove.setEnabled(true);
 						} catch (Exception ex) {
 							objBtnNext.setEnabled(true);
 						}
@@ -622,7 +647,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.objTxtRemove.setText("");
 		this.objBtnNext.setEnabled(true);
 		this.objBtnRemove.setEnabled(true);
-
+		this.objSelectMeta.setChannelsToLookAt(GUI.channelsToProcess);
+		this.objSelectMeta.lookedAt(this.gui.getPanelDisplay().getSliderSelectedChannel());
 		setDisplayState(STATE_OBJ, null);
 		this.gui.getPanelDisplay().setDisplayState(true, null);
 		return true;
@@ -758,7 +784,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			else
 				this.lblDisabled.setText("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
 			setLayout(false, -1);
-			this.objBtnPick.setText("Pick...");
+			this.objBtnPick.setText("Pick Mult.");
 			this.objBtnRemove.setText("Remove");
 			this.infoLblERR.setVisible(false);
 			this.infoTxtDisplaying.setText("");
@@ -851,13 +877,13 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(objBtnHelp, GroupLayout.PREFERRED_SIZE, 17, GroupLayout.PREFERRED_SIZE))
 										.addGroup(gl_objPnl.createSequentialGroup()
-												.addComponent(objLblRemove, GroupLayout.PREFERRED_SIZE, 34, GroupLayout.PREFERRED_SIZE)
+												.addComponent(objLblRemove, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(objTxtRemove, GroupLayout.PREFERRED_SIZE, 120, GroupLayout.PREFERRED_SIZE)
+												.addComponent(objTxtRemove, GroupLayout.PREFERRED_SIZE, 110, GroupLayout.PREFERRED_SIZE)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(objBtnRemove, GroupLayout.PREFERRED_SIZE, 75, GroupLayout.PREFERRED_SIZE)
+												.addComponent(objBtnRemove, GroupLayout.PREFERRED_SIZE, /*75*/60, GroupLayout.PREFERRED_SIZE)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(objBtnPick, GroupLayout.PREFERRED_SIZE, 65, GroupLayout.PREFERRED_SIZE))
+												.addComponent(objBtnPick, GroupLayout.PREFERRED_SIZE, /*65*/84, GroupLayout.PREFERRED_SIZE))
 										.addComponent(objBtnNext, Alignment.TRAILING))
 								.addContainerGap())
 						);
@@ -1042,4 +1068,28 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnCancelROI.doClick();
 	}
 
+}
+class OBJSelectMeta {
+	
+	private Set<Channel> channelsToLookAt = new HashSet<Channel>();
+	
+	public OBJSelectMeta() {
+	}
+	
+	public void setChannelsToLookAt(Collection<Channel> channelsToExplore) {
+		this.channelsToLookAt.clear();
+		this.channelsToLookAt.addAll(channelsToExplore);
+	}
+	
+	public void lookedAt(Channel chan) {
+		this.channelsToLookAt.remove(chan);
+	}
+	
+	public Channel getChannelNotLookedAt() {
+		if (this.channelsToLookAt.isEmpty())
+			return null;
+		
+		return this.channelsToLookAt.iterator().next();
+	}
+	
 }

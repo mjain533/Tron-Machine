@@ -74,10 +74,18 @@ public class Wizard {
 	}
 	
 	public synchronized void cancel() {
-		gui.getInstructionPanel().setInstruction(Instruction.CANCELING);
-		this.gui.getPanelOptions().cancelNeuronProcessing();
-		setStatus(Status.SELECT_FILES);
-		gui.log("Run canceled.");
+		if (!this.status.equals(Status.SELECT_FILES)) {
+			gui.getInstructionPanel().setInstruction(Instruction.CANCELING);
+			this.gui.getPanelOptions().cancelNeuronProcessing();
+			this.gui.getSelectFilesPanel().cancelOpening();
+			setStatus(Status.SELECT_FILES);
+			gui.log("Run canceled.");
+		} else {
+			this.gui.getPanelOptions().cancelNeuronProcessing();
+			this.gui.getSelectFilesPanel().cancelOpening();
+			setStatus(Status.SELECT_FILES);
+		}
+
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -111,7 +119,7 @@ public class Wizard {
 		
 	}
 	
-	public synchronized Status getStatus() {
+	public Status getStatus() {
 		return this.status;
 	}
 	

@@ -28,6 +28,7 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.Preferences;
 import com.typicalprojects.CellQuant.popup.HelpPopup;
+import com.typicalprojects.CellQuant.util.DeepDirectoryWalker;
 import com.typicalprojects.CellQuant.util.FileContainer;
 import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SimpleJList;
@@ -46,10 +47,11 @@ public class PnlSelectFiles {
 	private JButton btnRemoveSelectedFile;
 	private JButton btnGo;
 	private JButton btnCancelRun;
-	private JCheckBox chkAllOutputSingleFolder;
+	private JCheckBox chkSelectFolders;
 	private JButton btnSelectFilesHelp;
 	private SimpleJList<FileContainer> listSelectedFiles;
 	private HelpPopup helpPopup;
+	private Thread processor;
 	private volatile GUI gui;
 
 
@@ -67,7 +69,7 @@ public class PnlSelectFiles {
 				+ "processing, then one single output folder will be created within that directory, simply named "
 				+ "Neuron Counter Output [DATE].</html>";
 
-		this.helpPopup = new HelpPopup(300, 500, message);
+		this.helpPopup = new HelpPopup(320, 500, message);
 
 		JLabel lblSelectFileInstruction = new JLabel("<html>Please select an input image or folder of images (must have extension .czi):</html>");
 
@@ -83,7 +85,8 @@ public class PnlSelectFiles {
 		btnRemoveSelectedFile.setFocusable(false);
 
 		JSeparator separatorSelectFiles = new JSeparator();
-		separatorSelectFiles.setBackground(Color.GRAY);
+		separatorSelectFiles.setForeground(Color.BLACK);
+		separatorSelectFiles.setBackground(Color.BLACK);
 
 		btnGo = new JButton("Go");
 		btnGo.setFocusable(true);
@@ -91,10 +94,10 @@ public class PnlSelectFiles {
 		btnCancelRun = new JButton("Cancel Run");
 		btnCancelRun.setFocusable(false);
 
-		chkAllOutputSingleFolder = new JCheckBox("Condense output");
-		chkAllOutputSingleFolder.setSelected(false);
-		chkAllOutputSingleFolder.setFocusable(false);
-		chkAllOutputSingleFolder.setEnabled(false);
+		chkSelectFolders = new JCheckBox("Select Folders");
+		chkSelectFolders.setSelected(false);
+		chkSelectFolders.setFocusable(false);
+		chkSelectFolders.setEnabled(true);
 
 		btnSelectFilesHelp = new JButton("");
 		btnSelectFilesHelp.setFocusable(false);
@@ -125,7 +128,7 @@ public class PnlSelectFiles {
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(btnRemoveSelectedFile))
 								.addGroup(gl_lblSelectFiles.createSequentialGroup()
-										.addComponent(chkAllOutputSingleFolder)
+										.addComponent(chkSelectFolders)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(btnSelectFilesHelp)))
 						.addContainerGap())
@@ -142,11 +145,11 @@ public class PnlSelectFiles {
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(lblSelectedFiles)
 										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 61, GroupLayout.PREFERRED_SIZE))
+										.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, /*61*/80, GroupLayout.PREFERRED_SIZE))
 								.addComponent(btnRemoveSelectedFile))
 						.addPreferredGap(ComponentPlacement.RELATED)
 						.addGroup(gl_lblSelectFiles.createParallelGroup(Alignment.BASELINE)
-								.addComponent(chkAllOutputSingleFolder)
+								.addComponent(chkSelectFolders)
 								.addComponent(btnSelectFilesHelp))
 						.addPreferredGap(ComponentPlacement.RELATED)
 						.addComponent(separatorSelectFiles, GroupLayout.PREFERRED_SIZE, 14, GroupLayout.PREFERRED_SIZE)
@@ -165,101 +168,89 @@ public class PnlSelectFiles {
 		this.btnSelectFiles.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
+				if (chkSelectFolders.isSelected()) {
+					System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
+				}
 
 				FileDialog fd = new FileDialog(gui.getComponent());
 				if (GUI.lastSelectFileLocation != null) {
 					fd.setDirectory(GUI.lastSelectFileLocation.getPath());
 				}
 				fd.setMode(FileDialog.LOAD);
-				fd.setMultipleMode(false);
+				fd.setMultipleMode(true);
 				fd.setVisible(true);
 				
-				File[] file = fd.getFiles();
-				if (file != null && file.length != 0) {
-					if (file[0].isDirectory() || file[0].getName().toLowerCase().endsWith(".czi")) {
+				File[] files = fd.getFiles();
+				File lastSelectLocation = null;
+				if (files != null && files.length != 0) {
+					
+					List<FileContainer> cziFiles = new ArrayList<FileContainer>();
+					for (File file : files) {
 						
-						if (file[0].isDirectory()) {
-							GUI.lastSelectFileLocation = file[0];
+						if (file.isDirectory()) {
+							if (lastSelectLocation == null)
+								lastSelectLocation = file;
+							
+							DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
+							
 							try {
-								Preferences.writeSettingsFromGUI();
+								cziFiles.addAll(ddw.getFilteredFiles(file));
 							} catch (IOException e1) {
-								// TODO shouldn't happen
-								e1.printStackTrace();
-							}
-							if (file[0].list().length > 500) {
-								JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file[0].getName() + "</em> has too many files in it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 								return;
 							}
-
-							List<String> existingNames = new ArrayList<String>();
-							Enumeration<FileContainer> en = listSelectedFiles.getElements();
-							while (en.hasMoreElements()) {
-								existingNames.add(en.nextElement().file.getName());
-							}
-
-							File[] subFiles = file[0].listFiles();
-							List<File> filesToCheck = new ArrayList<File>();
-							for (File subFile : subFiles) {
-								if (subFile.isDirectory() || !subFile.exists()) continue;
-								if (!subFile.getName().toLowerCase().endsWith(".czi")) continue;	
-								filesToCheck.add(subFile);
-							}
-							if (filesToCheck.isEmpty()) {
-								JOptionPane.showMessageDialog(null, "<html>The directory <em>" + file[0].getName() + "</em> doesn't contain any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-								return;
-							}
-							String alreadyExists = null;
-							for (File subFile : filesToCheck) {
-								if (existingNames.contains(subFile.getName())) {
-									alreadyExists = subFile.getName();
-									break;
-								}
-							}
-
-							if (alreadyExists != null) {
-								JOptionPane.showMessageDialog(null, "<html>The file <em>" + alreadyExists + "</em> in this directory has already been added.<br><br>. Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-								return;
-							}
-
-							for (File fileToAdd : filesToCheck) {
-								listSelectedFiles.addItem(new FileContainer(fileToAdd));
-							}
-							if (listSelectedFiles.getSelected()== null) {
-								listSelectedFiles.setSelection(0);
-							}
-							if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
-								setDisplayState(STATE_FILE_ADDED);
-							}
+							
+							
 						} else {
-							GUI.lastSelectFileLocation = file[0].getParentFile();
-							try {
-								Preferences.writeSettingsFromGUI();
-							} catch (IOException e1) {
-								// TODO shouldn't happen
-								e1.printStackTrace();
+							if (lastSelectLocation == null) {
+								lastSelectLocation = file.getParentFile();
 							}
-							String name = file[0].getName();
-							Enumeration<FileContainer> en = listSelectedFiles.getElements();
-							while (en.hasMoreElements()) {
-								FileContainer fileContainer = en.nextElement();
-								if (fileContainer.file.getName().equals(name)) {
-									JOptionPane.showMessageDialog(null, "<html>The file <em>" + file[0].getName() + "</em> has already been added.<br><br>All files must have unique names.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-									return;
-								}
+							if (!file.getName().endsWith(".czi")){
+								JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> is not a .czi file.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+								return;
 							}
-							listSelectedFiles.addItem(new FileContainer(file[0]));
-							if (listSelectedFiles.getSelected()== null) {
-								listSelectedFiles.setSelection(0);
-							} 
-							if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
-								setDisplayState(STATE_FILE_ADDED);
-							}
-
+							cziFiles.add(new FileContainer(file));
 						}
-
-					} else {
-						JOptionPane.showMessageDialog(null, "<html>You must select a file with extension '.czi' or a folder.<br><br><em>" + file[0].getName() + "</em> is not valid.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 					}
+					
+					if (lastSelectLocation != null) {
+						GUI.lastSelectFileLocation = lastSelectLocation;
+						try {
+							Preferences.writeSettingsFromGUI();
+						} catch (IOException e1) {
+							// TODO shouldn't happen
+							e1.printStackTrace();
+						}
+					}
+					if (cziFiles.isEmpty()) {
+						JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+						return;
+					}
+					Enumeration<FileContainer> en = listSelectedFiles.getElements();
+					while (en.hasMoreElements()) {
+						FileContainer fc = en.nextElement();
+						if (cziFiles.contains(fc)) {
+							JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>. Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+							System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+							return;
+						}
+					}
+					
+					for (FileContainer fileToAdd : cziFiles) {
+						listSelectedFiles.addItem(fileToAdd);
+					}
+					if (listSelectedFiles.getSelected()== null) {
+						listSelectedFiles.setSelection(0);
+					}
+					if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
+						setDisplayState(STATE_FILE_ADDED);
+					}
+					
+					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+
 				}
 			}
 
@@ -298,22 +289,26 @@ public class PnlSelectFiles {
 					return;
 				}
 				
-				new Thread(new Runnable() {
+				processor = new Thread(new Runnable() {
 					public void run(){
 						
 
 						List<ImagePhantom> futureImages = new LinkedList<ImagePhantom>();
 						Enumeration<FileContainer> files = listSelectedFiles.getElements();
-						while (files.hasMoreElements()) {
+						while (files.hasMoreElements()  && processor != null) {
 							FileContainer container = files.nextElement();
 
 							int indexOf = container.file.getName().lastIndexOf('.');
 							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getProgressReporter(), null));
 						}
-						gui.getWizard().nextState(futureImages);
-
+						if (processor != null) {
+							gui.getWizard().nextState(futureImages);
+						}
+						processor = null;
 					}
-				}).start();
+				});
+				processor.setDaemon(true);
+				processor.start();
 
 
 			}
@@ -321,7 +316,9 @@ public class PnlSelectFiles {
 
 		this.btnCancelRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				System.out.println("Cancel");
 				cancel();
+				System.out.println("Cancel2");
 			}
 		});
 
@@ -345,8 +342,8 @@ public class PnlSelectFiles {
 			this.btnGo.setEnabled(false);
 			this.btnRemoveSelectedFile.setEnabled(false);
 			this.btnSelectFiles.setEnabled(true);
-			//this.chkAllOutputSingleFolder.setEnabled(true); //TODO : Fix, and fix the help
 			this.listSelectedFiles.clear();
+			this.chkSelectFolders.setEnabled(true);
 			this.listSelectedFiles.getGUIComponent().setEnabled(true);
 			break;
 		case STATE_FILE_ADDED:
@@ -354,7 +351,7 @@ public class PnlSelectFiles {
 			this.btnGo.setEnabled(true);
 			this.btnRemoveSelectedFile.setEnabled(true);
 			this.btnSelectFiles.setEnabled(true);
-			//this.chkAllOutputSingleFolder.setEnabled(true);
+			this.chkSelectFolders.setEnabled(true);
 			this.listSelectedFiles.getGUIComponent().setEnabled(true);
 			break;
 		case STATE_FILES_RUNNING:
@@ -362,14 +359,16 @@ public class PnlSelectFiles {
 			this.btnGo.setEnabled(false);
 			this.btnRemoveSelectedFile.setEnabled(false);
 			this.btnSelectFiles.setEnabled(false);		
-			//this.chkAllOutputSingleFolder.setEnabled(false);
+			this.chkSelectFolders.setEnabled(false);
 			this.listSelectedFiles.getGUIComponent().setEnabled(false);
 			this.listSelectedFiles.getGUIComponent().clearSelection();
 			break;
 		}
 	}
-
 	
+	public void cancelOpening() {
+		this.processor = null;
+	}
 
 }
 

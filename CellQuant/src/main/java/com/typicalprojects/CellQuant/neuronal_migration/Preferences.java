@@ -116,6 +116,9 @@ public class Preferences extends JFrame {
 						resetPreferences();
 						removeDisplay();
 						JOptionPane.showMessageDialog(null, "<html>Your changes were not applied because there was an error:<br><br>"+errors+"</html>", "Error", JOptionPane.ERROR_MESSAGE);
+					} else {
+						removeDisplay();
+
 					}
 					
 				} else {
@@ -128,7 +131,7 @@ public class Preferences extends JFrame {
 
 
 		setTitle("Preferences");
-		setBounds(100, 100, 600, 380);
+		setBounds(100, 100, 610, 400);
 		setResizable(false);
 		contentPane = new JPanel();
 		contentPane.setVisible(true);
@@ -156,7 +159,7 @@ public class Preferences extends JFrame {
 		separator.setOpaque(true);
 		separator.setBounds(new Rectangle(0, 0, 1, 12));
 		separator.setSize(new Dimension(1, 12));
-		separator.setMinimumSize(new Dimension(1, 12));
+		separator.setMinimumSize(new Dimension(600, 1));
 		separator.setPreferredSize(new Dimension(1, 12));
 
 		separator.setForeground(Color.BLACK);
@@ -194,18 +197,21 @@ public class Preferences extends JFrame {
 		}
 		values.add("None");
 		comBoxCh0 = new JComboBox<String>();
+		comBoxCh0.setFocusable(false);
 		comBoxCh0.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
 
 		JLabel lblChan1 = new JLabel("Chan 1:");
 		lblChan1.setFont(GUI.smallPlainFont);
 
 		comBoxCh1 = new JComboBox<String>();
+		comBoxCh1.setFocusable(false);
 		comBoxCh1.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
 
 		JLabel lblChan2 = new JLabel("Chan 2:");
 		lblChan2.setFont(GUI.smallPlainFont);
 
 		comBoxCh2 = new JComboBox<String>();
+		comBoxCh2.setFocusable(false);
 		comBoxCh2.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
 
 
@@ -213,27 +219,32 @@ public class Preferences extends JFrame {
 		lblChan3.setFont(GUI.smallPlainFont);
 
 		comBoxCh3 = new JComboBox<String>();
+		comBoxCh3.setFocusable(false);
 		comBoxCh3.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
 
 		JLabel lblChannelProcess = new JLabel("Channels to Process:");
 		lblChannelProcess.setFont(GUI.smallPlainFont);
 
 		chkG = new JCheckBox("G");
+		chkG.setFocusable(false);
 		if (GUI.channelsToProcess.contains(Channel.GREEN)) {
 			chkG.setSelected(true);
 		}
 
 		chkW = new JCheckBox("W");
+		chkW.setFocusable(false);
 		if (GUI.channelsToProcess.contains(Channel.WHITE)) {
 			chkW.setSelected(true);
 		}
 
 		chkR = new JCheckBox("R");
+		chkR.setFocusable(false);
 		if (GUI.channelsToProcess.contains(Channel.RED)) {
 			chkR.setSelected(true);
 		}
 
 		chkB = new JCheckBox("B");
+		chkB.setFocusable(false);
 		if (GUI.channelsToProcess.contains(Channel.BLUE)) {
 			chkB.setSelected(true);
 		}
@@ -242,6 +253,7 @@ public class Preferences extends JFrame {
 		lblChannelSelectROI.setFont(GUI.smallPlainFont);
 
 		comBoxChSelectingROI = new JComboBox<Channel>();
+		comBoxChSelectingROI.setFocusable(false);
 		comBoxChSelectingROI.setModel(new DefaultComboBoxModel<Channel>(Channel.values()));
 		comBoxChSelectingROI.setSelectedItem(GUI.channelForROIDraw);
 		GroupLayout gl_pnlChannelConfig = new GroupLayout(pnlChannelConfig);
@@ -341,6 +353,7 @@ public class Preferences extends JFrame {
 		txtSavePath.setColumns(10);
 		
 		JButton btnBrowseSavePath = new JButton("Browse...");
+		btnBrowseSavePath.setFocusable(false);
 		btnBrowseSavePath.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
@@ -439,6 +452,7 @@ public class Preferences extends JFrame {
 		btnApplyClose.setHorizontalAlignment(SwingConstants.RIGHT);
 
 		JButton btnNewButton_1 = new JButton("Cancel");
+		btnNewButton_1.setFocusable(false);
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -450,12 +464,12 @@ public class Preferences extends JFrame {
 		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
 		gl_panel_1.setHorizontalGroup(
 			gl_panel_1.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_panel_1.createSequentialGroup()
-					.addGap(171)
+				.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
+					.addContainerGap(346, Short.MAX_VALUE)
 					.addComponent(btnNewButton_1)
 					.addPreferredGap(ComponentPlacement.RELATED)
 					.addComponent(btnApplyClose)
-					.addContainerGap(171, Short.MAX_VALUE))
+					.addContainerGap())
 		);
 		gl_panel_1.setVerticalGroup(
 			gl_panel_1.createParallelGroup(Alignment.LEADING)

@@ -2,7 +2,7 @@ package com.typicalprojects.CellQuant.util;
 
 public enum Zoom {
 	
-	ZOOM_100(1), ZOOM_50(2), ZOOM_25(3);
+	ZOOM_100(1), ZOOM_50(2), ZOOM_25(3), ZOOM_17(4);
 	
 	private int level;
 	
