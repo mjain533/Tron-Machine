@@ -66,7 +66,7 @@ public class PnlLog implements SynchronizedProgressReceiver {
 
 	public synchronized void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
 		
-		if (textLog.getLineCount() > 90) {
+		if (textLog.getLineCount() > 300) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
@@ -81,6 +81,7 @@ public class PnlLog implements SynchronizedProgressReceiver {
 			
 			String newText = task + progressPart + currText.substring(currText.indexOf('\n'));
 			textLog.setText(newText);
+			spLog.getVerticalScrollBar().setValue(0);
 			return;
 		}
 		if (progressSoFar <= totalProgress && progressSoFar != -1 && totalProgress != -1) {
