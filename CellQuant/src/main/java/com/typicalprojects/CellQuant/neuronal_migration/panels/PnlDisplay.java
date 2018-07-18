@@ -241,14 +241,6 @@ public class PnlDisplay  {
 								getImagePanel().shiftImage(1);
 							}
 							break;
-						case KeyEvent.VK_C:
-							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
-								ke.consume();
-								getImagePanel().grabFocus();
-
-								gui.getPanelOptions().triggerROIClearButton();
-							}
-							break;
 						case KeyEvent.VK_W:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
 								ke.consume();

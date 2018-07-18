@@ -180,7 +180,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		distBtnAddROI.setFocusable(false);
 		distBtnAddROI.setMargin(new Insets(0, -30, 0, -30));
 
-		distBtnCancelROI = new JButton("<html><p style='text-align: center;'><a style='text-decoration:underline'>C</a>lear</p></html>");
+		distBtnCancelROI = new JButton("Clear");
 		distBtnCancelROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
 		distBtnCancelROI.setFocusable(false);
 		distBtnAddROI.setMnemonic(KeyEvent.VK_C);
