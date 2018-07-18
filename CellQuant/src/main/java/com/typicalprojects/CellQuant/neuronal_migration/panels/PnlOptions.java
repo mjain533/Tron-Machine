@@ -992,6 +992,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		} else if (currentState == STATE_OBJ) {
 			if(imageCurrentlyObjEditing != null)
 			{
+				this.objSelectMeta.lookedAt(chan);
 				imageCurrentlyObjEditing.setZoom(Zoom.ZOOM_100);
 				this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 			}
