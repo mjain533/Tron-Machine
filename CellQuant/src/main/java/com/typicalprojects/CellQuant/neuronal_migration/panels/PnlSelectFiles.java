@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
@@ -252,10 +253,12 @@ public class PnlSelectFiles {
 
 				} else {
 					JFileChooser fChoos = new JFileChooser();
-
+					boolean mult = true;
+					fChoos.setMultiSelectionEnabled(true);
 					if (chkSelectFolders.isSelected()) {
 						fChoos.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 					} else {
+						mult = false;
 						fChoos.setFileSelectionMode(JFileChooser.FILES_ONLY);
 					}
 					
