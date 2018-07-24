@@ -256,6 +256,7 @@ public class PnlSelectFiles {
 					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 
 				} else {
+					JOptionPane.showMessageDialog(null, "test");
 					JFileChooser fChoos = new JFileChooser();
 
 					if (chkSelectFolders.isSelected()) {
