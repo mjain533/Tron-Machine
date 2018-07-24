@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
@@ -253,33 +252,26 @@ public class PnlSelectFiles {
 
 				} else {
 					JFileChooser fChoos = new JFileChooser();
-					boolean mult = true;
 					fChoos.setMultiSelectionEnabled(true);
 					if (chkSelectFolders.isSelected()) {
 						fChoos.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 					} else {
-						mult = false;
 						fChoos.setFileSelectionMode(JFileChooser.FILES_ONLY);
 					}
 					
 					fChoos.showOpenDialog(null);
 					File[] files = fChoos.getSelectedFiles();
-					JOptionPane.showMessageDialog(null, "0");
 					File lastSelectLocation = null;
 					if (files != null && files.length != 0) {
-						JOptionPane.showMessageDialog(null, "1");
 						List<FileContainer> cziFiles = new ArrayList<FileContainer>();
 						for (File file : files) {
-							JOptionPane.showMessageDialog(null, "2");
 							if (file.isDirectory()) {
-								JOptionPane.showMessageDialog(null, "3");
 								if (lastSelectLocation == null)
 									lastSelectLocation = file;
 								
 								DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
 								
 								try {
-									JOptionPane.showMessageDialog(null, "4");
 									cziFiles.addAll(ddw.getFilteredFiles(file));
 								} catch (IOException e1) {
 									JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
@@ -288,7 +280,6 @@ public class PnlSelectFiles {
 								
 								
 							} else {
-								JOptionPane.showMessageDialog(null, "6");
 								if (lastSelectLocation == null) {
 									lastSelectLocation = file.getParentFile();
 								}
