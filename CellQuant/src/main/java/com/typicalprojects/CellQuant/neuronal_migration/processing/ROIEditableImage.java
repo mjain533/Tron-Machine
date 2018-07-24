@@ -41,6 +41,7 @@ public class ROIEditableImage {
 	private GUI gui;
 	private List<String> roi_names = new ArrayList<String>();
 	private List<PolygonRoi> roi_polygons = new ArrayList<PolygonRoi>();
+	private Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
 
 	private List<Point> points = new ArrayList<Point>();
 
@@ -63,35 +64,62 @@ public class ROIEditableImage {
 		if (this.points.size() > 1) 
 			return true;
 		else
-			return false;
-				
+			return false;	
 		
 	}
 
 
 	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
 
-		if (this.points.isEmpty()) {
+		if (this.cache.containsKey(channelToDrawROI)) {
+			return this.cache.get(channelToDrawROI);
+		}
+		
+		
 
-			return this.ic.getImageChannel(channelToDrawROI, false).getProcessor().convertToRGB().getBufferedImage();
+		Object[] obj = convertPointsToArray();
+		ImagePlus dup = new ImagePlus("dup", this.ic.getImageChannel(channelToDrawROI, /*note: changed to false*/false).getProcessor().convertToRGB());
+		
+		BufferedImage bi = null;
+		
+		ImageProcessor ip = dup.getProcessor();
+		ip.setLineWidth(3);
+		ip.setFont(new Font("Arial", Font.BOLD, 20));
+
+		for (int i = 0; i < this.roi_names.size(); i++) {
+			String name = this.roi_names.get(i);
+			PolygonRoi roi = this.roi_polygons.get(i);
+			roi.setFillColor(Color.GREEN);
+			
+			roi.setStrokeWidth(1000 / 300.0);
+			ip.drawOverlay(new Overlay(roi));
+			int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
+			middleY= Math.min(middleY, dup.getDimensions()[1] - 4);
+			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+			ip.setColor(Color.RED);
+			ip.drawString(name, middleX, middleY, Color.BLACK);
 
 		}
 
-		Object[] obj = convertPointsToArray();
-
+		dup.updateImage();
+		
+		if (this.points.isEmpty()) {
+			bi = dup.getBufferedImage();
+			this.cache.put(channelToDrawROI, bi);
+			return bi;
+		}
+		
 		if (points.size() == 1) {
 			
-			ImagePlus dup = new ImagePlus("dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 			
 		
-			dup.getProcessor().setColor(Color.GREEN);
+			ip.setColor(Color.GREEN);
 			int size = (int) (Math.max(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
-			dup.getProcessor().fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
+			ip.fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
 			dup.updateImage();
-			return dup.getBufferedImage();
+			bi = dup.getBufferedImage();
 
 		} else {
-			ImagePlus dup = new ImagePlus("Dup", this.ic.getImageChannel(channelToDrawROI, true).getProcessor().convertToRGB());
 
 			PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
 			pgr.setStrokeColor(Color.GREEN);
@@ -104,19 +132,24 @@ public class ROIEditableImage {
 			}
 
 
-			dup.getProcessor().setColor(Color.GREEN);
-			dup.getProcessor().drawOverlay(new Overlay(pgr));
+			ip.setColor(Color.GREEN);
+			ip.drawOverlay(new Overlay(pgr));
 			dup.updateImage();
-			return dup.getBufferedImage();
+			bi = dup.getBufferedImage();
 
 
 		}
+		
+		this.cache.put(channelToDrawROI, bi);
+		return bi;
 
 
 	}
 
 	public void addPoint(Point p) {
+		this.cache.clear();
 		this.points.add(p);
+		
 	}
 
 	public boolean convertSelectionToRoi(String name) {
@@ -154,15 +187,18 @@ public class ROIEditableImage {
 		this.roi_names.add(name);
 		this.roi_polygons.add(pgr);
 		this.points.clear();
+		this.cache.clear();
 
 		return true;
 	}
 
 	public void clearPoints() {
+		this.cache.clear();
 		this.points.clear();
 	}
 
 	public void removeROI(String name) {
+		this.cache.clear();
 		int index = this.roi_names.indexOf(name);
 		this.roi_names.remove(index);
 		this.roi_polygons.remove(index);
@@ -225,7 +261,7 @@ public class ROIEditableImage {
 		}
 
 
-		return new ImageContainer(channels, images, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
+		return new ImageContainer(channels, images, null, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
 
@@ -331,15 +367,16 @@ public class ROIEditableImage {
 			progress.setProgress("Success. ", -1, -1);
 
 			int col = newTable.getColumnIndex("Grayscale Value");
-			ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui.getProgressReporter(), null);
+			/*ImagePhantom pi = new ImagePhantom(this.ic.getImgFile(), this.ic.getTotalImageTitle(), this.gui.getProgressReporter(), null);
 			pi.open(GUI.channelMap, GUI.outputLocation, GUI.dateString, false);
 			ZProjector projector = new ZProjector();
 			projector.setImage(
 					pi.getIC().getImageChannel(chan, false));
 			projector.setMethod(ZProjector.MAX_METHOD);
-			projector.doProjection();
+			projector.doProjection();*/
 			progress.setProgress("Recording grayscale values...", -1, -1);
-			ImageProcessor ip = projector.getProjection().getProcessor();
+			/*ImageProcessor ip = projector.getProjection().getProcessor();*/
+			ImageProcessor ip = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_ORIGINAL).getProcessor();
 			for (int i = 0; i < xObjValues.length; i++) {
 				newTable.setValue(col, i, ip.getPixelValue((int) xObjValues[i], (int) yObjValues[i]) );
 

@@ -22,6 +22,8 @@ public class ImageContainer {
 	private List<Channel> channels = new ArrayList<Channel>();
 	private List<ImagePlus> images = new ArrayList<ImagePlus>();
 	
+	private Map<String, ImagePlus> supplementaryImages = new HashMap<String, ImagePlus>();
+	
 	private String title;
 	private File imgFile;
 	private Calibration cal;
@@ -89,7 +91,7 @@ public class ImageContainer {
 	}
 	
 	
-	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, String title, File imgFile, Calibration cal, File outputLocation, String timeOfRun) {
+	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, Map<String, ImagePlus> supplementalImgs, String title, File imgFile, Calibration cal, File outputLocation, String timeOfRun) {
 		this.cal = cal;
 		this.imgFile = imgFile;
 		this.outputLocation = outputLocation;
@@ -115,11 +117,19 @@ public class ImageContainer {
 			this.images.add(imagesToSet.get(i));
 
 		}
-
+		
+		if (supplementalImgs != null) {
+			
+			this.supplementaryImages = supplementalImgs;
+			
+			deleteSuppImgFiles();
+		}
 		
 		deleteImgFiles();
 
 	}
+	
+
 	
 	public Calibration getCalibration() {
 		return this.cal;
@@ -138,6 +148,18 @@ public class ImageContainer {
 		for (int i = 0; i < images.size(); i++) {
 			new File(this.getIntermediateFilesDirectory().getPath() + File.separator + images.get(i).getTitle() + ".tiff").delete();
 
+		}
+
+	}
+	
+	private void deleteSuppImgFiles() {
+		File intDir = this.getIntermediateFilesDirectory();
+		if (intDir.isDirectory()) {
+			for (File file : intDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().endsWith(".tiff") && file.getName().startsWith("SUPP IMG ")) {
+					file.delete();
+				}
+			}
 		}
 
 	}
@@ -160,8 +182,14 @@ public class ImageContainer {
 		int indexOf = channels.indexOf(channel);
 		if (indexOf < 0)
 			return null;
-
-		return (duplicate ? images.get(indexOf).duplicate() : images.get(indexOf));
+		
+		if (duplicate) {
+			ImagePlus newImg = images.get(indexOf).duplicate();
+			newImg.setTitle(newImg.getTitle().substring(4));
+			return newImg;
+		} else {
+			return images.get(indexOf);
+		}
 	}
 
 	public ImagePlus getImage(Channel channel, int stackPosition, boolean duplicate) {
@@ -170,14 +198,35 @@ public class ImageContainer {
 
 
 		ImagePlus ip = new ImagePlus(images.get(indexOf).getTitle() + " Slc-" + stackPosition, images.get(indexOf).getImageStack().getProcessor(stackPosition));
-		return (duplicate ? ip.duplicate() : ip);
+		
+		if (duplicate) {
+			ImagePlus newImg = ip.duplicate();
+			newImg.setTitle(newImg.getTitle().substring(4));
+			return newImg;
+		} else {
+			return ip;
+		}
 	}
 
 	public ImagePlus getImage(int channelNum, int stackPosition, boolean duplicate) {
 
 
 		ImagePlus ip = new ImagePlus(images.get(channelNum).getTitle() + " Slc-" + stackPosition, images.get(channelNum).getImageStack().getProcessor(stackPosition));
-		return (duplicate ? ip.duplicate() : ip);
+		if (duplicate) {
+			ImagePlus newImg = ip.duplicate();
+			newImg.setTitle(newImg.getTitle().substring(4));
+			return newImg;
+		} else {
+			return ip;
+		}
+	}
+	
+	public ImagePlus getSupplementalImage(String key) {
+		return this.supplementaryImages.get(key);
+	}
+	
+	public void addSupplementalImage(String key, ImagePlus image) {
+		this.supplementaryImages.put(key, image);
 	}
 
 	public Channel getChannel(int num) {
@@ -248,12 +297,13 @@ public class ImageContainer {
 	}
 
 
-	public void save(String date) {
+	public void save(boolean saveSupp) {
 		
 		try {
+			String savePathPrefix = this.getIntermediateFilesDirectory().getPath() + File.separator;
 			for (int i = 0; i < images.size(); i++) {
 
-				String savePath = this.getIntermediateFilesDirectory().getPath() + File.separator + images.get(i).getTitle() + ".tiff";
+				String savePath = savePathPrefix + images.get(i).getTitle() + ".tiff";
 				
 				if (images.get(i).getStackSize() > 1) {
 					new FileSaver(images.get(i)).saveAsTiffStack(savePath);
@@ -261,6 +311,20 @@ public class ImageContainer {
 					new FileSaver(images.get(i)).saveAsTiff(savePath);
 				}
 			}
+			
+			if (saveSupp) {
+				for (Entry<String, ImagePlus> en : this.supplementaryImages.entrySet()) {
+
+					String savePath = savePathPrefix + "SUPP IMG " + en.getKey() + ".tiff";
+					
+					if (en.getValue().getStackSize() > 1) {
+						new FileSaver(en.getValue()).saveAsTiffStack(savePath);
+					} else {
+						new FileSaver(en.getValue()).saveAsTiff(savePath);
+					}
+				}
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -372,5 +436,7 @@ public class ImageContainer {
 		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun + File.separator + INTERMED_FILES);
 
 	}
+	
+
 	
 }

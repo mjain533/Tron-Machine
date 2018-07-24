@@ -24,6 +24,9 @@ import ij.plugin.ZProjector;
 
 public class NeuronProcessor {
 
+	public static final String SUPP_LBL_MASK = "mask";
+	public static final String SUPP_LBL_ORIGINAL = "original";
+
 	private final List<ImagePhantom> imagesDoneProcessing;
 	private final List<ImagePhantom> imagesToProcess;
 	private final Set<Channel> channelsToProcess;
@@ -55,18 +58,23 @@ public class NeuronProcessor {
 
 						List<Channel> channels = new LinkedList<Channel>();
 						List<ImagePlus> images = new LinkedList<ImagePlus>();
+						Map<String, ImagePlus> supp = new HashMap<String, ImagePlus>();
 						Map<Channel, ResultsTable> tables = new HashMap<Channel, ResultsTable>();
 						ZProjector projector = new ZProjector();
 						for (Channel chan : container.getChannels()) {
 							channels.add(chan);
 
 							if (channelsToProcess.contains(chan)) {
-
-								Object[] chanProcessed = processChannel(container.getImageChannel(chan, true), progressReporter);
+								ImagePlus duplicate = container.getImageChannel(chan, true);
+								Object[] chanProcessed = processChannel(duplicate, progressReporter);
 								if (cancelled)
 									return;
-								images.add((ImagePlus) chanProcessed[0]);							
-								tables.put(chan, (ResultsTable) chanProcessed[1]);
+
+								images.add((ImagePlus) chanProcessed[0]);
+								supp.put(duplicate.getTitle() + " " + SUPP_LBL_ORIGINAL, (ImagePlus)chanProcessed[1]);
+								supp.put(duplicate.getTitle() + " " + SUPP_LBL_MASK, (ImagePlus) chanProcessed[2]);
+
+								tables.put(chan, (ResultsTable) chanProcessed[3]);
 							} else {
 								projector.setImage(container.getImageChannel(chan, true));
 								projector.setMethod(ZProjector.MAX_METHOD);
@@ -78,8 +86,8 @@ public class NeuronProcessor {
 
 						log(progressReporter, "Saving...");
 
-						ImageContainer newContainer = new ImageContainer(channels, images, container.getTotalImageTitle(), container.getImgFile(), container.getCalibration(), GUI.outputLocation, GUI.dateString);
-						newContainer.save(GUI.dateString);
+						ImageContainer newContainer = new ImageContainer(channels, images, supp, container.getTotalImageTitle(), container.getImgFile(), container.getCalibration(), GUI.outputLocation, GUI.dateString);
+						newContainer.save(true);
 						newContainer.saveResultsTable(tables, GUI.dateString, false);
 						imagesDoneProcessing.add(new ImagePhantom(pi.getImageFile(), newContainer.getTotalImageTitle(), gui.getProgressReporter(), newContainer.getCalibration()));
 
@@ -126,32 +134,33 @@ public class NeuronProcessor {
 		this.threadProcessor.start();
 	}
 
-	private Object[] processChannel(ImagePlus channelDup, SynchronizedProgress progressReporter) {
+	private Object[] processChannel(ImagePlus originalImg, SynchronizedProgress progressReporter) {
 
-		ImagePlus originalDup = channelDup.duplicate();
+		ImagePlus duplicate = originalImg.duplicate();
+		duplicate.setTitle(duplicate.getTitle().substring(4));
 
-		IJ.run(channelDup, "Unsharp Mask...", "radius=20 mask=0.80 stack");
+		IJ.run(duplicate, "Unsharp Mask...", "radius=20 mask=0.80 stack");
 		log(progressReporter, "Applying unsharp mask...");
 
-		IJ.run(channelDup, "Gaussian Blur...", "sigma=0.50 stack");
+		IJ.run(duplicate, "Gaussian Blur...", "sigma=0.50 stack");
 		log(progressReporter, "Applying Gaussian Blur...");
 
-		IJ.run(channelDup, "8-bit", "stack");
+		IJ.run(duplicate, "8-bit", "stack");
 		log(progressReporter, "Converting to 8-bit...");
 
-		new Thresholder(channelDup).threshold();
+		new Thresholder(duplicate).threshold();
 		log(progressReporter, "Thresholding...");
 
 		IJ.run("Options...", "iterations=1 count=1 black");
 		log(progressReporter, "Setting binary options...");
 
-		IJ.run(channelDup, "Erode", "stack");
+		IJ.run(duplicate, "Erode", "stack");
 		log(progressReporter, "Eroding...");
 
-		IJ.run(channelDup, "Watershed", "stack");
+		IJ.run(duplicate, "Watershed", "stack");
 		log(progressReporter, "Segmenting (watershed)...");
 
-		Custome3DObjectCounter counter =new Custome3DObjectCounter(channelDup);
+		Custome3DObjectCounter counter =new Custome3DObjectCounter(duplicate);
 		log(progressReporter, "Counting 3D objects...");
 
 		counter.run(progressReporter, this);
@@ -163,6 +172,7 @@ public class NeuronProcessor {
 		IJ.setRawThreshold(counter.getObjectMap(), 1, 65535, null);
 		IJ.run(counter.getObjectMap(), "Convert to Mask", "method=Default background=Default black");
 
+
 		log(progressReporter, "Processing center of mass map map...");
 
 		IJ.setRawThreshold(counter.getCOMMap(), 1, 255, null);
@@ -170,11 +180,11 @@ public class NeuronProcessor {
 
 		log(progressReporter, "Converting original to 8-bit...");
 
-		IJ.run(originalDup, "8-bit", "stack");
+		IJ.run(originalImg, "8-bit", "stack");
 
 		log(progressReporter, "Merging...");
 		counter.getObjectMap();
-		ImagePlus /*firstTwo*/impFinal = new ImagePlus(channelDup.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalDup.getImageStack(), null, true));
+		ImagePlus /*firstTwo*/impFinal = new ImagePlus(duplicate.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalImg.getImageStack(), null, true));
 		//ImageStack stack = new ImageStack(firstTwo.getWidth(), firstTwo.getHeight());
 
 		/*for (int i = 1; i <= firstTwo.getNSlices(); i++) {
@@ -189,7 +199,7 @@ public class NeuronProcessor {
 		}*/
 		//ImagePlus impFinal = new ImagePlus();
 		//impFinal.setStack(stack);
-		impFinal.setTitle(channelDup.getTitle());
+		impFinal.setTitle(originalImg.getTitle());
 
 		ZProjector projector = new ZProjector();
 		projector.setImage(impFinal);
@@ -198,7 +208,7 @@ public class NeuronProcessor {
 		impFinal = projector.getProjection();
 		log(progressReporter, "Done.");
 		System.gc();
-		return new Object[] {impFinal, counter.getStats()};
+		return new Object[] {impFinal, maxProject(originalImg), maxProject(counter.getObjectMap()), counter.getStats()};
 	}
 
 	private void log(SynchronizedProgress progressReporter, String info) {
@@ -213,5 +223,18 @@ public class NeuronProcessor {
 	public boolean isCancelled() {
 		return this.cancelled;
 	}
+
+
+	public static ImagePlus maxProject(ImagePlus image) {
+		ImagePlus newI = image.duplicate();
+		newI.setTitle(image.getTitle());
+		ZProjector projector = new ZProjector();
+		projector.setImage(newI);
+		projector.setMethod(ZProjector.MAX_METHOD);
+		projector.doProjection();
+		return projector.getProjection();
+	}
+
+
 
 }

@@ -3,6 +3,7 @@ package com.typicalprojects.CellQuant.neuronal_migration.processing;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Polygon;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,7 +41,13 @@ public class ObjectEditableImage {
 	private Zoom zoom = Zoom.ZOOM_100;
 	private boolean creatingDeletionZone;
 	private List<Point> deletionZone = new ArrayList<Point>();
-	
+
+
+	private boolean mask = true;
+	private boolean original = true;
+	private boolean dots = true;
+
+
 	private ImagePanel imagePnl;
 
 	public ObjectEditableImage(ImagePanel ip, ImageContainer ic, Map<Channel, ImagePlus> images, Map<Channel, ResultsTable> results) {
@@ -63,21 +70,21 @@ public class ObjectEditableImage {
 
 		this.images = images;
 	}
-	
+
 	public boolean deleteObjectsWithinDeletionZone(Channel chanToDisplayAfterward) {
-		
+
 		Object[] obj = convertDeletionPointsToArray(true);
 		if (obj == null) {
 			System.out.println("called null");
 			this.deletionZone.clear();
 			this.creatingDeletionZone = false;
-			
+
 			this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
-			
+
 			return false;
 
 		}
-		
+
 		Polygon pg = new PolygonRoi((float[]) obj[0], (float[]) obj[1], this.deletionZone.size(), Roi.POLYLINE).getPolygon() ;
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
 			Iterator<Point> channelPtsItr = en.getValue().iterator();
@@ -91,46 +98,46 @@ public class ObjectEditableImage {
 
 		this.deletionZone.clear();
 		this.creatingDeletionZone = false;
-		
+
 		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
-		
+
 		return true;
 	}
-	
+
 	public void addDeletionZonePoint(Point p, Channel chanToDisplayAfterward) {
 		p.fromObjCounter = false;
 		this.creatingDeletionZone = true;
 		this.deletionZone.add(p);
-		
+
 		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
 
 	}
-	
+
 	public void cancelDeletionZone(Channel chanToDisplayAfterward) {
 		this.deletionZone.clear();
 		this.creatingDeletionZone = false;
 		this.imagePnl.setImage(this.getImgWithDots(chanToDisplayAfterward).getBufferedImage(), -1, -1, zoom);
 
 	}
-	
+
 	public boolean isCreatingDeletionZone() {
 		return this.creatingDeletionZone;
 	}
-	
+
 	public void setCreatingDeletionZone(boolean creatingDeletionZone) {
 		this.creatingDeletionZone = creatingDeletionZone;
 	}
-	
+
 	public void addPoint(Channel chan, Point p) {
-		
+
 		p.fromObjCounter = false;
 		this.points.get(chan).add(p);
-		
+
 		this.imagePnl.setImage(this.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 
 
 	}
-	
+
 	public Point getNearestPoint(Channel chan, Point p) {
 		int range = this.dotSize;
 		if (this.zoom !=null && !this.zoom.equals(Zoom.ZOOM_100)) {
@@ -143,7 +150,7 @@ public class ObjectEditableImage {
 		double dist = -1;
 		for (Point chanPoint : chanPoints) {
 			if (Math.abs(chanPoint.x - p.x) < range && Math.abs(chanPoint.y - p.y) < range) {
-				
+
 				double newDist = Math.sqrt(Math.pow(chanPoint.x - p.x, 2) + Math.pow(chanPoint.y - p.y, 2));
 				if (newDist < dist || dist < 0) {
 					dist = newDist;
@@ -151,9 +158,9 @@ public class ObjectEditableImage {
 				}
 			}
 		}
-		
+
 		return currClosest;
-		
+
 	}
 
 	public boolean removePoint(Channel chan, Point p) {
@@ -164,7 +171,7 @@ public class ObjectEditableImage {
 		return removed;
 
 	}
-	
+
 	public boolean removePoints(Channel chan, Set<Integer> points) {
 		boolean validPoints = true;
 
@@ -181,9 +188,9 @@ public class ObjectEditableImage {
 		}
 
 		return validPoints;
-		
+
 	}
-	
+
 	public boolean removePoint(Channel chan, int pointNum) {
 		boolean removed = false;
 		try {
@@ -194,7 +201,7 @@ public class ObjectEditableImage {
 		} catch (Exception e) {
 			removed = false;
 		}
-		
+
 		return removed;
 
 	}
@@ -206,7 +213,9 @@ public class ObjectEditableImage {
 	public ImageContainer createNewImage() {
 		List<Channel> channels = new ArrayList<Channel>();
 		List<ImagePlus> newImages = new ArrayList<ImagePlus>();
-
+		this.mask = true;
+		this.original = true;
+		this.dots = true;
 		for (Channel chan : this.ic.getChannels()) {
 			if (this.images.containsKey(chan)) {
 				channels.add(chan);
@@ -216,10 +225,10 @@ public class ObjectEditableImage {
 				newImages.add(this.ic.getImageChannel(chan, true));
 			}
 		}
-		return new ImageContainer(channels, newImages, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
+		return new ImageContainer(channels, newImages, null, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
-	
+
 	@SuppressWarnings("deprecation")
 	public Map<Channel, ResultsTable> createNewResultsTables() {
 		Map<Channel, ResultsTable> tables = new HashMap<Channel, ResultsTable>();
@@ -229,7 +238,7 @@ public class ObjectEditableImage {
 			for (Column col : Column.values()) {
 				rt.setHeading(col.getColumnNum() + 1, col.getTitle());
 			}
-			
+
 			int counter = 0;
 			for (Point p : en.getValue()) {
 				rt.incrementCounter();
@@ -243,7 +252,7 @@ public class ObjectEditableImage {
 		}
 		return tables;
 	}
-	
+
 	@SuppressWarnings("deprecation")
 	public ResultsTable createNewResultsTable(Channel chan) {
 
@@ -252,7 +261,7 @@ public class ObjectEditableImage {
 		for (Column col : Column.values()) {
 			rt.setHeading(col.getColumnNum() + 1, col.getTitle());
 		}
-		
+
 		int counter = 0;
 		for (Point p : this.points.get(chan)) {
 			rt.incrementCounter();
@@ -267,8 +276,10 @@ public class ObjectEditableImage {
 
 	}
 
+
+
 	public ImagePlus getImgWithDots(Channel chan){
-		
+
 		int newFontSize = this.fontSize;
 		int newDotSize = this.dotSize;
 		if (this.zoom !=null && !this.zoom.equals(Zoom.ZOOM_100)) {
@@ -278,73 +289,95 @@ public class ObjectEditableImage {
 
 			}
 		}
-		
-		
-		ImagePlus stack = this.ic.getImageChannel(chan, true);
 
-		//ImagePlus img=NewImage.createImage(stack.getTitle(), stack.getWidth(), stack.getHeight(),1,32, 1);
 		
+		ImagePlus stack = null;
+		if (mask) {
+			if (original) {
+				stack = 	this.ic.getImageChannel(chan, true);
+			} else {
+				stack = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_MASK);
+			}
+		} else if (original) {
+			stack = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_ORIGINAL);
+		} else {
+			/*ImagePlus dupDummy = this.ic.getImageChannel(chan, true);
+			ImageRoi roi = new ImageRoi(0, 0, dupDummy.getProcessor());
+			roi.setZeroTransparent(false);
+			roi.setOpacity(1.0);
+			dupDummy.getProcessor().drawOverlay(new Overlay(roi));
+			dupDummy.updateImage();*/
+			int[] dim = this.ic.getImageChannel(chan, true).getDimensions();
+			stack = new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB));
+		}
+
+
 		List<Point> chanPoints = this.points.get(chan);
-		ImageProcessor ip= stack.getProcessor().convertToRGB();
-		
-		ip.setColor(Color.BLUE);
-		ip.setLineWidth(newDotSize);
-		
 
-		for (Point point : chanPoints) {
-			if (point != null && point.fromObjCounter) {
-				ip.drawDot(point.x, point.y);
-			} else {
-				ip.setColor(Color.BLUE);
-				ip.drawDot(point.x, point.y);
-				ip.setColor(Color.BLUE);
+		if (dots) {
+			stack = new ImagePlus(stack.getTitle(), stack.getProcessor().convertToRGB());
+			ImageProcessor ip = stack.getProcessor();
+			
+			ip.setColor(Color.BLUE);
+			ip.setLineWidth(newDotSize);
+
+
+			for (Point point : chanPoints) {
+				if (point != null && point.fromObjCounter) {
+					ip.drawDot(point.x, point.y);
+				} else {
+					ip.setColor(Color.BLUE);
+					ip.drawDot(point.x, point.y);
+					ip.setColor(Color.BLUE);
+				}
 			}
-		}
-		/*for (int y=0; y<stack.getHeight(); y++){
-			for (int x=0; x<stack.getWidth(); x++){
+			/*for (int y=0; y<stack.getHeight(); y++){
+				for (int x=0; x<stack.getWidth(); x++){
 
-				if (ip.getPixelValue(x, y) < 0.5) {
-					ip.setValue(0);
-					ip.setColor(Color.BLACK);
-					ip.drawPixel(x, y);
+					if (ip.getPixelValue(x, y) < 0.5) {
+						ip.setValue(0);
+						ip.setColor(Color.BLACK);
+						ip.drawPixel(x, y);
 
-				}				
+					}				
+
+				}
+			}
+			img.updateImage();*/
+
+			ip.setColor(Color.LIGHT_GRAY);
+			ip.setFont(new Font("Arial", Font.BOLD, newFontSize));
+			int counter = 1;
+			for (Point point : chanPoints) {
+				if (point != null && point.fromObjCounter) {
+					ip.drawString(""+counter, point.x, point.y);
+				} else {
+					ip.setColor(Color.LIGHT_GRAY);
+					ip.drawString(""+counter, point.x, point.y);
+					ip.setColor(Color.LIGHT_GRAY);
+				}
+				counter++;
 
 			}
-		}
-		img.updateImage();*/
 
-		ip.setColor(Color.LIGHT_GRAY);
-		ip.setFont(new Font("Arial", Font.BOLD, newFontSize));
-		int counter = 1;
-		for (Point point : chanPoints) {
-			if (point != null && point.fromObjCounter) {
-				ip.drawString(""+counter, point.x, point.y);
-			} else {
-				ip.setColor(Color.LIGHT_GRAY);
-				ip.drawString(""+counter, point.x, point.y);
-				ip.setColor(Color.LIGHT_GRAY);
-			}
-			counter++;
+			//img.setDisplayRange(1, Integer.MAX_VALUE);
+			//img.updateImage();
 
+			ImageRoi roi = new ImageRoi(0, 0, ip);
+			roi.setZeroTransparent(true);
+			roi.setOpacity(1.0);
+			stack.getProcessor().drawOverlay(new Overlay(roi));
+			stack.updateImage();
 		}
 
-		//img.setDisplayRange(1, Integer.MAX_VALUE);
-		//img.updateImage();
-		
-		ImageRoi roi = new ImageRoi(0, 0, ip);
-		roi.setZeroTransparent(true);
-		roi.setOpacity(1.0);
-		stack.getProcessor().drawOverlay(new Overlay(roi));
-		stack.updateImage();
-		
+
 		if (this.creatingDeletionZone) {
-			
+
 			Object[] obj = convertDeletionPointsToArray(false);
-			
+
 			if (obj != null) {
 				if (this.deletionZone.size() == 1) {
-					
+
 					stack.getProcessor().setColor(Color.GREEN);
 					int size = (int) (Math.max(stack.getDimensions()[0], stack.getDimensions()[1] ) / 100.0);
 					stack.getProcessor().fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
@@ -365,43 +398,43 @@ public class ObjectEditableImage {
 
 				}
 			}
-			
-			
+
+
 		}
 
 		return stack;
 	}
-	
+
 	public void setFontSize(int fontSize) {
 		this.fontSize = fontSize;
 	}
-	
+
 	public void setDotSize(int dotSize) {
 		this.dotSize = dotSize;
 	}
-	
+
 	public void clearZoom() {
 		this.zoom = Zoom.ZOOM_100;
 	}
-	
+
 	public Zoom getZoom() {
 		return this.zoom;
 	}
-	
+
 	public void setZoom(Zoom newZoom) {
 		this.zoom = newZoom;
 	}
-	
+
 	public Zoom getNextZoom() {
 		return this.zoom.getNextZoomLevel();
 	}
-	
+
 	public Zoom getPreviousZoomLevel() {
 		return this.zoom.getPreviousZoomLevel();
 	}
-	
+
 	private Object[] convertDeletionPointsToArray(boolean finished) {
-		
+
 		if (finished) {
 			if (this.deletionZone.size() <= 2) {
 				return null;
@@ -432,6 +465,27 @@ public class ObjectEditableImage {
 			}
 			return new Object[] {xCoords, yCoords};
 		}
+
+	}
+	
+	public void setDisplaying(boolean original, boolean mask, boolean dots, Channel channelToDisplayAfterUpdate) {
+		
+		if (!original && !mask && !dots) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.original = original;
+		this.mask = mask;
+		this.dots = dots;
+		System.out.print(mask);
+		System.out.print(" ");
+		System.out.print(original);
+		System.out.print(" ");
+		System.out.println(dots);
+
+		this.imagePnl.setImage(this.getImgWithDots(channelToDisplayAfterUpdate).getBufferedImage(), -1, -1, zoom);
+
+		
 		
 	}
 

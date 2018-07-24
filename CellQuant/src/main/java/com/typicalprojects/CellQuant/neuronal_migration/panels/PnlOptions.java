@@ -21,6 +21,7 @@ import java.util.Set;
 import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -114,6 +115,10 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private JLabel objLblCurrDisp;
 	private JLabel objLblInstructions;
 	private JLabel objLblRemove;
+	private JLabel objLblShow;
+	private JCheckBox objChkMask;
+	private JCheckBox objChkOriginal;
+	private JCheckBox objChkDots;
 	private OBJSelectMeta objSelectMeta;
 	private JScrollPane distSP;
 	private SimpleJList<String> distListROI;
@@ -140,10 +145,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				+ "<br>"
 				+ "<h3><em>Modifying the View</em></h3>"
 				+ "You can resize the program window to enlarge the image. If this is insufficient, you may zoom in by hitting the Shift key (will zoom in where your mouse lies, so the mouse must be within the image boundaries). "
-				+ "You can navigate while zoomed using A (left), W (up), S (down), D (right), and zoom out using the space bar."
+				+ "You can navigate while zoomed using A (left), W (up), S (down), D (right), and zoom out using the space bar.<br><br>"
+				+ "You may also toggle the image dots (and numbers), object mask, and original image using the checkboxes in the options panel."
 				+ "</html>";
 
-		this.objHelpPopup = new HelpPopup(540, 600, message);
+		this.objHelpPopup = new HelpPopup(575, 615, message);
 
 		String message2 = "<html>Click on the image to start adding points to the ROI. Then, click 'Add' in the "
 				+ "panel below the image to add the region. You can delete this region via the 'Delete' button.<br><br>"
@@ -185,7 +191,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		distBtnCancelROI.setFocusable(false);
 		distBtnAddROI.setMnemonic(KeyEvent.VK_C);
 		distBtnCancelROI.setMargin(new Insets(0, -30, 0, -30));
-
 
 		distBtnDeleteROI = new JButton("Delete");
 		distBtnDeleteROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
@@ -255,6 +260,19 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		objBtnRemove.setMargin(new Insets(0,0,0,0));
 		objBtnPick.setFocusable(false);
 		objBtnNext.setFocusable(false);
+		
+		objLblShow = new JLabel("Show:");
+		objChkMask = new JCheckBox("Mask");
+		objChkMask.setFocusable(false);
+		objChkMask.setBackground(PnlDisplay.colorEnabled);
+		objChkOriginal = new JCheckBox("Original");
+		objChkOriginal.setFocusable(false);
+		objChkOriginal.setBackground(PnlDisplay.colorEnabled);
+
+		objChkDots = new JCheckBox("Dots");
+		objChkDots.setFocusable(false);
+		objChkDots.setBackground(PnlDisplay.colorEnabled);
+
 
 		// Slices
 
@@ -387,6 +405,54 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 			}
 		});
+		
+		this.objChkDots.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				if (imageCurrentlyObjEditing != null) {
+					try {
+						
+						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
+
+					} catch (IllegalArgumentException ex) {
+						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						objChkDots.setSelected(true);
+					}
+				}
+			}
+		});
+		
+		this.objChkOriginal.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				if (imageCurrentlyObjEditing != null) {
+					try {
+						
+						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
+
+					} catch (IllegalArgumentException ex) {
+						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						objChkOriginal.setSelected(true);
+					}
+				}
+			}
+		});
+		
+		this.objChkMask.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				if (imageCurrentlyObjEditing != null) {
+					try {
+						
+						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
+
+					} catch (IllegalArgumentException ex) {
+						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						objChkMask.setSelected(true);
+					}
+				}
+			}
+		});
 
 		this.objBtnPick.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -486,8 +552,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						imageCurrentlyROIEditing.removeROI(roi);
 						distListROI.removeItem(roi);
 					}
+					distListROI.clearSelection();
+
+					gui.getPanelDisplay().getImagePanel().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), -1, -1, Zoom.ZOOM_100);
 				}
-				distListROI.clearSelection();
+
 
 			}
 		});
@@ -542,14 +611,16 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		if (text == null || text.equals("")) {
 
-
+			// Do nothing I suppose?
 		} else {
 
 			if (!imageCurrentlyROIEditing.convertSelectionToRoi(text)) {
 				JOptionPane.showMessageDialog(gui.getComponent(), "Error: Either this name is already taken, or you didn't select any points.", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
+			} else {
+				this.distListROI.addItem(text);
+				this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 			}
-			this.distListROI.addItem(text);
-			this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
+
 		}
 
 		distBtnAddROI.setEnabled(true);
@@ -568,7 +639,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			this.gui.log("Selecting slices...");
 
 			ImageContainer newIC = this.imageCurrentlyDisplayed.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
-			newIC.save(GUI.dateString);
+			newIC.save(false);
 			this.imagesForObjectAnalysis.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), this.gui.getProgressReporter(), newIC.getCalibration()));
 			this.gui.log("Success.");
 			this.imageCurrentlyDisplayed = null;
@@ -607,7 +678,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.imageCurrentlyObjEditing != null) {
 			this.gui.log("Selecting objects...");
 			ImageContainer newIC = this.imageCurrentlyObjEditing.createNewImage();
-			newIC.save(GUI.dateString);
+			newIC.save(false);
 			newIC.saveResultsTable(this.imageCurrentlyObjEditing.createNewResultsTables(), GUI.dateString, false);
 
 			this.imagesForROICreation.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), gui.getProgressReporter(), newIC.getCalibration()));
@@ -650,6 +721,14 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.objTxtRemove.setText("");
 		this.objBtnNext.setEnabled(true);
 		this.objBtnRemove.setEnabled(true);
+		this.objChkDots.setEnabled(true);
+		this.objChkDots.setSelected(true);
+		this.objChkOriginal.setEnabled(true);
+		this.objChkOriginal.setSelected(true);
+		this.objChkMask.setEnabled(true);
+		this.objChkMask.setSelected(true);
+		
+
 		this.objSelectMeta.setChannelsToLookAt(GUI.channelsToProcess);
 		this.objSelectMeta.lookedAt(this.gui.getPanelDisplay().getSliderSelectedChannel());
 		setDisplayState(STATE_OBJ, null);
@@ -672,7 +751,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		
 			this.imageCurrentlyROIEditing.saveROIs();
 			ImageContainer newIC = this.imageCurrentlyROIEditing.getNewImage();
-			newIC.save(GUI.dateString);
+			newIC.save(false);
 			newIC.saveResultsTable(results, GUI.dateString, true);
 			this.gui.log("Success.");
 			this.imageCurrentlyROIEditing = null;
@@ -865,6 +944,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				this.rawPanel.setLayout(gl_pnlInfo);
 				break;
 			case LAYOUT_TYPE_OBJ:
+
 				GroupLayout gl_objPnl = new GroupLayout(this.rawPanel);
 				gl_objPnl.setHorizontalGroup(
 						gl_objPnl.createParallelGroup(Alignment.LEADING)
@@ -887,8 +967,21 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 												.addComponent(objBtnRemove, GroupLayout.PREFERRED_SIZE, /*75*/60, GroupLayout.PREFERRED_SIZE)
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(objBtnPick, GroupLayout.PREFERRED_SIZE, /*65*/84, GroupLayout.PREFERRED_SIZE))
-										.addComponent(objBtnNext, Alignment.TRAILING))
+										.addGroup(Alignment.TRAILING,  gl_objPnl.createSequentialGroup()
+												.addComponent(objLblShow, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)	
+												.addComponent(objChkMask, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)		
+												.addComponent(objChkOriginal, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)		
+												.addComponent(objChkDots, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+												.addComponent(objBtnNext))
+										/*.addComponent(objBtnNext, Alignment.TRAILING)*/
+										)
+								
 								.addContainerGap())
+						
 						);
 				gl_objPnl.setVerticalGroup(
 						gl_objPnl.createParallelGroup(Alignment.LEADING)
@@ -907,7 +1000,18 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 										.addComponent(objTxtRemove, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(objBtnRemove).addComponent(objBtnPick))
 								.addPreferredGap(ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
-								.addComponent(objBtnNext)
+								//
+								.addGroup(gl_objPnl.createParallelGroup(Alignment.BASELINE)
+										.addComponent(objLblShow)
+										
+										//.addGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+								        //.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+
+										.addComponent(objChkMask)
+										.addComponent(objChkOriginal)
+										.addComponent(objChkDots)
+										.addComponent(objBtnNext))
+								/*.addComponent(objBtnNext)*/
 								.addContainerGap())
 						);
 				this.rawPanel.setLayout(gl_objPnl);
@@ -1070,6 +1174,10 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 	public void triggerROIClearButton() {
 		this.distBtnCancelROI.doClick();
+	}
+	
+	public boolean objDeleteTextFieldHasFocus() {
+		return this.objTxtRemove.isFocusOwner();
 	}
 
 }

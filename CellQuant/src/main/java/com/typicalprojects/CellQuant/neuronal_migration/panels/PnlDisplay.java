@@ -40,8 +40,8 @@ public class PnlDisplay  {
 
 
 	private JLabel lblDisabled;
-	private Color colorDisabled = new Color(169, 169, 169);
-	private Color colorEnabled = new Color(220, 220, 220);
+	public static Color colorDisabled = new Color(169, 169, 169);
+	public static Color colorEnabled = new Color(220, 220, 220);
 
 	private JPanel rawPanel;	
 
@@ -140,12 +140,12 @@ public class PnlDisplay  {
 			public void stateChanged(ChangeEvent e) {
 
 				if (changing) return;
-				
-				
+
+
 				int slice = getSliderSelectedSlice();
 				if (slice == lastSelectedSlice)
 					return;
-				
+
 				lastSelectedSlice = slice;
 				lblSliceNum.setText(slice + "");
 				outputHandler.sliderSliceChanged(getSliderSelectedSlice());
@@ -159,7 +159,7 @@ public class PnlDisplay  {
 				Channel chan = getSliderSelectedChannel();
 				if (chan == lastSelectedChan)
 					return;
-				
+
 				lastSelectedChan = chan;
 				lblChanNum.setText(chan.getAbbreviation());
 				outputHandler.sliderChanChanged(chan);
@@ -174,7 +174,7 @@ public class PnlDisplay  {
 				synchronized (PnlDisplay.class) {
 					switch (ke.getID()) {
 					case KeyEvent.KEY_PRESSED:
-						
+
 						break;
 
 					case KeyEvent.KEY_RELEASED:
@@ -185,8 +185,8 @@ public class PnlDisplay  {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei == null)
 									break;
-								
-								
+
+
 								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 								SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
 								//if  (javaPoint.x < 0 || javaPoint.x >= pnlImage.getWidth() || javaPoint.y < 0 || javaPoint.y >= pnlImage.getHeight()) {
@@ -195,9 +195,9 @@ public class PnlDisplay  {
 								Zoom zoom = oei.getNextZoom();
 
 								if (zoom != null) {
-									
+
 									if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
-									
+
 										oei.setZoom(zoom);
 
 										pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
@@ -231,43 +231,55 @@ public class PnlDisplay  {
 							}
 							break;
 						case KeyEvent.VK_A:
-							
+
 							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
 								ke.consume();
 								gui.getPanelOptions().triggerROIAddButton();
 							} else if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								getImagePanel().grabFocus();
-								ke.consume();
-								getImagePanel().shiftImage(1);
+								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+									getImagePanel().grabFocus();
+									ke.consume();
+									getImagePanel().shiftImage(1);
+								}
+
 							}
 							break;
 						case KeyEvent.VK_W:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								ke.consume();
-								getImagePanel().grabFocus();
+								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
 
-								getImagePanel().shiftImage(2);
+									ke.consume();
+									getImagePanel().grabFocus();
+
+									getImagePanel().shiftImage(2);
+								}
 							}
 							break;
 						case KeyEvent.VK_S:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								ke.consume();
-								getImagePanel().grabFocus();
-								getImagePanel().shiftImage(4);
+								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+
+									ke.consume();
+									getImagePanel().grabFocus();
+									getImagePanel().shiftImage(4);
+								}
 							}
 							break;
 						case KeyEvent.VK_D:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								ke.consume();
-								getImagePanel().grabFocus();
-								getImagePanel().shiftImage(3);
+								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+
+									ke.consume();
+									getImagePanel().grabFocus();
+									getImagePanel().shiftImage(3);
+								}
 							}
 							break;
 						default:
 							break;
 						}
 						break;
-					
+
 					}
 					return false;
 				}
@@ -292,9 +304,9 @@ public class PnlDisplay  {
 
 				if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 					if (SwingUtilities.isRightMouseButton(e)){
-						
+
 						ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-						
+
 						if (oei != null) {
 							Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
 							Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
@@ -302,14 +314,14 @@ public class PnlDisplay  {
 								oei.removePoint(getSliderSelectedChannel(), closest);
 							}
 						}
-						
+
 					} else {
 						int x = e.getX();
 						int y = e.getY();
 						Point p = pnlImage.getPixelPoint(x, y);
 						outputHandler.mouseClickOnImage(p);
 					}
-					
+
 				} else if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
 					int x = e.getX();
 					int y = e.getY();
@@ -326,7 +338,7 @@ public class PnlDisplay  {
 				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
 
-			
+
 		});
 
 	}
@@ -418,8 +430,8 @@ public class PnlDisplay  {
 			this.lblSliceNum.setText("--");
 			this.sldrSlice.setEnabled(false);
 		}
-		
-		
+
+
 		this.lastSelectedSlice = this.sldrSlice.getValue();
 
 		this.sldrSlice.updateUI();

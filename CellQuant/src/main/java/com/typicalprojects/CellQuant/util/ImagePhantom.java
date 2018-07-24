@@ -2,6 +2,7 @@ package com.typicalprojects.CellQuant.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,11 +73,25 @@ public class ImagePhantom {
 					}
 
 				}
+				Map<String, ImagePlus> supp = new HashMap<String, ImagePlus>();
+				if (intermediateFilesDir.isDirectory()) {
+					for (File file : intermediateFilesDir.listFiles()) {
+						if (!file.isDirectory() && file.getName().startsWith("SUPP IMG ")) {
+							ImagePlus ip = opener.openImage(file.getPath());
+							ip.setCalibration(this.cal);
+							String ipTitle = file.getName().substring(9, file.getName().lastIndexOf('.'));
+							ip.setTitle(ipTitle);
+							supp.put(ipTitle, opener.openImage(file.getPath()));
+						}
+					}
+				}
+				
 				if (channels.size() != validChannels.size()) {
 					logger.setProgress("Failed to open.");
 					return "Incorrect channel configuration. Please use Preferences to specify channel mapping.";
 				}
-				ic = new ImageContainer(channels, images, title, this.imageFile, this.cal, resaveOutputDir, timeOfRun);
+				
+				ic = new ImageContainer(channels, images, supp, title, this.imageFile, this.cal, resaveOutputDir, timeOfRun);
 				logger.setProgress("Success.");
 				return null;
 

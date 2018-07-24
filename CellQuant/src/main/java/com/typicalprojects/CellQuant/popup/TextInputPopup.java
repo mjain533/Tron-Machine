@@ -86,14 +86,13 @@ public class TextInputPopup extends JFrame {
 				receiver.processInputFromTextPopup(null);
 			}
 		});
-		
 		this.btnDone.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				receiver.processInputFromTextPopup(txtInput.getText());
 				setVisible(false);
 			}
 		});
-		
+		getRootPane().setDefaultButton(this.btnDone);
 		setUIFont(new Font("PingFang TC", Font.BOLD, 13));
 
 	}
