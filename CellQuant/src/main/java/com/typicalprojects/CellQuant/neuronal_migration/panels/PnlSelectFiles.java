@@ -62,15 +62,9 @@ public class PnlSelectFiles {
 		rawPanel.setVisible(false);
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 
-		String message = "<html>If this box is checked, then a single output folder named "
-				+ "with today's date and time will be created within the "+GUI.folderName+" folder, "
-				+ "which is in the same directory as this program.<br><br>"
-				+ "If unchecked, then an output folder will be created at the location of each individual image. "
-				+ "This folder will be titled Neuron Counter Output [DATE]. If a directory of images was selected for "
-				+ "processing, then one single output folder will be created within that directory, simply named "
-				+ "Neuron Counter Output [DATE].</html>";
+		String message = "<html>If this box is checked, then only folders will be selected. When you select a folder, all CZI images within the folder will be selected along with all other CZI images in subfolder 6 levels deep.</html>";
 
-		this.helpPopup = new HelpPopup(320, 500, message);
+		this.helpPopup = new HelpPopup(220, 350, message);
 
 		JLabel lblSelectFileInstruction = new JLabel("<html>Please select an input image or folder of images (must have extension .czi):</html>");
 
@@ -170,7 +164,6 @@ public class PnlSelectFiles {
 
 			public void actionPerformed(ActionEvent e) {
 				if (isMac()) {
-					JOptionPane.showMessageDialog(null, "test");
 
 					if (chkSelectFolders.isSelected()) {
 						System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
@@ -258,7 +251,6 @@ public class PnlSelectFiles {
 					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 
 				} else {
-					JOptionPane.showMessageDialog(null, "test");
 					JFileChooser fChoos = new JFileChooser();
 
 					if (chkSelectFolders.isSelected()) {
