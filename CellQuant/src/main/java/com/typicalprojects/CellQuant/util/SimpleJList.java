@@ -1,6 +1,7 @@
 package com.typicalprojects.CellQuant.util;
 
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
@@ -41,6 +42,10 @@ public class SimpleJList<K> {
 		
 		return this.jList.getSelectedValue();
 		
+	}
+	
+	public List<K> getSelectedValues() {
+		return this.jList.getSelectedValuesList();
 	}
 	
 	public int getSelectedIndex() {

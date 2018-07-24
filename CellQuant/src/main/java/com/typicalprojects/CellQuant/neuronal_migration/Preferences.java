@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import javax.swing.JLabel;
@@ -42,6 +43,7 @@ import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
@@ -356,31 +358,56 @@ public class Preferences extends JFrame {
 		btnBrowseSavePath.setFocusable(false);
 		btnBrowseSavePath.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
+				if (PnlSelectFiles.isMac()) {
+					System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
 
-				FileDialog fd = new FileDialog(gui.getComponent());
-				fd.setMode(FileDialog.LOAD);
-				fd.setMultipleMode(false);
-				fd.setVisible(true);
+					FileDialog fd = new FileDialog(gui.getComponent());
+					fd.setMode(FileDialog.LOAD);
+					fd.setMultipleMode(false);
+					fd.setVisible(true);
 
 
-				File[] file = fd.getFiles();
-				if (file != null && file.length != 0) {
-					File oldFile = GUI.outputLocation;
-					try {
+					File[] file = fd.getFiles();
+					if (file != null && file.length != 0) {
+						File oldFile = GUI.outputLocation;
+						try {
 
-						
-						GUI.outputLocation = file[0];
-						writeSettingsFromGUI();
-						
-						txtSavePath.setText(file[0].getPath());
+							
+							GUI.outputLocation = file[0];
+							writeSettingsFromGUI();
+							
+							txtSavePath.setText(file[0].getPath());
 
-					} catch (IOException exception) {
-						GUI.outputLocation = oldFile;
-						JOptionPane.showConfirmDialog(null, "Could not save settings file.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
+						} catch (IOException exception) {
+							GUI.outputLocation = oldFile;
+							JOptionPane.showConfirmDialog(null, "Could not save settings file.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
+						}
+					}
+					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+				} else {
+					JFileChooser fChoos = new JFileChooser();
+
+					fChoos.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					
+					fChoos.showOpenDialog(null);
+					File file = fChoos.getSelectedFile();
+					if (file != null) {
+						File oldFile = GUI.outputLocation;
+						try {
+
+							
+							GUI.outputLocation = file;
+							writeSettingsFromGUI();
+							
+							txtSavePath.setText(file.getPath());
+
+						} catch (IOException exception) {
+							GUI.outputLocation = oldFile;
+							JOptionPane.showConfirmDialog(null, "Could not save settings file.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
+						}
 					}
 				}
-				System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+				
 
 			}
 		});

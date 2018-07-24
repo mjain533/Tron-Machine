@@ -50,9 +50,10 @@ public class MainFrame extends JFrame {
 						| UnsupportedLookAndFeelException e1) {
 					e1.printStackTrace();
 				}
+				
 				SINGLETON = new MainFrame();
 				SINGLETON.setVisible(true);
-
+				
 			}
 		});
 	}

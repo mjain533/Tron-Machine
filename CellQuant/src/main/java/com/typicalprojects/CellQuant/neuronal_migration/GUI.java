@@ -323,8 +323,6 @@ public class GUI  {
 			// shouldn't happen
 			e1.printStackTrace();
 		}
-		System.out.println(properties.getProperty("version"));
-		System.out.println(properties.getProperty("artifactId"));
 		JLabel lblAttributes = new JLabel("Developed by Justin Carrington, Russ Taylor, Kendra Taylor, and Erik Dent. Copyright 2018. Version "+ properties.getProperty("version")+".");
 		lblAttributes.setFont(new Font("PingFang TC", Font.BOLD, 13));
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));

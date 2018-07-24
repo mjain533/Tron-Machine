@@ -480,11 +480,14 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.distBtnDeleteROI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String selected = distListROI.getSelected();
-				if (selected != null && imageCurrentlyROIEditing != null) {
-					imageCurrentlyROIEditing.removeROI(selected);
-					distListROI.removeItem(selected);
+				List<String> selectedRois = distListROI.getSelectedValues();
+				if (selectedRois != null && !selectedRois.isEmpty() && imageCurrentlyROIEditing != null) {
+					for (String roi : selectedRois) {
+						imageCurrentlyROIEditing.removeROI(roi);
+						distListROI.removeItem(roi);
+					}
 				}
+				distListROI.clearSelection();
 
 			}
 		});

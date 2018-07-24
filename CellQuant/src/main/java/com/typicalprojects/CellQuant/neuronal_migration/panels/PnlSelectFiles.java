@@ -16,6 +16,7 @@ import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -168,90 +169,175 @@ public class PnlSelectFiles {
 		this.btnSelectFiles.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				if (chkSelectFolders.isSelected()) {
-					System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
-				}
+				if (isMac()) {
+					if (chkSelectFolders.isSelected()) {
+						System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
+					}
 
-				FileDialog fd = new FileDialog(gui.getComponent());
-				if (GUI.lastSelectFileLocation != null) {
-					fd.setDirectory(GUI.lastSelectFileLocation.getPath());
-				}
-				fd.setMode(FileDialog.LOAD);
-				fd.setMultipleMode(true);
-				fd.setVisible(true);
-				
-				File[] files = fd.getFiles();
-				File lastSelectLocation = null;
-				if (files != null && files.length != 0) {
+					FileDialog fd = new FileDialog(gui.getComponent());
+					if (GUI.lastSelectFileLocation != null) {
+						fd.setDirectory(GUI.lastSelectFileLocation.getPath());
+					}
+					fd.setMode(FileDialog.LOAD);
+					fd.setMultipleMode(true);
+					fd.setVisible(true);
 					
-					List<FileContainer> cziFiles = new ArrayList<FileContainer>();
-					for (File file : files) {
+					File[] files = fd.getFiles();
+					File lastSelectLocation = null;
+					if (files != null && files.length != 0) {
 						
-						if (file.isDirectory()) {
-							if (lastSelectLocation == null)
-								lastSelectLocation = file;
+						List<FileContainer> cziFiles = new ArrayList<FileContainer>();
+						for (File file : files) {
 							
-							DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
-							
+							if (file.isDirectory()) {
+								if (lastSelectLocation == null)
+									lastSelectLocation = file;
+								
+								DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
+								
+								try {
+									cziFiles.addAll(ddw.getFilteredFiles(file));
+								} catch (IOException e1) {
+									JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+									System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+									return;
+								}
+								
+								
+							} else {
+								if (lastSelectLocation == null) {
+									lastSelectLocation = file.getParentFile();
+								}
+								if (!file.getName().endsWith(".czi")){
+									JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> is not a .czi file.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+									System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+									return;
+								}
+								cziFiles.add(new FileContainer(file));
+							}
+						}
+						
+						if (lastSelectLocation != null) {
+							GUI.lastSelectFileLocation = lastSelectLocation;
 							try {
-								cziFiles.addAll(ddw.getFilteredFiles(file));
+								Preferences.writeSettingsFromGUI();
 							} catch (IOException e1) {
-								JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-								System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
-								return;
+								// TODO shouldn't happen
+								e1.printStackTrace();
 							}
-							
-							
-						} else {
-							if (lastSelectLocation == null) {
-								lastSelectLocation = file.getParentFile();
-							}
-							if (!file.getName().endsWith(".czi")){
-								JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> is not a .czi file.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-								System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
-								return;
-							}
-							cziFiles.add(new FileContainer(file));
 						}
-					}
-					
-					if (lastSelectLocation != null) {
-						GUI.lastSelectFileLocation = lastSelectLocation;
-						try {
-							Preferences.writeSettingsFromGUI();
-						} catch (IOException e1) {
-							// TODO shouldn't happen
-							e1.printStackTrace();
-						}
-					}
-					if (cziFiles.isEmpty()) {
-						JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-						System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
-						return;
-					}
-					Enumeration<FileContainer> en = listSelectedFiles.getElements();
-					while (en.hasMoreElements()) {
-						FileContainer fc = en.nextElement();
-						if (cziFiles.contains(fc)) {
-							JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>. Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						if (cziFiles.isEmpty()) {
+							JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 							System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 							return;
 						}
+						Enumeration<FileContainer> en = listSelectedFiles.getElements();
+						while (en.hasMoreElements()) {
+							FileContainer fc = en.nextElement();
+							if (cziFiles.contains(fc)) {
+								JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>. Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+								return;
+							}
+						}
+						
+						for (FileContainer fileToAdd : cziFiles) {
+							listSelectedFiles.addItem(fileToAdd);
+						}
+						if (listSelectedFiles.getSelected()== null) {
+							listSelectedFiles.setSelection(0);
+						}
+						if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
+							setDisplayState(STATE_FILE_ADDED);
+						}
+						
+
 					}
-					
-					for (FileContainer fileToAdd : cziFiles) {
-						listSelectedFiles.addItem(fileToAdd);
-					}
-					if (listSelectedFiles.getSelected()== null) {
-						listSelectedFiles.setSelection(0);
-					}
-					if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
-						setDisplayState(STATE_FILE_ADDED);
-					}
-					
 					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 
+				} else {
+					JFileChooser fChoos = new JFileChooser();
+
+					if (chkSelectFolders.isSelected()) {
+						fChoos.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					} else {
+						fChoos.setFileSelectionMode(JFileChooser.FILES_ONLY);
+					}
+					
+					fChoos.showOpenDialog(null);
+					File[] files = fChoos.getSelectedFiles();
+					
+					File lastSelectLocation = null;
+					if (files != null && files.length != 0) {
+						
+						List<FileContainer> cziFiles = new ArrayList<FileContainer>();
+						for (File file : files) {
+							
+							if (file.isDirectory()) {
+								if (lastSelectLocation == null)
+									lastSelectLocation = file;
+								
+								DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
+								
+								try {
+									cziFiles.addAll(ddw.getFilteredFiles(file));
+								} catch (IOException e1) {
+									JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+									return;
+								}
+								
+								
+							} else {
+								if (lastSelectLocation == null) {
+									lastSelectLocation = file.getParentFile();
+								}
+								if (!file.getName().endsWith(".czi")){
+									JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> is not a .czi file.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+									return;
+								}
+								cziFiles.add(new FileContainer(file));
+							}
+						}
+						
+						if (lastSelectLocation != null) {
+							GUI.lastSelectFileLocation = lastSelectLocation;
+							try {
+								Preferences.writeSettingsFromGUI();
+							} catch (IOException e1) {
+								// TODO shouldn't happen
+								e1.printStackTrace();
+							}
+						}
+						if (cziFiles.isEmpty()) {
+							JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						Enumeration<FileContainer> en = listSelectedFiles.getElements();
+						while (en.hasMoreElements()) {
+							FileContainer fileCont = en.nextElement();
+							if (cziFiles.contains(fileCont)) {
+								JOptionPane.showMessageDialog(null, "<html>The file <em>" + fileCont.toString() + "</em> has already been added.<br><br>. Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+								return;
+							}
+						}
+						
+						for (FileContainer fileToAdd : cziFiles) {
+							listSelectedFiles.addItem(fileToAdd);
+						}
+						if (listSelectedFiles.getSelected()== null) {
+							listSelectedFiles.setSelection(0);
+						}
+						if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
+							setDisplayState(STATE_FILE_ADDED);
+						}
+						
+
+					}
+
+					
+
 				}
+				
 			}
 
 		});
@@ -368,6 +454,13 @@ public class PnlSelectFiles {
 	
 	public void cancelOpening() {
 		this.processor = null;
+	}
+	
+	public static boolean isMac() {
+		String osName = System.getProperty("os.name").toLowerCase();
+		boolean isMacOs = osName.startsWith("mac os x");
+		return isMacOs;
+
 	}
 
 }
