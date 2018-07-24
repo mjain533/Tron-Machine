@@ -170,6 +170,8 @@ public class PnlSelectFiles {
 
 			public void actionPerformed(ActionEvent e) {
 				if (isMac()) {
+					JOptionPane.showMessageDialog(null, "test");
+
 					if (chkSelectFolders.isSelected()) {
 						System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
 					}
