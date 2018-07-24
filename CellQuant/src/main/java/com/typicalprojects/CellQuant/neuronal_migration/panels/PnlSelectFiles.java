@@ -261,7 +261,7 @@ public class PnlSelectFiles {
 					
 					fChoos.showOpenDialog(null);
 					File[] files = fChoos.getSelectedFiles();
-					
+					JOptionPane.showMessageDialog(null, "0");
 					File lastSelectLocation = null;
 					if (files != null && files.length != 0) {
 						JOptionPane.showMessageDialog(null, "1");
