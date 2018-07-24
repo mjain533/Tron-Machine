@@ -264,17 +264,19 @@ public class PnlSelectFiles {
 					
 					File lastSelectLocation = null;
 					if (files != null && files.length != 0) {
-						
+						JOptionPane.showMessageDialog(null, "1");
 						List<FileContainer> cziFiles = new ArrayList<FileContainer>();
 						for (File file : files) {
-							
+							JOptionPane.showMessageDialog(null, "2");
 							if (file.isDirectory()) {
+								JOptionPane.showMessageDialog(null, "3");
 								if (lastSelectLocation == null)
 									lastSelectLocation = file;
 								
 								DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6);
 								
 								try {
+									JOptionPane.showMessageDialog(null, "4");
 									cziFiles.addAll(ddw.getFilteredFiles(file));
 								} catch (IOException e1) {
 									JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
@@ -283,6 +285,7 @@ public class PnlSelectFiles {
 								
 								
 							} else {
+								JOptionPane.showMessageDialog(null, "6");
 								if (lastSelectLocation == null) {
 									lastSelectLocation = file.getParentFile();
 								}
@@ -319,6 +322,7 @@ public class PnlSelectFiles {
 						for (FileContainer fileToAdd : cziFiles) {
 							listSelectedFiles.addItem(fileToAdd);
 						}
+						
 						if (listSelectedFiles.getSelected()== null) {
 							listSelectedFiles.setSelection(0);
 						}
