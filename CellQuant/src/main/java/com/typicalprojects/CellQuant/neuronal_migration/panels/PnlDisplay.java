@@ -185,7 +185,8 @@ public class PnlDisplay  {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei == null)
 									break;
-
+								if (!GUI.channelsToProcess.contains(getSliderSelectedChannel()))
+									break;
 
 								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 								SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
@@ -212,6 +213,8 @@ public class PnlDisplay  {
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
+									if (!GUI.channelsToProcess.contains(getSliderSelectedChannel()))
+										break;
 									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
 									getImagePanel().grabFocus();
@@ -306,13 +309,17 @@ public class PnlDisplay  {
 					if (SwingUtilities.isRightMouseButton(e)){
 
 						ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-
+						
 						if (oei != null) {
-							Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
-							Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
-							if (closest != null) {
-								oei.removePoint(getSliderSelectedChannel(), closest);
+							Channel chan = getSliderSelectedChannel();
+							if (GUI.channelsToProcess.contains(chan)) {
+								Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
+								Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
+								if (closest != null) {
+									oei.removePoint(getSliderSelectedChannel(), closest);
+								}
 							}
+							
 						}
 
 					} else {

@@ -678,7 +678,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.imageCurrentlyObjEditing != null) {
 			this.gui.log("Selecting objects...");
 			ImageContainer newIC = this.imageCurrentlyObjEditing.createNewImage();
-			newIC.save(false);
+			newIC.save(true);
 			newIC.saveResultsTable(this.imageCurrentlyObjEditing.createNewResultsTables(), GUI.dateString, false);
 
 			this.imagesForROICreation.add(new ImagePhantom(newIC.getImgFile(), newIC.getTotalImageTitle(), gui.getProgressReporter(), newIC.getCalibration()));
@@ -714,6 +714,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				chans.add(GUI.channelMap.get(i));
 			}
 		}
+		chans.add(GUI.channelForROIDraw);
 
 		this.gui.getPanelDisplay().setChannelSlider(true, chans);
 		this.gui.getPanelDisplay().setImage(this.imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
@@ -751,7 +752,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		
 			this.imageCurrentlyROIEditing.saveROIs();
 			ImageContainer newIC = this.imageCurrentlyROIEditing.getNewImage();
-			newIC.save(false);
+			newIC.save(true);
 			newIC.saveResultsTable(results, GUI.dateString, true);
 			this.gui.log("Success.");
 			this.imageCurrentlyROIEditing = null;
@@ -1101,7 +1102,15 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			{
 				this.objSelectMeta.lookedAt(chan);
 				imageCurrentlyObjEditing.setZoom(Zoom.ZOOM_100);
-				this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+				if (GUI.channelsToProcess.contains(chan)) {
+					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+					this.objBtnPick.setEnabled(true);
+					this.objBtnRemove.setEnabled(true);
+				} else {
+					this.objBtnPick.setEnabled(false);
+					this.objBtnRemove.setEnabled(false);
+					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getContainer().getImageChannel(chan, false), Zoom.ZOOM_100, -1, -1);
+				}
 			}
 		} else if (currentState == STATE_COUNT_DIST) {
 			if (imageCurrentlyROIEditing != null) {
@@ -1137,7 +1146,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		if (currentState == STATE_OBJ) {
 
-			if (p != null && imageCurrentlyObjEditing != null) {
+			if (p != null && imageCurrentlyObjEditing != null && GUI.channelsToProcess.contains(gui.getPanelDisplay().getSliderSelectedChannel())) {
 				if (this.imageCurrentlyObjEditing.isCreatingDeletionZone()) {
 					imageCurrentlyObjEditing.addDeletionZonePoint(p, gui.getPanelDisplay().getSliderSelectedChannel());
 				} else {
@@ -1156,12 +1165,18 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	}
 
 	public void adjustMinMax(int min, int max) {
+		System.out.println("Called");
 		if (this.imageCurrentlyROIEditing == null) {
+			System.out.println("Called 2");
 			return;
 		}
+		System.out.println("Called 3");
 		Channel chan = gui.getPanelDisplay().getSliderSelectedChannel();
-		this.imageCurrentlyROIEditing.getContainer().applyMinMax(chan, min, max);
+		System.out.println("Called 4");
+		this.imageCurrentlyROIEditing.applyMinMax(chan, min, max);
+		System.out.println("Called 5");
 		gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
+		System.out.println("Called 6");
 	}
 
 	public ObjectEditableImage getObjectEditableImage() {

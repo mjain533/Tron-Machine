@@ -65,13 +65,13 @@ public class NeuronProcessor {
 							channels.add(chan);
 
 							if (channelsToProcess.contains(chan)) {
-								ImagePlus duplicate = container.getImageChannel(chan, true);
+								ImagePlus duplicate = container.getImageChannel(chan, false);
 								Object[] chanProcessed = processChannel(duplicate, progressReporter);
 								if (cancelled)
 									return;
 
 								images.add((ImagePlus) chanProcessed[0]);
-								supp.put(duplicate.getTitle() + " " + SUPP_LBL_ORIGINAL, (ImagePlus)chanProcessed[1]);
+								supp.put(duplicate.getTitle() + " " + SUPP_LBL_ORIGINAL, (ImagePlus) chanProcessed[1]);
 								supp.put(duplicate.getTitle() + " " + SUPP_LBL_MASK, (ImagePlus) chanProcessed[2]);
 
 								tables.put(chan, (ResultsTable) chanProcessed[3]);
@@ -137,6 +137,7 @@ public class NeuronProcessor {
 	private Object[] processChannel(ImagePlus originalImg, SynchronizedProgress progressReporter) {
 
 		ImagePlus duplicate = originalImg.duplicate();
+		ImagePlus originalImageToBe8bit = originalImg.duplicate();
 		duplicate.setTitle(duplicate.getTitle().substring(4));
 
 		IJ.run(duplicate, "Unsharp Mask...", "radius=20 mask=0.80 stack");
@@ -180,11 +181,11 @@ public class NeuronProcessor {
 
 		log(progressReporter, "Converting original to 8-bit...");
 
-		IJ.run(originalImg, "8-bit", "stack");
+		IJ.run(originalImageToBe8bit, "8-bit", "stack");
 
 		log(progressReporter, "Merging...");
 		counter.getObjectMap();
-		ImagePlus /*firstTwo*/impFinal = new ImagePlus(duplicate.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalImg.getImageStack(), null, true));
+		ImagePlus /*firstTwo*/impFinal = new ImagePlus(duplicate.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalImageToBe8bit.getImageStack(), null, true));
 		//ImageStack stack = new ImageStack(firstTwo.getWidth(), firstTwo.getHeight());
 
 		/*for (int i = 1; i <= firstTwo.getNSlices(); i++) {

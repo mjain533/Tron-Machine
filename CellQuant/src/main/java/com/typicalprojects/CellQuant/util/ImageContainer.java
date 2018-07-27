@@ -36,6 +36,7 @@ public class ImageContainer {
 		this.title = fileTitle;
 		this.outputLocation = outputLocation;
 		this.timeOfRun = timeOfRun;
+		System.out.println("Opened 2");
 
 		makeSaveDirectory(this.title, this.outputLocation,this.timeOfRun);
 
@@ -68,7 +69,7 @@ public class ImageContainer {
 		this.title = container.title;
 		this.outputLocation = container.outputLocation;
 		this.timeOfRun = container.timeOfRun;
-
+		System.out.println("Opened 1");
 		makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
 
 		if (newImages.size() == 0)
@@ -118,8 +119,10 @@ public class ImageContainer {
 
 		}
 		
+		System.out.println("Opened ");
 		if (supplementalImgs != null) {
-			
+			System.out.println("With size of " + supplementalImgs.size());
+
 			this.supplementaryImages = supplementalImgs;
 			
 			deleteSuppImgFiles();
@@ -225,7 +228,12 @@ public class ImageContainer {
 		return this.supplementaryImages.get(key);
 	}
 	
+	public Map<String, ImagePlus> getAllSupplementalImages() {
+		return this.supplementaryImages;
+	}
+	
 	public void addSupplementalImage(String key, ImagePlus image) {
+		System.out.println("Added via method");
 		this.supplementaryImages.put(key, image);
 	}
 
@@ -377,11 +385,7 @@ public class ImageContainer {
 
 	}
 	
-	public synchronized void applyMinMax(Channel channel, int min, int max) {
-		ImagePlus ip = this.images.get(this.channels.indexOf(channel));
-		ip.setDisplayRange(min, max);
-		ip.updateImage();
-	}
+
 	
 	public synchronized int getMin(Channel channel) {
 

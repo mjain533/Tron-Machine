@@ -15,6 +15,8 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+import javax.swing.SwingWorker.StateValue;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -23,6 +25,8 @@ import javax.swing.JButton;
 import javax.swing.border.BevelBorder;
 
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.awt.event.ActionEvent;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
@@ -35,6 +39,7 @@ public class MainFrame extends JFrame {
 	private JPanel contentPane;
 
 	private static MainFrame SINGLETON = null;;
+	private WaitingFrame wf = null;
 	//private static WaitingFrame waitingFrame = new WaitingFrame();
 	private GUI guiWindow;
 
@@ -51,10 +56,10 @@ public class MainFrame extends JFrame {
 						| UnsupportedLookAndFeelException e1) {
 					e1.printStackTrace();
 				}
-				
+
 				SINGLETON = new MainFrame();
 				SINGLETON.setVisible(true);
-				
+
 			}
 		});
 	}
@@ -65,6 +70,7 @@ public class MainFrame extends JFrame {
 	public MainFrame() {
 		setTitle("The TRON Machine");
 
+		wf = new WaitingFrame();
 
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -94,14 +100,54 @@ public class MainFrame extends JFrame {
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							//waitingFrame.show(SINGLETON);
-							setVisible(false);
 							if (guiWindow == null) {
-								guiWindow = new GUI(SINGLETON);
-							}
-							//waitingFrame.disappear();
+								wf.show(SINGLETON);
+								setVisible(false);
+								
+								MySwingWorker worker = new MySwingWorker(SINGLETON);
+								worker.execute();
+								worker.addPropertyChangeListener(new PropertyChangeListener() {
+									@Override
+									public void propertyChange(final PropertyChangeEvent event) {
+										switch (event.getPropertyName()) {
+										case "progress":
+											break;
+										case "state":
+											switch ((StateValue) event.getNewValue()) {
+											case DONE:
+												try {
+													final GUI gui = worker.get();
+													guiWindow = gui;
+													gui.show();
+													wf.disappear();
 
-							guiWindow.show();
+												} catch (final Exception e) {
+													// Shouldn't happen;
+													e.printStackTrace();
+												}
+
+												break;
+											default:
+												break;
+											}
+											break;
+										}
+									}
+								});
+								//GUI gui = worker.get();
+								//guiWindow = gui;
+								/*if (guiWindow == null) {
+									guiWindow = new GUI(SINGLETON);
+								}*/
+								//wf.disappear();
+
+								//guiWindow.show();
+							} else {
+								
+								guiWindow.show();
+								setVisible(false);
+							}
+							
 
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -155,4 +201,19 @@ public class MainFrame extends JFrame {
 	public void reshow() {
 		setVisible(true);
 	}
+}
+
+class MySwingWorker extends SwingWorker<GUI, String> {
+
+	private MainFrame mf;
+
+	public MySwingWorker(MainFrame mf) {
+		this.mf = mf;
+	}
+
+	protected GUI doInBackground() throws Exception {
+		GUI gui = new GUI(mf);
+		return gui;
+	}
+
 }

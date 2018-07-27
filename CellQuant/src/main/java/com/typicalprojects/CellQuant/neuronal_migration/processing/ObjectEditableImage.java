@@ -225,7 +225,7 @@ public class ObjectEditableImage {
 				newImages.add(this.ic.getImageChannel(chan, true));
 			}
 		}
-		return new ImageContainer(channels, newImages, null, this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
+		return new ImageContainer(channels, newImages, this.ic.getAllSupplementalImages(), this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
 
@@ -477,11 +477,6 @@ public class ObjectEditableImage {
 		this.original = original;
 		this.mask = mask;
 		this.dots = dots;
-		System.out.print(mask);
-		System.out.print(" ");
-		System.out.print(original);
-		System.out.print(" ");
-		System.out.println(dots);
 
 		this.imagePnl.setImage(this.getImgWithDots(channelToDisplayAfterUpdate).getBufferedImage(), -1, -1, zoom);
 

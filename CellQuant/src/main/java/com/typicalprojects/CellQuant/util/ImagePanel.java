@@ -1,6 +1,9 @@
 package com.typicalprojects.CellQuant.util;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
@@ -26,7 +29,7 @@ public class ImagePanel extends JPanel{
 	private int zoomHeight;
 	private int zoomX;
 	private int zoomY;
-	private boolean zoomDiffNeedsUpdate = false;
+	private boolean needsUpdate = false;
 
 	public ImagePanel() {
 		super();
@@ -85,7 +88,7 @@ public class ImagePanel extends JPanel{
 			this.zoomY = Math.min(this.image.getHeight() - this.zoomHeight, this.zoomY + shiftAmount);
 			break;
 		}
-		this.zoomDiffNeedsUpdate = true;
+		this.needsUpdate = true;
 		repaint();
 	}
 	
@@ -109,7 +112,7 @@ public class ImagePanel extends JPanel{
 				zoomX = -1;
 				zoomY = -1;
 				this.zoom = zoom;
-				this.zoomDiffNeedsUpdate = true;
+				this.needsUpdate = true;
 			} else  {
 
 				if (this.zoom == null || this.zoom.equals(Zoom.ZOOM_100)) {
@@ -153,7 +156,7 @@ public class ImagePanel extends JPanel{
 
 					}
 					this.zoom = zoom;
-					this.zoomDiffNeedsUpdate = true;
+					this.needsUpdate = true;
 
 				} else if (zoomDiff < 0) {
 					for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
@@ -175,13 +178,18 @@ public class ImagePanel extends JPanel{
 		super.paintComponent(g);
 		if (image != null) {
 			BufferedImage zoomedIg = image;
-			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight && !this.zoomDiffNeedsUpdate) {
+			boolean drawZoomBox = false;
+			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight && !this.needsUpdate) {
 				g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters 
+				if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+					drawZoomBox(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
+				}
 				return;
 			} else if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+				drawZoomBox = true;
 				zoomedIg = image.getSubimage(zoomX, zoomY, zoomWidth, zoomHeight);
 			}
-			this.zoomDiffNeedsUpdate = false;
+			this.needsUpdate = false;
 
 			pastHeight = getHeight();
 			pastWidth = getWidth();
@@ -202,13 +210,37 @@ public class ImagePanel extends JPanel{
 				this.posY = ((pastHeight - this.imgPartHeight) / 2);
 			}
 
+			
 
 			scaled = zoomedIg.getScaledInstance(this.imgPartWidth, this.imgPartHeight, Image.SCALE_SMOOTH);
 			g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters  
+			
+			if (drawZoomBox) {
+				drawZoomBox(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
+			}
+			
 			return;
 		}
 
 
+	}
+	
+	private void drawZoomBox(Graphics g, int upperLeftImagePosX, int upperLeftImagePosY, int imagePnlWidth, int imagePnlHeight) {
+		
+		
+		if (imagePnlWidth < 100 || imagePnlHeight < 100)
+			return;
+		
+		int scaleFactor = imagePnlWidth / 8;
+		Graphics2D g2= (Graphics2D) g;
+		int strokeWidth = imagePnlWidth / 250;
+		g2.setStroke(new BasicStroke(strokeWidth));
+		g2.setColor(Color.MAGENTA);
+		g2.drawRect(upperLeftImagePosX + 5, upperLeftImagePosY + 5, scaleFactor, scaleFactor);
+		g2.setColor(Color.CYAN);
+		g2.drawRect((int) (upperLeftImagePosX + 5 + (scaleFactor * (this.zoomX / (double) this.image.getWidth()))), (int) (upperLeftImagePosY + 5 + (scaleFactor * (this.zoomY / (double) this.image.getHeight()))), (int) (scaleFactor * (this.zoomWidth / (double) this.image.getWidth())), (int) (scaleFactor * (this.zoomHeight / (double) this.image.getHeight())));
+		//g.setColor(Color.YELLOW);
+		
 	}
 
 }

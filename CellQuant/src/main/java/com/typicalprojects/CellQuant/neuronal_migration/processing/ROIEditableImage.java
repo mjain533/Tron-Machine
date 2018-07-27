@@ -19,7 +19,6 @@ import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
-import com.typicalprojects.CellQuant.util.ImagePhantom;
 import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -30,7 +29,6 @@ import ij.gui.Roi;
 import ij.io.RoiEncoder;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
-import ij.plugin.ZProjector;
 import ij.process.ImageProcessor;
 
 public class ROIEditableImage {
@@ -41,7 +39,7 @@ public class ROIEditableImage {
 	private GUI gui;
 	private List<String> roi_names = new ArrayList<String>();
 	private List<PolygonRoi> roi_polygons = new ArrayList<PolygonRoi>();
-	private Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
+	private volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
 
 	private List<Point> points = new ArrayList<Point>();
 
@@ -68,6 +66,12 @@ public class ROIEditableImage {
 		
 	}
 
+	public synchronized void applyMinMax(Channel channel, int min, int max) {
+		this.cache.remove(channel);
+		ImagePlus ip = this.ic.getImageChannel(channel, false);
+		ip.setDisplayRange(min, max);
+		ip.updateImage();
+	}
 
 	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
 
@@ -376,7 +380,11 @@ public class ROIEditableImage {
 			projector.doProjection();*/
 			progress.setProgress("Recording grayscale values...", -1, -1);
 			/*ImageProcessor ip = projector.getProjection().getProcessor();*/
-			ImageProcessor ip = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_ORIGINAL).getProcessor();
+			ImageProcessor ip = this.ic.getSupplementalImage(
+					this.ic.getImageChannel(chan, false).getTitle()
+					+ " " +
+							NeuronProcessor.SUPP_LBL_ORIGINAL)
+					.getProcessor();
 			for (int i = 0; i < xObjValues.length; i++) {
 				newTable.setValue(col, i, ip.getPixelValue((int) xObjValues[i], (int) yObjValues[i]) );
 

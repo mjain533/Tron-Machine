@@ -6,11 +6,12 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JRootPane;
-import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
-import javax.swing.SwingConstants;
 import java.awt.Font;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.border.LineBorder;
+import java.awt.Color;
 
 public class WaitingFrame extends JFrame {
 
@@ -41,24 +42,36 @@ public class WaitingFrame extends JFrame {
 	 */
 	public WaitingFrame() {
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		//setUndecorated(true);
-		getRootPane().setWindowDecorationStyle(JRootPane.NONE);
+		setUndecorated(true);
+		//getRootPane().setWindowDecorationStyle(JRootPane.NONE);
 
 		setBounds(100, 100, 150, 80);
 		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		contentPane.setBorder(new LineBorder(new Color(0, 0, 0), 2));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 		
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.CENTER);
-		panel.setLayout(new BorderLayout(0, 0));
 		
-		JLabel lblPleaseWait = new JLabel("Please wait...");
-		lblPleaseWait.setFont(new Font("Lucida Grande", Font.BOLD, 15));
-		lblPleaseWait.setHorizontalTextPosition(SwingConstants.CENTER);
-		lblPleaseWait.setHorizontalAlignment(SwingConstants.CENTER);
-		panel.add(lblPleaseWait, BorderLayout.CENTER);
+		JLabel lblNewLabel = new JLabel("Please wait...");
+		lblNewLabel.setFont(new Font("PingFang TC", Font.BOLD, 16));
+		GroupLayout gl_panel = new GroupLayout(panel);
+		gl_panel.setHorizontalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addGap(25)
+					.addComponent(lblNewLabel)
+					.addContainerGap(24, Short.MAX_VALUE))
+		);
+		gl_panel.setVerticalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addGap(27)
+					.addComponent(lblNewLabel)
+					.addContainerGap(26, Short.MAX_VALUE))
+		);
+		panel.setLayout(gl_panel);
 	}
 	
 	public void show(Component parent) {
@@ -69,5 +82,4 @@ public class WaitingFrame extends JFrame {
 	public void disappear() {
 		setVisible(false);
 	}
-
 }

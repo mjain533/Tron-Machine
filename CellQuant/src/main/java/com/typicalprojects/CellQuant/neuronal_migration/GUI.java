@@ -304,8 +304,8 @@ public class GUI  {
 					public void run() {
 						try {
 							getWizard().cancel();
-							quantFrame.setVisible(false);
 							parentFrame.reshow();
+							quantFrame.setVisible(false);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
