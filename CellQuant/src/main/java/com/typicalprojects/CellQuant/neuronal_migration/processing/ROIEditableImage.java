@@ -6,10 +6,13 @@ import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
@@ -19,10 +22,12 @@ import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
+import com.typicalprojects.CellQuant.util.PolarizedPolygonROI;
 import com.typicalprojects.CellQuant.util.SynchronizedProgress;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
+import ij.gui.ImageRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
@@ -37,10 +42,12 @@ public class ROIEditableImage {
 	private Map<Channel, ResultsTable> tables;
 	private Channel drawChannel;
 	private GUI gui;
-	private List<String> roi_names = new ArrayList<String>();
-	private List<PolygonRoi> roi_polygons = new ArrayList<PolygonRoi>();
+	//private List<String> roi_names = new ArrayList<String>();
+	//private List<PolygonRoi> roi_polygons = new ArrayList<PolygonRoi>();
+	private List<PolarizedPolygonROI> rois = new ArrayList<PolarizedPolygonROI>();
 	private volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
-
+	private boolean selectingPositive = false;
+	
 	private List<Point> points = new ArrayList<Point>();
 
 	public ROIEditableImage(ImageContainer ic, Channel drawChannel, Map<Channel, ResultsTable> tables, GUI gui) {
@@ -55,7 +62,7 @@ public class ROIEditableImage {
 	}
 
 	public boolean hasROIs() {
-		return !this.roi_names.isEmpty();
+		return !this.rois.isEmpty();
 	}
 	
 	public boolean hasCreatedValidROIPoints() {
@@ -64,6 +71,15 @@ public class ROIEditableImage {
 		else
 			return false;	
 		
+	}
+	
+	public void setSelectingPositive() {
+		this.cache.clear();
+		this.selectingPositive = true;
+	}
+	
+	public boolean isSelectingPositiveRegion() {
+		return this.selectingPositive;
 	}
 
 	public synchronized void applyMinMax(Channel channel, int min, int max) {
@@ -74,11 +90,10 @@ public class ROIEditableImage {
 	}
 
 	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
-
 		if (this.cache.containsKey(channelToDrawROI)) {
 			return this.cache.get(channelToDrawROI);
 		}
-		
+
 		
 
 		Object[] obj = convertPointsToArray();
@@ -90,9 +105,11 @@ public class ROIEditableImage {
 		ip.setLineWidth(3);
 		ip.setFont(new Font("Arial", Font.BOLD, 20));
 
-		for (int i = 0; i < this.roi_names.size(); i++) {
-			String name = this.roi_names.get(i);
-			PolygonRoi roi = this.roi_polygons.get(i);
+		for (PolarizedPolygonROI roiWrapper : this.rois) {
+			
+			
+			PolygonRoi roi = roiWrapper.get();
+			
 			roi.setFillColor(Color.GREEN);
 			
 			roi.setStrokeWidth(1000 / 300.0);
@@ -100,18 +117,71 @@ public class ROIEditableImage {
 			int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
 			middleY= Math.min(middleY, dup.getDimensions()[1] - 4);
 			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+
+			
+			ip.setColor(Color.GREEN);
+			if(roiWrapper.hasPositiveSideBeenSelected()) {
+				if (roi.getPolygon().npoints > 12) {
+					int polySize = (int) (roi.getPolygon().npoints / 6.0);
+					// TODO ensure these are within bounds
+					
+					Map<Integer, Integer> posNegAboveLabels = new HashMap<Integer, Integer>();
+					Map<Integer, Integer> posNegBelowLabels = new HashMap<Integer, Integer>();
+
+					posNegAboveLabels.put(roi.getPolygon().xpoints[polySize], roi.getPolygon().ypoints[polySize]-2);
+					posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*2], roi.getPolygon().ypoints[polySize*2]-2);
+					posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*4], roi.getPolygon().ypoints[polySize*4]-2);
+					posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*5], roi.getPolygon().ypoints[polySize*5]-2);
+					posNegBelowLabels.put(roi.getPolygon().xpoints[polySize], roi.getPolygon().ypoints[polySize] + 22);
+					posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*2], roi.getPolygon().ypoints[polySize*2] + 22);
+					posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*4], roi.getPolygon().ypoints[polySize*4] + 22);
+					posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*5], roi.getPolygon().ypoints[polySize*5] + 22);
+					for (Entry<Integer, Integer> en : posNegAboveLabels.entrySet()) {
+						if (roiWrapper.isPositive(en.getKey(), en.getValue()))
+							ip.drawString("+", en.getKey(), en.getValue());
+						else
+							ip.drawString("–", en.getKey(), en.getValue());
+					}
+					for (Entry<Integer, Integer> en : posNegBelowLabels.entrySet()) {
+						if (roiWrapper.isPositive(en.getKey(), en.getValue()))
+							ip.drawString("+", en.getKey(), en.getValue());
+						else
+							ip.drawString("–", en.getKey(), en.getValue());
+					}
+
+
+				}
+			}
+			
 			ip.setColor(Color.RED);
-			ip.drawString(name, middleX, middleY, Color.BLACK);
+
+			ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
 
 		}
 
 		dup.updateImage();
+		
+		if (this.selectingPositive) {
+			ImageRoi whiteOverlay = new ImageRoi(0, 0, ip.duplicate());
+			whiteOverlay.getProcessor().setColor(Color.WHITE);
+			whiteOverlay.getProcessor().fillRect(0, 0, ip.getWidth(), ip.getHeight());
+			whiteOverlay.setZeroTransparent(true);
+			whiteOverlay.setOpacity(0.5);
+			ip.drawOverlay(new Overlay(whiteOverlay));
+			dup.updateImage();
+		}
 		
 		if (this.points.isEmpty()) {
 			bi = dup.getBufferedImage();
 			this.cache.put(channelToDrawROI, bi);
 			return bi;
 		}
+		
+		//
+		
+		
+		//ip.drawRect(0, 0, ip.getWidth(), ip.getHeight());
+		//
 		
 		if (points.size() == 1) {
 			
@@ -159,9 +229,13 @@ public class ROIEditableImage {
 	public boolean convertSelectionToRoi(String name) {
 		if (this.points.size() < 2) {
 			return false;
-		} else if (this.roi_names.contains(name)) {
-			return false;
 		}
+		
+		for (PolarizedPolygonROI wrapper : this.rois) {
+			if (wrapper.getName().equals(name))
+				return false;
+		}
+		
 		ImagePlus drawImage = this.ic.getImageChannel(this.drawChannel, false);
 		
 		
@@ -173,7 +247,7 @@ public class ROIEditableImage {
 		}
 		
 		Point newEnd = getStretchedPoint(this.points.get(this.points.size() - 1), drawImage);
-		
+
 		if (newEnd != null) {
 			this.points.add(newEnd);
 		}
@@ -181,15 +255,30 @@ public class ROIEditableImage {
 		Object[] obj = convertPointsToArray();
 
 		PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
+		
 		pgr.setStrokeColor(Color.GREEN);
 		pgr.setFillColor(Color.GREEN);
-		double size = Math.max(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
+		double imgSize = Math.max(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
 
-		pgr.setStrokeWidth(size / 300.0);
+		pgr.setStrokeWidth(imgSize / 300.0);
 		pgr.fitSplineForStraightening();
+		
 		pgr.setName(name);
-		this.roi_names.add(name);
-		this.roi_polygons.add(pgr);
+		Polygon polygon = pgr.getPolygon();
+		int[] newxs = new int[polygon.npoints + 2];
+		System.arraycopy(polygon.xpoints, 0, newxs, 1, polygon.npoints);
+		int[] newys = new int[polygon.npoints + 2];
+		System.arraycopy(polygon.ypoints, 0, newys, 1, polygon.npoints);
+		newxs[0] = newStart.x;
+		newxs[newxs.length - 1] = newEnd.x;
+		newys[0] = newStart.y;
+		newys[newys.length - 1] = newEnd.y;
+
+
+		pgr = new PolygonRoi(newxs, newys, polygon.npoints + 2, Roi.POLYLINE);
+		polygon = pgr.getPolygon();
+		this.rois.add(new PolarizedPolygonROI(name, pgr, createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))));
+
 		this.points.clear();
 		this.cache.clear();
 
@@ -203,9 +292,13 @@ public class ROIEditableImage {
 
 	public void removeROI(String name) {
 		this.cache.clear();
-		int index = this.roi_names.indexOf(name);
-		this.roi_names.remove(index);
-		this.roi_polygons.remove(index);
+		Iterator<PolarizedPolygonROI> itr = this.rois.iterator();
+		while (itr.hasNext()) {
+			if (itr.next().getName().equals(name)) {
+				itr.remove();
+				break;
+			}
+		}
 	}
 
 	public boolean hasPoints() {
@@ -240,9 +333,8 @@ public class ROIEditableImage {
 				ip.setLineWidth(3);
 				ip.setFont(new Font("Arial", Font.BOLD, 20));
 
-				for (int i = 0; i < this.roi_names.size(); i++) {
-					String name = this.roi_names.get(i);
-					PolygonRoi roi = this.roi_polygons.get(i);
+				for (PolarizedPolygonROI roiWrapper : this.rois) {
+					PolygonRoi roi = roiWrapper.get();
 					roi.setFillColor(Color.GREEN);
 					
 					roi.setStrokeWidth(1000 / 300.0);
@@ -251,10 +343,40 @@ public class ROIEditableImage {
 					middleY= Math.min(middleY, roiImg.getDimensions()[1] - 4);
 					int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
 					ip.setColor(Color.RED);
-					ip.drawString(name, middleX, middleY, Color.BLACK);
+					ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
+					ip.setColor(Color.GREEN);
+					if (roi.getPolygon().npoints > 12) {
+						int polySize = (int) (roi.getPolygon().npoints / 6.0);
+						// TODO ensure these are within bounds
+						
+						Map<Integer, Integer> posNegAboveLabels = new HashMap<Integer, Integer>();
+						Map<Integer, Integer> posNegBelowLabels = new HashMap<Integer, Integer>();
+
+						posNegAboveLabels.put(roi.getPolygon().xpoints[polySize], roi.getPolygon().ypoints[polySize]-2);
+						posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*2], roi.getPolygon().ypoints[polySize*2]-2);
+						posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*4], roi.getPolygon().ypoints[polySize*4]-2);
+						posNegAboveLabels.put(roi.getPolygon().xpoints[polySize*5], roi.getPolygon().ypoints[polySize*5]-2);
+						posNegBelowLabels.put(roi.getPolygon().xpoints[polySize], roi.getPolygon().ypoints[polySize] + 22);
+						posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*2], roi.getPolygon().ypoints[polySize*2] + 22);
+						posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*4], roi.getPolygon().ypoints[polySize*4] + 22);
+						posNegBelowLabels.put(roi.getPolygon().xpoints[polySize*5], roi.getPolygon().ypoints[polySize*5] + 22);
+						for (Entry<Integer, Integer> en : posNegAboveLabels.entrySet()) {
+							if (roiWrapper.isPositive(en.getKey(), en.getValue()))
+								ip.drawString("+", en.getKey(), en.getValue());
+							else
+								ip.drawString("–", en.getKey(), en.getValue());
+						}
+						for (Entry<Integer, Integer> en : posNegBelowLabels.entrySet()) {
+							if (roiWrapper.isPositive(en.getKey(), en.getValue()))
+								ip.drawString("+", en.getKey(), en.getValue());
+							else
+								ip.drawString("–", en.getKey(), en.getValue());
+						}
+
+					}
 
 				}
-
+				
 				roiImg.updateImage();
 				images.add(roiImg);
 
@@ -270,8 +392,8 @@ public class ROIEditableImage {
 	}
 
 	public void saveROIs() {
-		for (PolygonRoi roi : this.roi_polygons) {
-			RoiEncoder.save(roi, this.ic.getIntermediateFilesDirectory() + File.separator + roi.getName() +".roi");
+		for (PolarizedPolygonROI roi : this.rois) {
+			RoiEncoder.save(roi.get(), this.ic.getIntermediateFilesDirectory() + File.separator + roi.getName() +".roi");
 		}
 	}
 
@@ -304,11 +426,11 @@ public class ROIEditableImage {
 			Calibration cal = this.ic.getCalibration();
 
 
-			for (String roiName : this.roi_names) {
-				newTable.setHeading(counter, "Distance from " + roiName + " (" + cal.getUnits() +")");
+			for (PolarizedPolygonROI roiWrapper : this.rois) {
+				newTable.setHeading(counter, "Distance from " + roiWrapper.getName() + " (" + cal.getUnits() +")");
 				Map<Integer, Integer> pts = new HashMap<Integer, Integer>();
 
-				Polygon p = this.roi_polygons.get(this.roi_names.indexOf(roiName)).getPolygon();
+				Polygon p = roiWrapper.get().getPolygon();
 
 				for (int polygonPt = 0; polygonPt < p.npoints; polygonPt ++) {
 					pts.put(p.xpoints[polygonPt], p.ypoints[polygonPt]);
@@ -332,11 +454,12 @@ public class ROIEditableImage {
 					newTable.addValue(2, yObjValues[i]);
 
 					int r = 3;
-					for (Map<Integer, Integer> coordinatePts : coords) {
+					for (PolarizedPolygonROI roi : this.rois) {
 
 						double shortestDist = Double.MAX_VALUE;
 						int lowestY = Integer.MAX_VALUE;
 						int highestY = Integer.MIN_VALUE;
+						Map<Integer, Integer> coordinatePts = roi.getPointsOnLine();
 						for (Entry<Integer, Integer> en : coordinatePts.entrySet()) {
 							lowestY = Math.min(lowestY, en.getValue());
 							highestY = Math.max(highestY, en.getValue());
@@ -345,16 +468,9 @@ public class ROIEditableImage {
 								shortestDist = dist;
 						}
 						
-						Integer yCoordOnROILine = coordinatePts.get((int)xObjValues[i]);
-						if (yCoordOnROILine == null) {
-							if (lowestY == 0) {
-								yCoordOnROILine = lowestY;
-							} else {
-								yCoordOnROILine = highestY;
-							}
-						}
+
 						
-						if (yObjValues[i] > yCoordOnROILine) {
+						if (roi.isPositive((int) xObjValues[i], (int) yObjValues[i])) {
 							newTable.addValue(r, cal.getX(shortestDist)); // could be X or Y, just for conversion
 						} else {
 							newTable.addValue(r, -1 * cal.getX(shortestDist));
@@ -392,10 +508,10 @@ public class ROIEditableImage {
 			
 			if (!calculations.isEmpty()) {
 				progress.setProgress("Running further calculations...", -1, -1);
-				if (calculations.contains(Analyzer.Calculation.PERCENT_MIGRATION) && this.roi_names.size() > 1) {
+				if (calculations.contains(Analyzer.Calculation.PERCENT_MIGRATION) && this.rois.size() > 1) {
 					
-					for (int i = 1; i < this.roi_names.size(); i++) {
-						newTable.setHeading(counter, "%migrated " + this.roi_names.get(0) + " to " + this.roi_names.get(i));
+					for (int i = 1; i < this.rois.size(); i++) {
+						newTable.setHeading(counter, "%migrated " + this.rois.get(0).getName() + " to " + this.rois.get(i).getName());
 						double[] firstLineDist = newTable.getColumnAsDoubles(3);
 						double[] secondLineDist = newTable.getColumnAsDoubles(3 + i);
 						for (int j = 0; j < firstLineDist.length && j < secondLineDist.length; j++) {
@@ -426,9 +542,9 @@ public class ROIEditableImage {
 	public Point getStretchedPoint(Point p, ImagePlus drawImage) {
 		
 		int distTop = p.y;
-		int distBottom = drawImage.getDimensions()[1] - p.y - 1;
+		int distBottom = drawImage.getDimensions()[1] - p.y + 1;
 		int distLeft = p.x;
-		int distRight = drawImage.getDimensions()[0] - p.x - 1;
+		int distRight = drawImage.getDimensions()[0] - p.x + 1;
 		
 		int min = Math.min(Math.min(distTop, distBottom), Math.min(distLeft, distRight));
 		
@@ -443,10 +559,120 @@ public class ROIEditableImage {
 				return new Point(drawImage.getDimensions()[0] - 1, p.y, false);
 			}
 		}
-		
 		return null;
 	}
+	
+	public String selectPositiveRegionForCurrentROI(Point p) {
+		this.selectingPositive = false;
+		this.cache.clear();
+		PolarizedPolygonROI roiPolygon = this.rois.get(this.rois.size() - 1);
+		roiPolygon.setPositiveRegion(p.x, p.y);
+		return roiPolygon.getName();
+	}
+
+	private PolygonRoi createHalfRegion(int[] xPts, int[] yPts, Point upperLeft, Point lowerLeft, Point lowerRight, Point upperRight) {
+		
+		
+		List<Integer> xPtsAdd = new ArrayList<Integer>();
+		List<Integer> yPtsAdd = new ArrayList<Integer>();
+		xPtsAdd.addAll(Arrays.stream(xPts).boxed().collect(Collectors.toList()));
+		yPtsAdd.addAll(Arrays.stream(yPts).boxed().collect(Collectors.toList()));
+		Point stopPoint = new Point(xPts[0], yPts[0], null);
+		// start at end pt, find closest corner
+		// If start pt is closer, go to it and be done. Otherwise add that corner.
+		// Detect which direction we are going, and then determine which way through the list we should iterate.
+		// Go to next corner, but it start point is closer, then just go to that.
+		
+		
+		boolean continueAdding = true;
+		Point currentPoint = new Point(xPts[xPts.length - 1], yPts[yPts.length - 1], null);
+		while (continueAdding) {
+			Point nextP = _addAnotherPoint(stopPoint, currentPoint, upperLeft, lowerLeft, lowerRight, upperRight);
+			if (nextP == null) {
+				xPtsAdd.add(stopPoint.x);
+				yPtsAdd.add(stopPoint.y);
+				continueAdding = false;
+			} else {
+				xPtsAdd.add(nextP.x);
+				yPtsAdd.add(nextP.y);
+				currentPoint = nextP;
+			}
+			
+		}
+		
+		
 
 
+		return new PolygonRoi(_convertToPrimFloatArray(xPtsAdd), _convertToPrimFloatArray(yPtsAdd), xPtsAdd.size(), Roi.POLYLINE) ;
+
+		
+	}
+	
+
+	
+	private Point _addAnotherPoint(Point stopPoint, Point currentPoint, Point upperLeft, Point lowerLeft, Point lowerRight, Point upperRight) {
+		
+		if (currentPoint.equals(lowerLeft)) {
+			if (stopPoint.y == lowerRight.y)
+				return null;
+			
+			return lowerRight;
+		} else if (currentPoint.equals(lowerRight)) {
+			if (stopPoint.x == upperRight.x)
+				return null;
+
+			return upperRight;
+		} else if (currentPoint.equals(upperRight)) {
+			if (stopPoint.y == upperLeft.y)
+				return null;
+
+			return upperLeft;
+		} else if (currentPoint.equals(upperLeft)) {
+			if (stopPoint.x == lowerLeft.x)
+				return null;
+
+			return lowerLeft;
+		} else {
+			
+			
+			if (currentPoint.x == 0) {
+				if (stopPoint.x == 0 && stopPoint.y > currentPoint.y) {
+					return null;
+				}
+				return lowerLeft;
+			} else if (currentPoint.y == 0) {
+				if (stopPoint.y == 0 && stopPoint.x < currentPoint.x) {
+					return null;
+				}
+				return upperLeft;
+			} else if (currentPoint.x == upperRight.x) {
+				if (stopPoint.x == upperRight.x && stopPoint.y < currentPoint.y) {
+					return null;
+				}
+				return upperRight;
+			} else {
+				if (stopPoint.y == lowerRight.y && stopPoint.x > currentPoint.x) {
+					return null;
+				}
+				return lowerRight;
+			}
+			
+		}
+		
+		
+	}
+	
+	public PolarizedPolygonROI getFirstROI() {
+		return this.rois.get(0);
+	}
+	
+	private float[] _convertToPrimFloatArray(List<Integer> integers) {
+		Integer nonprimitiveResult[] = integers.toArray( new Integer[integers.size()]);  
+		float[] primitiveResult = new float[integers.size()];
+		for(int i = 0; i < integers.size(); ++i) {
+		    primitiveResult[i] = (float) nonprimitiveResult[i];
+		}
+		return primitiveResult;
+	}
 
 }

@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class Analyzer {
 	
 	public enum Calculation {
-		PERCENT_MIGRATION, AVERAGE, NUM, STDEV
+		PERCENT_MIGRATION, AVERAGE, NUM, STDEV, SQ_DIST
 	}
 	
 	public static double calculate(Calculation calc, double... inputs) throws ArithmeticException {
@@ -39,6 +39,12 @@ public class Analyzer {
 				return Math.sqrt((sums / (inputs.length - 1)));
 			} catch (Exception e) {
 				throw new ArithmeticException("Null inputs or divide by zero when calculating average");
+			}
+		case SQ_DIST:
+			try {
+				return Math.pow((inputs[0] - inputs[1]), 2) + Math.pow((inputs[2] - inputs[3]), 2);
+			} catch (Exception e) {
+				throw new ArithmeticException("Not enough inputs.");
 			}
 
 		}

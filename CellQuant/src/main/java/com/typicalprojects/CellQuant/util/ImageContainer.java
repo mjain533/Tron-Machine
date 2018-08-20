@@ -1,5 +1,6 @@
 package com.typicalprojects.CellQuant.util;
 
+import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,9 +12,11 @@ import java.util.Map.Entry;
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.io.FileInfo;
 import ij.io.FileSaver;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
+import ij.process.ImageProcessor;
 
 public class ImageContainer {
 	
@@ -54,6 +57,7 @@ public class ImageContainer {
 				img[i].setTitle(fileTitle + " Chan-" + validChannels.get(i).getAbbreviation());
 			}
 			img[i].setCalibration(cal);
+			applyLUT(img[i], validChannels.get(i));
 			channels.add(validChannels.get(i));
 			images.add(img[i]);
 
@@ -441,6 +445,50 @@ public class ImageContainer {
 
 	}
 	
+	public void applyLUT(ImagePlus imp, Channel chan) {
+		
+		
+		FileInfo fi = new FileInfo();
+        fi.reds = new byte[256]; 
+        fi.greens = new byte[256]; 
+        fi.blues = new byte[256];
+        fi.lutSize = 256;
+		switch (chan) {
+		case GREEN:
+            primaryColor(2, fi.reds, fi.greens, fi.blues);
+			break;
+		case RED:
+            primaryColor(4, fi.reds, fi.greens, fi.blues);
+            break;
+		case BLUE:
+            primaryColor(1, fi.reds, fi.greens, fi.blues);
+            break;
+        default:
+            	return;
+		}
+        fi.fileName = "CustomLUT";
 
+        ImageProcessor ip = imp.getChannelProcessor();
+        IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
+        ip.setColorModel(cm);
+        if (imp.getStackSize()>1)
+            imp.getStack().setColorModel(cm);
+        imp.updateImage();
+
+	}
+	
+    
+	
+	private void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
+        for (int i=0; i<256; i++) {
+            if ((color&4)!=0)
+                reds[i] = (byte)i;
+            if ((color&2)!=0)
+                greens[i] = (byte)i;
+            if ((color&1)!=0)
+                blues[i] = (byte)i;
+        }
+        return;
+    }
 	
 }

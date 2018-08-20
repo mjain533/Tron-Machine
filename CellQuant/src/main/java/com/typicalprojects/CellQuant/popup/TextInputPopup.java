@@ -37,7 +37,10 @@ public class TextInputPopup extends JFrame {
 		this.receiver = receiverr;
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		setBounds(100, 100, 350, 140);
+		JLabel lblPrompt = new JLabel(prompt);
+		lblPrompt.setFont(new Font("PingFang TC", Font.BOLD, 14));
+		setBounds(100, 100, 410, 160);
+
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -47,8 +50,6 @@ public class TextInputPopup extends JFrame {
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.CENTER);
 		
-		JLabel lblPrompt = new JLabel(prompt);
-		lblPrompt.setFont(new Font("PingFang TC", Font.BOLD, 14));
 		
 		txtInput = new JTextField();
 		txtInput.setFont(new Font("PingFang TC", Font.BOLD, 13));
@@ -78,6 +79,7 @@ public class TextInputPopup extends JFrame {
 					.addContainerGap(22, Short.MAX_VALUE))
 		);
 		panel.setLayout(gl_panel);
+
 		setVisible(false);
 		
 		addWindowListener(new WindowAdapter(){

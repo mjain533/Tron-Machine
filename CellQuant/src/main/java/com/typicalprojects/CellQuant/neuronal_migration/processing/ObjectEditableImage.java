@@ -313,10 +313,10 @@ public class ObjectEditableImage {
 
 
 		List<Point> chanPoints = this.points.get(chan);
+		stack = new ImagePlus(stack.getTitle(), stack.getProcessor().convertToRGB()); // NOTE: changed teh stack to RGB, rather than just turning the copy of stack's processor for dot creation to RGB
 
 		if (dots) {
-			stack = new ImagePlus(stack.getTitle(), stack.getProcessor().convertToRGB());
-			ImageProcessor ip = stack.getProcessor();
+			ImageProcessor ip = stack.getProcessor().duplicate();
 			
 			ip.setColor(Color.BLUE);
 			ip.setLineWidth(newDotSize);

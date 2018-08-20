@@ -160,7 +160,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		lblDisabled = new JLabel("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
 		lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
 
-		this.roiNamePopup = new TextInputPopup("Select a name for this ROI:", this);
+		this.roiNamePopup = new TextInputPopup("<html>To create the ROI, type its name below and then select<br>the side of the ROI to be designated as POSITIVE:</html>", this);
 
 		setUpDirectionsPanels();
 		setDisplayState(STATE_DISABLED, null);
@@ -539,6 +539,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						distBtnCancelROI.setEnabled(false);
 						distBtnNext.setEnabled(false);
 						roiNamePopup.display(gui.getPanelDisplay().getImagePanel());
+					}else {
+						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html>You must select at least 2 points on<br>the image before creating an ROI.</html>", "ROI Creation Error", JOptionPane.ERROR_MESSAGE);
+						
 					}
 				}
 			}
@@ -611,22 +614,26 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		if (text == null || text.equals("")) {
 
-			// Do nothing I suppose?
+			distBtnAddROI.setEnabled(true);
+			distBtnDeleteROI.setEnabled(true);
+			distBtnCancelROI.setEnabled(true);
+			distBtnNext.setEnabled(true);
 		} else {
 
 			if (!imageCurrentlyROIEditing.convertSelectionToRoi(text)) {
 				JOptionPane.showMessageDialog(gui.getComponent(), "Error: Either this name is already taken, or you didn't select any points.", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
+				distBtnAddROI.setEnabled(true);
+				distBtnDeleteROI.setEnabled(true);
+				distBtnCancelROI.setEnabled(true);
+				distBtnNext.setEnabled(true);
 			} else {
-				this.distListROI.addItem(text);
-				this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
+				imageCurrentlyROIEditing.setSelectingPositive();
 			}
+			this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 
 		}
 
-		distBtnAddROI.setEnabled(true);
-		distBtnDeleteROI.setEnabled(true);
-		distBtnCancelROI.setEnabled(true);
-		distBtnNext.setEnabled(true);
+		
 
 	}
 
@@ -1094,6 +1101,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (currentState == STATE_INFO) {
 			if(imageCurrentlyDisplayed != null)
 			{
+				//System.out.println(imageCurrentlyDisplayed.getImage(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getClass());
 				this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getImage(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 			}
 
@@ -1157,7 +1165,16 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		} else if (currentState == STATE_COUNT_DIST) {
 
 			if (p != null && imageCurrentlyROIEditing != null) {
-				imageCurrentlyROIEditing.addPoint(p);
+				if (imageCurrentlyROIEditing.isSelectingPositiveRegion()) {
+					this.distBtnAddROI.setEnabled(true);
+					this.distBtnNext.setEnabled(true);
+					this.distBtnCancelROI.setEnabled(true);
+					this.distBtnDeleteROI.setEnabled(true);
+					this.distListROI.addItem(imageCurrentlyROIEditing.selectPositiveRegionForCurrentROI(p));
+				} else {
+
+					imageCurrentlyROIEditing.addPoint(p);
+				}
 				gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
 			}
 

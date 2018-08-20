@@ -133,7 +133,7 @@ public class Preferences extends JFrame {
 
 
 		setTitle("Preferences");
-		setBounds(100, 100, 610, 400);
+		setBounds(100, 100, 620, 400);
 		setResizable(false);
 		contentPane = new JPanel();
 		contentPane.setVisible(true);

@@ -30,4 +30,11 @@ public class Point {
 		return "Pt @ (" + x + ", " + y + ")";
 	}
 	
+	public boolean softEquals(Point point) {
+		if (point.x == this.x || this.y == point.y)
+			return true;
+		else
+			return false;
+	}
+	
 }

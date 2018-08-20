@@ -251,7 +251,7 @@ public class PnlSelectFiles {
 					System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
 
 				} else {
-					JFileChooser fChoos = new JFileChooser();
+					JFileChooser fChoos = GUI.lastSelectFileLocation != null ? new JFileChooser(GUI.lastSelectFileLocation.getPath()) : new JFileChooser();
 					fChoos.setMultiSelectionEnabled(true);
 					if (chkSelectFolders.isSelected()) {
 						fChoos.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);

@@ -49,6 +49,11 @@ public class ImagePhantom {
 					logger.setProgress("Failed to open.");
 					return "Incorrect channel configuration. Please use Preferences to specify channel mapping.";
 				}
+				for (int i = 0; i < ip.length; i++) {
+					ImagePlus newIP = ip[i].duplicate();
+					newIP.setProcessor(newIP.getProcessor().convertToShortProcessor());
+					ip[i] = newIP;
+				}
 				ic = new ImageContainer(ip, this.title, this.imageFile, this.cal, validChannels, resaveOutputDir, timeOfRun);
 				logger.setProgress("Success.");
 				return null;
