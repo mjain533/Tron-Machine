@@ -39,7 +39,7 @@ public class TextInputPopup extends JFrame {
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		JLabel lblPrompt = new JLabel(prompt);
 		lblPrompt.setFont(new Font("PingFang TC", Font.BOLD, 14));
-		setBounds(100, 100, 410, 160);
+		setBounds(100, 100, 430, 160);
 
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));

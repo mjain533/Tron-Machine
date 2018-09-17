@@ -230,8 +230,7 @@ public class ImagePanel extends JPanel{
 		
 		if (imagePnlWidth < 100 || imagePnlHeight < 100)
 			return;
-		
-		int scaleFactor = imagePnlWidth / 8;
+		int scaleFactor = (int) Math.ceil(imagePnlWidth / 8.0);
 		Graphics2D g2= (Graphics2D) g;
 		int strokeWidth = imagePnlWidth / 250;
 		g2.setStroke(new BasicStroke(strokeWidth));

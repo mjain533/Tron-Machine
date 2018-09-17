@@ -15,13 +15,13 @@ import java.util.Map.Entry;
 
 import java.util.Set;
 
-import com.typicalprojects.CellQuant.neuronal_migration.GUI;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImagePanel;
 import com.typicalprojects.CellQuant.util.Point;
 import com.typicalprojects.CellQuant.util.Zoom;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
+import com.typicalprojects.CellQuant.util.ImageContainer.ImageTag;
 
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
@@ -34,7 +34,6 @@ import ij.process.ImageProcessor;
 public class ObjectEditableImage {
 
 	private ImageContainer ic;
-	private Map<Channel, ImagePlus> images = new HashMap<Channel, ImagePlus>();
 	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
 	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
 	private int fontSize = Custome3DObjectCounter.opResultFontSize;
@@ -50,25 +49,34 @@ public class ObjectEditableImage {
 
 	private ImagePanel imagePnl;
 
-	public ObjectEditableImage(ImagePanel ip, ImageContainer ic, Map<Channel, ImagePlus> images, Map<Channel, ResultsTable> results) {
+	public ObjectEditableImage(ImagePanel ip, ImageContainer ic, List<Channel> images, Map<String, ResultsTable> results) {
 		this.imagePnl=ip;
 		this.ic = ic;
-		for (Channel chan : images.keySet()) {
+		for (Channel chan : images) {
 			this.points.put(chan, new LinkedList<Point>());
 		}
+		
 
-		for (Entry<Channel, ResultsTable> en : results.entrySet()) {
+
+
+
+
+		for (Entry<String, ResultsTable> en : results.entrySet()) {
 			ResultsTable rt = en.getValue();
-
+			Channel chan = Channel.parse(en.getKey());
+			if (chan == null)
+				continue;
 			double[] xCoords = rt.getColumnAsDoubles(Column.X.getColumnNum());
 			double[] yCoords = rt.getColumnAsDoubles(Column.Y.getColumnNum());
-			List<Point> chanPoints = points.get(en.getKey());
-			for (int i = 0; i < xCoords.length; i++) {
-				chanPoints.add(new Point(Math.round((float) xCoords[i]), Math.round((float) yCoords[i]), true));
+			List<Point> chanPoints = points.get(chan);
+			if (xCoords != null && yCoords != null) {
+				for (int i = 0; i < xCoords.length; i++) {
+					chanPoints.add(new Point(Math.round((float) xCoords[i]), Math.round((float) yCoords[i]), true));
+				}
 			}
+			
 		}
 
-		this.images = images;
 	}
 
 	public boolean deleteObjectsWithinDeletionZone(Channel chanToDisplayAfterward) {
@@ -210,28 +218,20 @@ public class ObjectEditableImage {
 		return this.ic;
 	}
 
-	public ImageContainer createNewImage() {
-		List<Channel> channels = new ArrayList<Channel>();
-		List<ImagePlus> newImages = new ArrayList<ImagePlus>();
+	public void createAndSaveNewImage() {
+
 		this.mask = true;
 		this.original = true;
 		this.dots = true;
-		for (Channel chan : this.ic.getChannels()) {
-			if (this.images.containsKey(chan)) {
-				channels.add(chan);
-				newImages.add(getImgWithDots(chan));
-			} else {
-				channels.add(chan);
-				newImages.add(this.ic.getImageChannel(chan, true));
-			}
+		for (Channel chan : this.points.keySet()) {
+			this.ic.saveSupplementalImage(ImageTag.Objects, getImgWithDots(chan), chan);
 		}
-		return new ImageContainer(channels, newImages, this.ic.getAllSupplementalImages(), this.ic.getTotalImageTitle(), this.ic.getImgFile(), this.ic.getCalibration(), GUI.outputLocation, GUI.dateString);
 
 	}
 
 	@SuppressWarnings("deprecation")
-	public Map<Channel, ResultsTable> createNewResultsTables() {
-		Map<Channel, ResultsTable> tables = new HashMap<Channel, ResultsTable>();
+	public Map<String, ResultsTable> createNewResultsTables() {
+		Map<String, ResultsTable> tables = new HashMap<String, ResultsTable>();
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
 			ResultsTable rt = new ResultsTable();
 			rt.setHeading(0, "ID");
@@ -248,7 +248,7 @@ public class ObjectEditableImage {
 
 				counter++;
 			}
-			tables.put(en.getKey(), rt);
+			tables.put(en.getKey().name(), rt);
 		}
 		return tables;
 	}
@@ -294,12 +294,12 @@ public class ObjectEditableImage {
 		ImagePlus stack = null;
 		if (mask) {
 			if (original) {
-				stack = 	this.ic.getImageChannel(chan, true);
+				stack = 	this.ic.getImage(ImageTag.ObjCountOrigMaskMerge, chan, true);
 			} else {
-				stack = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_MASK);
+				stack = this.ic.getImage(ImageTag.ObjCountMask, chan, false);
 			}
 		} else if (original) {
-			stack = this.ic.getSupplementalImage(this.ic.getImageChannel(chan, false).getTitle() + " " + NeuronProcessor.SUPP_LBL_ORIGINAL);
+			stack = 	this.ic.getImage(ImageTag.MaxProjected, chan, false);
 		} else {
 			/*ImagePlus dupDummy = this.ic.getImageChannel(chan, true);
 			ImageRoi roi = new ImageRoi(0, 0, dupDummy.getProcessor());
@@ -307,13 +307,13 @@ public class ObjectEditableImage {
 			roi.setOpacity(1.0);
 			dupDummy.getProcessor().drawOverlay(new Overlay(roi));
 			dupDummy.updateImage();*/
-			int[] dim = this.ic.getImageChannel(chan, true).getDimensions();
+			int[] dim = this.ic.getDimensions();
 			stack = new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB));
 		}
 
 
 		List<Point> chanPoints = this.points.get(chan);
-		stack = new ImagePlus(stack.getTitle(), stack.getProcessor().convertToRGB()); // NOTE: changed teh stack to RGB, rather than just turning the copy of stack's processor for dot creation to RGB
+		stack = new ImagePlus("temp", stack.getProcessor().convertToRGB()); // NOTE: changed teh stack to RGB, rather than just turning the copy of stack's processor for dot creation to RGB
 
 		if (dots) {
 			ImageProcessor ip = stack.getProcessor().duplicate();

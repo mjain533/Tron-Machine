@@ -4,7 +4,7 @@
 
 	<groupId>com.typicalprojects.CellQuant</groupId>
 	<artifactId>CellQuant</artifactId>
-	<version>1.1.10</version>
+	<version>1.1.11-beta</version>
 
 	<name>CellQuant</name>
 	<url>http://maven.apache.org</url>
@@ -14,7 +14,7 @@
 	<build>
 
 		<plugins>
-            
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -72,6 +72,28 @@
 	</properties>
 	<repositories>
 		<repository>
+			<id>Sonatype-public</id>
+			<name>SnakeYAML repository</name>
+			<url>http://oss.sonatype.org/content/groups/public/</url>
+		</repository>
+		<repository>
+			<id>locationtech-releases</id>
+			<url>https://repo.locationtech.org/content/groups/releases</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>jts-snapshots</id>
+			<url>https://repo.locationtech.org/content/repositories/jts-snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
@@ -125,6 +147,11 @@
 			<version>3.17</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>1.24-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>

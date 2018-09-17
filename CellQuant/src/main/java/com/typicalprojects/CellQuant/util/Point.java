@@ -22,8 +22,12 @@ public class Point {
 		return this.x == otherP.x && this.y == otherP.y;
 	}
 	
+	@Override
 	public int hashCode() {
-	    return x * 31 + y;
+	    int hash = 7;
+	    hash = 71 * hash + this.x;
+	    hash = 71 * hash + this.y;
+	    return hash;
 	}
 	
 	public String toString() {

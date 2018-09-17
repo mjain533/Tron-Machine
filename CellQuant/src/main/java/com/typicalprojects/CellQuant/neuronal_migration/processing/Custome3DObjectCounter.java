@@ -1,6 +1,6 @@
 package com.typicalprojects.CellQuant.neuronal_migration.processing;
 
-import com.typicalprojects.CellQuant.util.SynchronizedProgress;
+import com.typicalprojects.CellQuant.util.Logger;
 
 import ij.ImagePlus;
 import ij.measure.ResultsTable;
@@ -59,7 +59,7 @@ public class Custome3DObjectCounter {
 		this.threshold = Math.max(1, imageStack.getImageStack().getProcessor(1).getAutoThreshold());
 	}
 
-	public void run(SynchronizedProgress progress, NeuronProcessor nc) throws IllegalStateException {
+	public void run(Logger progress, NeuronProcessor nc) throws IllegalStateException {
 
 
 		Custom3DCounter OC = new Custom3DCounter(this.imageStack, this.threshold, minSize, maxSize, opExcludeOnEdges, progress, nc);

@@ -1,169 +1,149 @@
 package com.typicalprojects.CellQuant.util;
 
+import java.awt.Color;
 import java.awt.image.IndexColorModel;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import java.util.Set;
 
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.io.FileInfo;
 import ij.io.FileSaver;
+import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
+import loci.plugins.BF;
+import loci.plugins.in.ImporterOptions;
 
 public class ImageContainer {
-	
+
 	private static final String INTERMED_FILES = "Intermediate Files";
-	
-	private List<Channel> channels = new ArrayList<Channel>();
-	private List<ImagePlus> images = new ArrayList<ImagePlus>();
-	
-	private Map<String, ImagePlus> supplementaryImages = new HashMap<String, ImagePlus>();
-	
+
+	private Map<ImageTag, Map<Channel, ImagePlus>> images = new HashMap<ImageTag, Map<Channel, ImagePlus>>();
+
 	private String title;
-	private File imgFile;
 	private Calibration cal;
 	private File outputLocation;
 	private String timeOfRun;
+	private File imageFile;
+	private int[] dimensions;
 
-	public ImageContainer(ImagePlus[] img, String fileTitle, File imgFile, Calibration cal, Map<Integer, Channel> validChannels, File outputLocation, String timeOfRun) throws IllegalArgumentException{
-		this.imgFile = imgFile;
-		this.cal = cal;
-		this.title = fileTitle;
-		this.outputLocation = outputLocation;
-		this.timeOfRun = timeOfRun;
-		System.out.println("Opened 2");
-
-		makeSaveDirectory(this.title, this.outputLocation,this.timeOfRun);
-
-		if (img.length == 0)
-			throw new IllegalArgumentException("There are no channels for " + fileTitle + ".");
-
-		for (int i = 0; i < 4 && i < img.length; i++) {
-
-			if (!validChannels.containsKey(i)) {
-				continue;
-			}
-			img[i].setIJMenuBar(true);
-			if (!fileTitle.contains("Chan-")) {
-				
-				img[i].setTitle(fileTitle + " Chan-" + validChannels.get(i).getAbbreviation());
-			}
-			img[i].setCalibration(cal);
-			applyLUT(img[i], validChannels.get(i));
-			channels.add(validChannels.get(i));
-			images.add(img[i]);
-
-		}
+	public ImageContainer(String title, File imageFile, File outputLocation, String timeOfRun, List<ImageTag> imagesToOpen, Map<Integer, Channel> validChannels, Calibration cal) throws ImageOpenException {
 		
-		deleteImgFiles();
+		try {
+			this.cal = cal;
+			this.title = title;
+			this.outputLocation = outputLocation;
+			this.timeOfRun = timeOfRun;
+			this.imageFile = imageFile;
+			makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
 
-	}
-	
-	private ImageContainer(List<ImagePlus> newImages, List<Channel> newChannels, ImageContainer container) throws IllegalArgumentException{
-		this.imgFile = container.imgFile;
-		this.cal = container.cal;
-		this.title = container.title;
-		this.outputLocation = container.outputLocation;
-		this.timeOfRun = container.timeOfRun;
-		System.out.println("Opened 1");
-		makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
-
-		if (newImages.size() == 0)
-			throw new IllegalArgumentException("There are no channels for " + this.title + ".");
-
-		for (int i = 0; i < newImages.size(); i++) {
-
-			if (!newImages.get(i).getTitle().contains("Chan-")) {
-				
-				newImages.get(i).setTitle(this.title + " Chan-" + newChannels.get(i).getAbbreviation());
-			}
-			newImages.get(i).setCalibration(cal);
-			this.channels.add(newChannels.get(i));
-			this.images.add(newImages.get(i));
-
-		}
-		
-		deleteImgFiles();
-
-	}
-	
-	
-	public ImageContainer(List<Channel> channelsToSet, List<ImagePlus> imagesToSet, Map<String, ImagePlus> supplementalImgs, String title, File imgFile, Calibration cal, File outputLocation, String timeOfRun) {
-		this.cal = cal;
-		this.imgFile = imgFile;
-		this.outputLocation = outputLocation;
-		this.timeOfRun = timeOfRun;
-		
-		makeSaveDirectory(title, outputLocation, timeOfRun);
-
-
-		if (channelsToSet.size() == 0 || channelsToSet.size() != imagesToSet.size()) {
+			if (imagesToOpen.size() == 0)
+				throw new IllegalArgumentException("There are no images for " + this.title + ".");
 			
-			throw new IllegalArgumentException("Invalid channel numbers for " + title + ".");
-		}		
+			for (ImageTag it : imagesToOpen) {
+				if (it.equals(ImageTag.Orig)) {
+					
+					ImporterOptions io = new ImporterOptions();
+					io.setId(imageFile.getPath());
+					io.setSplitChannels(true);
+					ImagePlus[]  ips= BF.openImagePlus(io);
+					this.cal = ips[0].getCalibration();
+					if (ips.length != validChannels.size()) {
+						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
+					}
+					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
+					for (Entry<Integer, Channel> chanEn : validChannels.entrySet()) {
+						if (chanEn.getKey() < ips.length) {
+							ImagePlus ip = ips[chanEn.getKey()];
+							ip.setProcessor(ip.getProcessor().convertToShortProcessor());
+							ip.setTitle(this.title + " Chan-" + chanEn.getValue().getAbbreviation());
+							if (this.dimensions == null) this.dimensions = ip.getDimensions();
+							origImages.put(chanEn.getValue(), ip);
+						} else {
+							throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
+						}
+					}
+					
+					this.images.put(ImageTag.Orig, origImages);
+				} else if (it.equals(ImageTag.OrigTiff)) {
+					
+					Opener opener = new Opener();
+					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
 
-		this.title = title;
-		for (int i = 0; i < channelsToSet.size(); i++) {
+					File intermediateFilesDir = getIntermediateFilesDirectory();
+					
+					
+					for (Channel chan : validChannels.values()){
+						File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
+						System.out.println(file.getPath());
+						if (file.exists()) {
+							ImagePlus ip = opener.openImage(file.getPath());
+							ip.setCalibration(this.cal);
+							ip.setTitle(this.title + " Chan-" + chan.getAbbreviation());
+							if (this.dimensions == null) this.dimensions = ip.getDimensions();
+							origImages.put(chan, ip);
+						}
 
-			imagesToSet.get(i).setIJMenuBar(true);
-			if (!title.contains("Chan-")) {
-				imagesToSet.get(i).setTitle(title + " Chan-" + channelsToSet.get(i).getAbbreviation());
+					}
+					
+					if (origImages.size() != validChannels.size()) {
+						System.out.println(origImages.size() + " : " + validChannels.size());
+						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
+					}
+					
+					this.images.put(ImageTag.OrigTiff, origImages);
+				} else {
+					this.images.put(it, openSupplementalImages(it));
+					if (this.dimensions == null) {
+						Collection<ImagePlus> ip = this.images.get(it).values();
+						if (!ip.isEmpty()) {
+							this.dimensions = ip.iterator().next().getDimensions();
+						}
+					}
+
+				}
 			}
-			imagesToSet.get(i).setCalibration(cal);
-			this.channels.add(channelsToSet.get(i));
-			this.images.add(imagesToSet.get(i));
-
-		}
-		
-		System.out.println("Opened ");
-		if (supplementalImgs != null) {
-			System.out.println("With size of " + supplementalImgs.size());
-
-			this.supplementaryImages = supplementalImgs;
 			
-			deleteSuppImgFiles();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new ImageOpenException(e.getMessage());
 		}
 		
-		deleteImgFiles();
+		
 
 	}
 	
+	public File getImageFile() {
+		return this.imageFile;
+	}
 
-	
 	public Calibration getCalibration() {
 		return this.cal;
 	}
-	
-	public File getImgFile() {
-		return this.imgFile;
-	}
-	
 
-	public String getTotalImageTitle() {
+	public int[] getDimensions() {
+		return this.dimensions;
+	}
+
+	public String getImageTitle() {
 		return this.title;
 	}
 
-	private void deleteImgFiles() {
-		for (int i = 0; i < images.size(); i++) {
-			new File(this.getIntermediateFilesDirectory().getPath() + File.separator + images.get(i).getTitle() + ".tiff").delete();
-
-		}
-
-	}
-	
-	private void deleteSuppImgFiles() {
+	public void deleteSuppImgFiles(ImageTag it) {
 		File intDir = this.getIntermediateFilesDirectory();
 		if (intDir.isDirectory()) {
 			for (File file : intDir.listFiles()) {
-				if (!file.isDirectory() && file.getName().endsWith(".tiff") && file.getName().startsWith("SUPP IMG ")) {
+				if (!file.isDirectory() && file.getName().endsWith(".tiff") && file.getName().substring(0, file.getName().lastIndexOf(".tiff")).endsWith(it.getTag())) {
 					file.delete();
 				}
 			}
@@ -171,87 +151,183 @@ public class ImageContainer {
 
 	}
 
-	public int getStackSize(Channel chan) {
-
-		return images.get(channels.indexOf(chan)).getStackSize();
+	/**
+	 * 
+	 * @throws NullPointerException if the supplied channel doesn't exist or original image isn't opened.
+	 */
+	public int getOrigStackSize(Channel chan) throws NullPointerException {
+		
+		if (this.images.containsKey(ImageTag.Orig)) {
+			return this.images.get(ImageTag.Orig).values().iterator().next().getStackSize();
+		} else if (this.images.containsKey(ImageTag.OrigTiff)) {
+			return this.images.get(ImageTag.OrigTiff).values().iterator().next().getStackSize();
+		} else {
+			throw new NullPointerException();
+		}
 	}
 
-	public int getNumberOfChannels() {
-		return channels.size();
+	/**
+	 * 
+	 * @throws NullPointerException if channel doesn't exist or originals aren't open.
+	 */
+	public ImagePlus getChannelOrig(Channel channel, boolean duplicate) throws NullPointerException {
+		
+		ImagePlus ip = getOriginals().get(channel);
+
+		if (duplicate) {
+			ImagePlus newImg = ip.duplicate();
+			newImg.setTitle(newImg.getTitle().substring(4));
+			// REMOVE DUP TAG
+			return newImg;
+		} else if (ip == null) {
+			throw new NullPointerException();
+		} else {
+			return ip;
+		}
+	}
+	
+	public Map<Channel, ImagePlus> getOriginals() {
+		Map<Channel, ImagePlus> ips = this.images.get(ImageTag.Orig);
+		if (ips != null)
+			return ips;
+		else
+			return this.images.get(ImageTag.OrigTiff);
 	}
 
-	public List<Channel> getChannels() {
-		return channels;
+	/**
+	 * 
+	 * @throws NullPointerException if channel doesn't exist or there is no image stack.
+	 */
+	public ImagePlus getChannelSliceOrig(Channel channel, int stackPosition, boolean duplicate) throws NullPointerException{
+
+		ImagePlus fullImage = getOriginals().get(channel);
+		ImagePlus ip = new ImagePlus(fullImage.getTitle() + " Slc-" + stackPosition, fullImage.getImageStack().getProcessor(stackPosition));
+
+		if (duplicate) {
+			ImagePlus newImg = ip.duplicate();
+			newImg.setTitle(newImg.getTitle().substring(4));
+			// REMOVE DUP TAG
+			return newImg;
+		} else {
+			return ip;
+		}
+
 	}
-
-	public ImagePlus getImageChannel(Channel channel, boolean duplicate) {
-
-		int indexOf = channels.indexOf(channel);
-		if (indexOf < 0)
+	
+	public ImagePlus getImage(ImageTag it, Channel chan, boolean duplicate) {
+		Map<Channel, ImagePlus> ips = this.images.get(it);
+		
+		if (ips == null)
+			return null;
+		ImagePlus ip = ips.get(chan);
+		if (ip == null)
 			return null;
 		
 		if (duplicate) {
-			ImagePlus newImg = images.get(indexOf).duplicate();
+			ImagePlus newImg = ip.duplicate();
 			newImg.setTitle(newImg.getTitle().substring(4));
+			// REMOVE DUP TAG
 			return newImg;
 		} else {
-			return images.get(indexOf);
+			return ip;
 		}
+
 	}
 
-	public ImagePlus getImage(Channel channel, int stackPosition, boolean duplicate) {
+	public Map<Channel, ImagePlus> openSupplementalImages(ImageTag it) {
 
-		int indexOf = channels.indexOf(channel);
+		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
+		Opener opener = new Opener();
+
+		Map<Channel, ImagePlus> supp = new HashMap<Channel, ImagePlus>();
+		if (intermediateFilesDir.isDirectory()) {
+			for (File file : intermediateFilesDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().substring(0, file.getName().lastIndexOf('.')).endsWith(" " + it.getTag())) {
+
+					ImagePlus ip = opener.openImage(file.getPath());
+					ip.setCalibration(this.cal);
+
+					if (file.getName().contains("Chan-")) {
+						String ending = file.getName().substring(file.getName().indexOf("Chan-"));
+						if (ending.length() >= 6 && Channel.getChannelByAbbreviation(ending.charAt(5) + "") != null) {
+							Channel chan = Channel.getChannelByAbbreviation(ending.charAt(5) + "");
+							ip.setTitle(this.title + " Chan-" + ending.charAt(5));
+							supp.put(chan, ip);
+						} else {
+							ip.setTitle(this.title);
+							supp.put(null, ip);
+						}
+					} else {
+						ip.setTitle(this.title);
+						supp.put(null, ip);
+					}
+
+				}
+			}
+		}
+
+		return supp;
+	}
+
+	public ImagePlus openSupplementalImage(ImageTag it) {
+
+		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
+		Opener opener = new Opener();
+
+		if (intermediateFilesDir.isDirectory()) {
+			for (File file : intermediateFilesDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().substring(0, file.getName().lastIndexOf('.')).endsWith(" " + it.getTag())) {
+
+					ImagePlus ip = opener.openImage(file.getPath());
+					ip.setCalibration(this.cal);
+
+					ip.setTitle(this.title);
+					return ip;
+
+				}
+			}
+		}
+
+		return null;
+	}
+
+	public ImagePlus openSupplementalImage(ImageTag it, Channel chan) {
+		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
+		Opener opener = new Opener();
+
+		if (intermediateFilesDir.isDirectory()) {
+			for (File file : intermediateFilesDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().substring(0, file.getName().lastIndexOf('.')).endsWith(" " + it.getTag())) {
+
+					if (file.getName().contains("Chan-")) {
+						String ending = file.getName().substring(file.getName().indexOf("Chan-"));
+						if (ending.length() >= 6 && Channel.getChannelByAbbreviation(ending.charAt(5) + "") != null) {
+
+							if (Channel.getChannelByAbbreviation(ending.charAt(5) + "").equals(chan)) {
+								ImagePlus ip = opener.openImage(file.getPath());
+								ip.setCalibration(this.cal);
+								ip.setTitle(this.title + " Chan-" + ending.charAt(5));
+								return ip;							
+							}
+						}
+					}
+
+				}
+			}
+		}
+
+		return null;
+	}
 
 
-		ImagePlus ip = new ImagePlus(images.get(indexOf).getTitle() + " Slc-" + stackPosition, images.get(indexOf).getImageStack().getProcessor(stackPosition));
+	public void setSliceRegion(int lowSlice, int highSlice) {
+
+		Map<Channel, ImagePlus> originals = getOriginals();
+		if (originals == null)
+			throw new NullPointerException();
 		
-		if (duplicate) {
-			ImagePlus newImg = ip.duplicate();
-			newImg.setTitle(newImg.getTitle().substring(4));
-			return newImg;
-		} else {
-			return ip;
-		}
-	}
-
-	public ImagePlus getImage(int channelNum, int stackPosition, boolean duplicate) {
-
-
-		ImagePlus ip = new ImagePlus(images.get(channelNum).getTitle() + " Slc-" + stackPosition, images.get(channelNum).getImageStack().getProcessor(stackPosition));
-		if (duplicate) {
-			ImagePlus newImg = ip.duplicate();
-			newImg.setTitle(newImg.getTitle().substring(4));
-			return newImg;
-		} else {
-			return ip;
-		}
-	}
-	
-	public ImagePlus getSupplementalImage(String key) {
-		return this.supplementaryImages.get(key);
-	}
-	
-	public Map<String, ImagePlus> getAllSupplementalImages() {
-		return this.supplementaryImages;
-	}
-	
-	public void addSupplementalImage(String key, ImagePlus image) {
-		System.out.println("Added via method");
-		this.supplementaryImages.put(key, image);
-	}
-
-	public Channel getChannel(int num) {
-		return channels.get(num);
-	}
-
-	public ImageContainer setSliceRegion(int lowSlice, int highSlice) {
-
-		List<ImagePlus> newImages = new ArrayList<ImagePlus>();
-
-		for (int i = 0; i < images.size(); i++) {
-			ImagePlus img = images.get(i);
-			ImageStack is = img.getStack().duplicate();
+		for (Entry<Channel, ImagePlus> en : originals.entrySet()) {
+			ImageStack is = en.getValue().getStack().duplicate();
 			for (int s = (is.getSize() - highSlice); s > 0; s--) {
 				is.deleteLastSlice();
 			}
@@ -259,117 +335,171 @@ public class ImageContainer {
 			for (int s = lowSlice; s > 1; s--) {
 				is.deleteSlice(1);
 			}
-			newImages.add(new ImagePlus(img.getTitle(), is));
+			en.setValue(new ImagePlus(en.getValue().getTitle(), is));
 		}
-
-		return new ImageContainer(newImages, this.channels, this);
 
 	}
 
-	private void deleteResultsTables(String date) {
-
-		for (Channel chan : Channel.values()) {
-			ImagePlus potential = getImageChannel(chan, false);
-			if (potential != null) {
-				File file = new File(getSaveDirectory() + File.separator + getImageChannel(chan, false).getTitle() + ".txt");
-				if (file.exists()) {
+	private void deleteResultsTables() {
+		File intDir = getIntermediateFilesDirectory();
+		if (intDir.isDirectory()) {
+			for (File file : intDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().endsWith(".txt")) {
 					file.delete();
 				}
+			}
+		}
 
+	}
+	
+	public void deleteIrrelevantDataExcept(Set<ImageTag> tags) {
+		File intDir = getIntermediateFilesDirectory();
+		if (intDir.isDirectory()) {
+			for (File file : intDir.listFiles()) {
+				if (!file.isDirectory()) {
+					boolean delete = true;
+					for (ImageTag tag : tags) {
+						if (file.getName().endsWith(" " + tag.getTag() + ".tiff")) {
+							delete = false;
+							break;
+						}
+					}
+					if (delete)
+						file.delete();
+				}
 			}
 		}
 	}
+	
+	public void saveOrigImageStacksAsTiffs() {
+		
+		for (Entry<Channel, ImagePlus> en : this.images.get(ImageTag.Orig).entrySet()) {
+			
+			new FileSaver(en.getValue()).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + en.getKey() + ".tiff");
+		}
+	}
 
-	public void saveResultsTable(Map<Channel, ResultsTable> results, String date, boolean excel) {
+	public void saveResultsTables(Map<String, ResultsTable> results, boolean excel) {
 
-		deleteResultsTables(date);
+		deleteResultsTables();
 
 		String ext = excel ? ".xlsx" : ".txt";
-		
+
 		if (excel) {
 			AdvancedWorkbook aw = new AdvancedWorkbook();
-			for (Entry<Channel, ResultsTable> en : results.entrySet()) {
-				if (en.getValue() == null)
-					continue;
-				aw.addSheetFromNeuronCounterResultTable(en.getKey().name(), en.getValue());
+			List<String> keys = new ArrayList<String>(results.keySet());
+
+			for (Channel chan : Channel.values()) {
+				if (keys.contains(chan.name())) {
+					aw.addSheetFromNeuronCounterResultTable(chan.name(), results.get(chan.name()));
+					keys.remove(chan.name());
+				}
+			}
+			for (String key : keys) {
+				aw.addSheetFromNeuronCounterResultTable(key, results.get(key));
+
 			}
 
 			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
 			return;
 		}
-		for (Entry<Channel, ResultsTable> en : results.entrySet()) {
-			try {
-				en.getValue().saveAs(this.getSaveDirectory().getPath() + File.separator + getImageChannel(en.getKey(), false).getTitle() + ext);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-	}
-
-
-	public void save(boolean saveSupp) {
 		
-		try {
-			String savePathPrefix = this.getIntermediateFilesDirectory().getPath() + File.separator;
-			for (int i = 0; i < images.size(); i++) {
-
-				String savePath = savePathPrefix + images.get(i).getTitle() + ".tiff";
-				
-				if (images.get(i).getStackSize() > 1) {
-					new FileSaver(images.get(i)).saveAsTiffStack(savePath);
-				} else {
-					new FileSaver(images.get(i)).saveAsTiff(savePath);
+		for (Entry<String, ResultsTable> en : results.entrySet()) {
+			if (en.getValue() != null) {
+				try {
+					en.getValue().saveAs(getIntermediateFilesDirectory() + File.separator + this.title + " results " + en.getKey() + ext);
+				} catch (IllegalStateException e) {
+					// Wont happen
+					e.printStackTrace();
+				} catch (IOException e) {
+					// Wont happen
+					e.printStackTrace();
 				}
 			}
-			
-			if (saveSupp) {
-				for (Entry<String, ImagePlus> en : this.supplementaryImages.entrySet()) {
 
-					String savePath = savePathPrefix + "SUPP IMG " + en.getKey() + ".tiff";
-					
-					if (en.getValue().getStackSize() > 1) {
-						new FileSaver(en.getValue()).saveAsTiffStack(savePath);
-					} else {
-						new FileSaver(en.getValue()).saveAsTiff(savePath);
-					}
-				}
-			}
-			
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 
 
 	}
 	
-	public Map<Channel, ResultsTable> tryToOpenResultsTables(List<Channel> channelsToOpenResults) {
-		
-		Map<Channel, ResultsTable> results = new HashMap<Channel, ResultsTable>();
-		
-		for (Channel chan : channelsToOpenResults) {
-			results.put(chan, ResultsTable.open2(getSaveDirectory(this.title, this.outputLocation, this.timeOfRun) + File.separator + getImageChannel(chan, false).getTitle() + ".txt"));
+	public void saveSupplementalImage(ImageTag it, ImagePlus image) {
+		saveSupplementalImage(it, image, null);
+	}
+	
+	public void saveSupplementalImage(ImageTag it, ImagePlus image, Channel chan) {
+		String title = this.title.concat(chan != null ? " Chan-" + chan.abbrev : "");
+		image.setTitle(title);
+		String savePath = getIntermediateFilesDirectory().getPath() + File.separator + title.concat(" ").concat(it.getTag()).concat(".tiff");
 
-		}		
+		if (image.getStackSize() > 1) {
+			new FileSaver(image).saveAsTiffStack(savePath);
+		} else {
+			new FileSaver(image).saveAsTiff(savePath);
+		}
+		if (!this.images.containsKey(it))
+			this.images.put(it, new HashMap<Channel, ImagePlus>());
+		
+		this.images.get(it).put(chan, image);
+	}
+
+	public Map<String, ResultsTable> tryToOpenResultsTables() {
+
+		
+		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
+
+		Map<String, ResultsTable> results = new HashMap<String, ResultsTable>();
+		
+		if (intermediateFilesDir.isDirectory()) {
+			for (File file : intermediateFilesDir.listFiles()) {
+				if (!file.isDirectory() && file.getName().endsWith(".txt") && file.getName().contains(" results ")) {
+					
+					String nameNoExt = file.getName().substring(0, file.getName().indexOf(".txt"));
+					String name = nameNoExt.substring(nameNoExt.lastIndexOf(" results ") + 9);
+					results.put(name, ResultsTable.open2(file.getPath()));
+
+
+				}
+			}
+		}
 
 		return results;
 
 	}
-	
-	
+
+	public enum ImageTag {
+
+		Orig(""), OrigTiff(""), MaxProjected("MAXED"), Objects("OBJECTS"), ObjCountMask("OBJ MASK"), ObjCountOrigMaskMerge("OBJ MASK MERGE"),
+		Rois("ROIS"), Bins("BINS");
+
+		private String tag;
+
+		private ImageTag(String tag) {
+			this.tag = tag;
+		}
+
+		public String getTag() {
+			return this.tag;
+		}
+
+	}
 
 	public enum Channel {
-		GREEN("G"), RED("R"), BLUE("B"), WHITE("W");
+		GREEN("G", new Color(57, 137, 23)), RED("R", Color.RED), BLUE("B", Color.BLUE), WHITE("W", Color.GRAY);
 
 		private String abbrev;
+		private Color color;
 
-		private Channel(String abbrev) {
+		private Channel(String abbrev, Color color) {
 			this.abbrev = abbrev;
+			this.color = color;
 		}
 
 		public String getAbbreviation() {
 			return this.abbrev;
+		}
+
+		public Color getColor() {
+			return this.color;
 		}
 
 		public static Channel getChannelByAbbreviation(String abbrev) {
@@ -386,21 +516,72 @@ public class ImageContainer {
 			return this.abbrev;
 		}
 
+		public String toReadableString() {
+			String origName = super.name();
+			return origName.charAt(0) + origName.substring(1).toLowerCase();
+		}
+
+		public static Channel parse(String query) {
+			if (query == null)
+				return null;
+			for (Channel chan : values()) {
+				if (query.equalsIgnoreCase(chan.name()))
+					return chan;
+			}
+			return null;
+		}
+
 
 	}
 	
+	public class ImageOpenException extends Exception {
 
-	
-	public synchronized int getMin(Channel channel) {
+		private static final long serialVersionUID = 1963273665585902446L;
+			
+		public ImageOpenException(String message) {
+			super(message);
+		}
+	}
 
-		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMin();
+
+
+	public synchronized int getMin(ImageTag it, Channel channel) {
 		
+		Map<Channel, ImagePlus> itImages = this.images.get(it);
+		if (itImages == null)
+			throw new NullPointerException();
+		
+		if (channel == null) {
+			if (!itImages.containsKey(null))
+				throw new NullPointerException();
+			
+			return (int) itImages.get(null).getDisplayRangeMin();
+		} else {
+			if (!itImages.containsKey(channel))
+				throw new NullPointerException();
+			return (int) itImages.get(channel).getDisplayRangeMin();
+		}
+
+
 	}
-	
-	public synchronized int getMax(Channel channel) {
-		return (int) this.images.get(this.channels.indexOf(channel)).getDisplayRangeMax();
+
+	public synchronized int getMax(ImageTag it, Channel channel) {
+		Map<Channel, ImagePlus> itImages = this.images.get(it);
+		if (itImages == null)
+			throw new NullPointerException();
+		
+		if (channel == null) {
+			if (!itImages.containsKey(null))
+				throw new NullPointerException();
+			
+			return (int) itImages.get(null).getDisplayRangeMax();
+		} else {
+			if (!itImages.containsKey(channel))
+				throw new NullPointerException();
+			return (int) itImages.get(channel).getDisplayRangeMax();
+		}
 	}
-	
+
 	private static void makeSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) {
 		File file = new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
 		if (!file.isDirectory()) {
@@ -411,15 +592,15 @@ public class ImageContainer {
 			intermed.mkdir();
 		}
 	}
-	
+
 	public File getSaveDirectory() throws IllegalStateException{
-		
+
 		if (this.outputLocation == null) {
 			throw new IllegalStateException();
 		}
 		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun);
 	}
-	
+
 	public File getIntermediateFilesDirectory()throws IllegalStateException {
 		if (this.outputLocation == null) {
 			throw new IllegalStateException();
@@ -427,15 +608,15 @@ public class ImageContainer {
 		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun + File.separator + INTERMED_FILES);
 
 	}
-	
+
 	public static File getSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
 
 		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
 		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
 
 	}
-	
-	
+
+
 	public static File getIntermediateFilesDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
 		if (outputLocation == null) {
 			throw new IllegalStateException();
@@ -444,51 +625,51 @@ public class ImageContainer {
 		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun + File.separator + INTERMED_FILES);
 
 	}
-	
+
 	public void applyLUT(ImagePlus imp, Channel chan) {
-		
-		
+
+
 		FileInfo fi = new FileInfo();
-        fi.reds = new byte[256]; 
-        fi.greens = new byte[256]; 
-        fi.blues = new byte[256];
-        fi.lutSize = 256;
+		fi.reds = new byte[256]; 
+		fi.greens = new byte[256]; 
+		fi.blues = new byte[256];
+		fi.lutSize = 256;
 		switch (chan) {
 		case GREEN:
-            primaryColor(2, fi.reds, fi.greens, fi.blues);
+			primaryColor(2, fi.reds, fi.greens, fi.blues);
 			break;
 		case RED:
-            primaryColor(4, fi.reds, fi.greens, fi.blues);
-            break;
+			primaryColor(4, fi.reds, fi.greens, fi.blues);
+			break;
 		case BLUE:
-            primaryColor(1, fi.reds, fi.greens, fi.blues);
-            break;
-        default:
-            	return;
+			primaryColor(1, fi.reds, fi.greens, fi.blues);
+			break;
+		default:
+			return;
 		}
-        fi.fileName = "CustomLUT";
+		fi.fileName = "CustomLUT";
 
-        ImageProcessor ip = imp.getChannelProcessor();
-        IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
-        ip.setColorModel(cm);
-        if (imp.getStackSize()>1)
-            imp.getStack().setColorModel(cm);
-        imp.updateImage();
+		ImageProcessor ip = imp.getChannelProcessor();
+		IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
+		ip.setColorModel(cm);
+		if (imp.getStackSize()>1)
+			imp.getStack().setColorModel(cm);
+		imp.updateImage();
 
 	}
-	
-    
-	
+
+
+
 	private void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
-        for (int i=0; i<256; i++) {
-            if ((color&4)!=0)
-                reds[i] = (byte)i;
-            if ((color&2)!=0)
-                greens[i] = (byte)i;
-            if ((color&1)!=0)
-                blues[i] = (byte)i;
-        }
-        return;
-    }
-	
+		for (int i=0; i<256; i++) {
+			if ((color&4)!=0)
+				reds[i] = (byte)i;
+			if ((color&2)!=0)
+				greens[i] = (byte)i;
+			if ((color&1)!=0)
+				blues[i] = (byte)i;
+		}
+		return;
+	}
+
 }

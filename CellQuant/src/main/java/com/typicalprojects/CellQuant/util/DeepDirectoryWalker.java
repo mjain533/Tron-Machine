@@ -12,10 +12,14 @@ public class DeepDirectoryWalker extends DirectoryWalker{
 	
 	private final String ending;
 	private final int depth;
-	public DeepDirectoryWalker(String ending, int depth) {
+	private final boolean enforceDepth;
+	private final boolean enforceFileLimit;
+	public DeepDirectoryWalker(String ending, int depth, boolean enforceDepth, boolean enforceFileLimit) {
 		super();
 		this.ending = ending;
 		this.depth = depth;
+		this.enforceDepth = enforceDepth;
+		this.enforceFileLimit = enforceFileLimit;
 	}
 
 	public List<FileContainer> getFilteredFiles(File dir) throws IOException {
@@ -29,17 +33,20 @@ public class DeepDirectoryWalker extends DirectoryWalker{
 	}
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected void handleFile(File file, int depth, Collection results) throws IOException {
-		if (file.getPath().endsWith(ending)) {
+		if (ending == null || file.getPath().endsWith(ending)) {
 			if (depth <= this.depth) {
 				results.add(file);
+			} else if (this.enforceDepth) {
+				throw new IOException();
 			}
 		}
+
 	}
 
 	@SuppressWarnings("rawtypes")
-	protected boolean handleDirectory(File directory, int depth, Collection results) {
-		if (directory.list().length > 500)
-			throw new RuntimeException();
+	protected boolean handleDirectory(File directory, int depth, Collection results) throws IOException {
+		if (directory.list().length > 500 && this.enforceFileLimit)
+			throw new IOException();
 		return true;
 
 	}

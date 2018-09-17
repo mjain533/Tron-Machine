@@ -40,6 +40,7 @@ public class Wizard {
 			gui.getPanelDisplay().setDisplayState(false, null);
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, null);
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_FILE); // THIS LAST
+			gui.getLogPanel().setDisplayState(false);
 			break;
 		case SELECT_SLICES:
 			this.gui.setMenuItemsEnabledDuringRun(false);
@@ -79,7 +80,7 @@ public class Wizard {
 			this.gui.getPanelOptions().cancelNeuronProcessing();
 			this.gui.getSelectFilesPanel().cancelOpening();
 			setStatus(Status.SELECT_FILES);
-			gui.log("Run canceled.");
+			gui.getLogger().setCurrentTask("Run canceled.");
 		} else {
 			this.gui.getPanelOptions().cancelNeuronProcessing();
 			this.gui.getSelectFilesPanel().cancelOpening();

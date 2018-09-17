@@ -16,15 +16,10 @@ import javax.swing.WindowConstants;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.awt.event.ActionListener;
 import java.awt.Dimension;
@@ -36,15 +31,14 @@ import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.CellQuant.MainFrame;
+import com.typicalprojects.CellQuant.neuronal_migration.Settings.SettingsLoader;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlDisplay;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlInstructions;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlLog;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.CellQuant.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.CellQuant.popup.BrightnessAdjuster;
-import com.typicalprojects.CellQuant.util.ImageContainer;
-import com.typicalprojects.CellQuant.util.SynchronizedProgress;
-import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
+import com.typicalprojects.CellQuant.util.Logger;
 
 import java.awt.Font;
 import java.awt.Toolkit;
@@ -61,32 +55,15 @@ public class GUI  {
 
 	private JFrame quantFrame;
 	private final MainFrame parentFrame;
+	public static final Font mediumFont = new Font("PingFang TC", Font.BOLD, 14);
 	public static final Font smallFont = new Font("PingFang TC", Font.BOLD, 13);
 	public static final Font smallPlainFont = new Font("PingFang TC", Font.PLAIN, 13);
 	public static final Font medium_smallPlainFont = new Font("PingFang TC", Font.PLAIN, 10);
 
-	public static final String folderName = "Neuronal_Migration_Resources";
-	public static final String settingsFile = "settings.txt";
 
 	public static String dateString = null;
 
-	public static Map<Integer, ImageContainer.Channel> channelMap = new HashMap<Integer, ImageContainer.Channel>();
-	public static List<Channel> channelsToProcess = new ArrayList<Channel>();
-	public static Channel channelForROIDraw = null;
-	public static File outputLocation = null;
-	public static File lastSelectFileLocation = null;
-	static {
-		channelMap.clear();
-		channelMap.put(0, Channel.GREEN);
-		channelMap.put(1, Channel.WHITE);
-		channelMap.put(2, Channel.RED);
-		channelMap.put(3, Channel.BLUE);
-		channelsToProcess.clear();
-		channelsToProcess.add(Channel.RED);
-		channelsToProcess.add(Channel.GREEN);
-		channelForROIDraw = Channel.BLUE;
-
-	}
+	public static Settings settings = null;
 
 
 	private PnlInstructions pnlInstructions;
@@ -95,14 +72,12 @@ public class GUI  {
 	private PnlDisplay pnlDisplay;
 	private PnlOptions pnlOptions;
 
-	private SynchronizedProgress progressReporter;
-
 	private volatile Wizard wizard;
 	private JMenuItem mntmPreferences;
 	private JMenuItem mntmBrightnessAdj;
 	private JMenuItem mntmSummaryStats;
 
-	private Preferences prefs;
+	private Preferences2 prefs;
 	private BrightnessAdjuster brightnessAdjuster;
 	private StatsGUI statsGUI;
 
@@ -113,56 +88,28 @@ public class GUI  {
 	 * @throws FormatException 
 	 */
 	public GUI(MainFrame parent) throws IOException {
-		
+		settings = null;
+		try {
+			settings = SettingsLoader.loadSettings(false);
+			if (settings.needsUpdate) {
+				SettingsLoader.saveSettings(settings);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			if (settings == null) {
+				JOptionPane.showMessageDialog(parent, "<html>There was an error loading settings:<br><br>" + e.getMessage() + "</html>", "Settings Load Error", JOptionPane.ERROR_MESSAGE);
+			} else {
+				JOptionPane.showMessageDialog(parent, "<html>There was an error updating settings:<br><br>" + e.getMessage() + "</html>", "Settings Update Error", JOptionPane.ERROR_MESSAGE);
 
+			}
+		}
+		System.out.println(settings.channelsToProcess);
 		this.parentFrame = parent;
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();
 		dateString = dateFormat.format(date);
 		
-		File baseDir = new File(folderName);
-		if (!baseDir.exists() || !baseDir.isDirectory()) {
-			baseDir.mkdir();
-
-		}
-
-		File settings = new File(folderName + File.separator + settingsFile);
-		if (!settings.exists()) {
-			boolean fileCreated = false;
-
-			while (!fileCreated) {
-				try {
-					settings.createNewFile();
-					fileCreated = true;
-					channelMap.clear();
-					channelMap.put(0, Channel.GREEN);
-					channelMap.put(1, Channel.WHITE);
-					channelMap.put(2, Channel.RED);
-					channelMap.put(3, Channel.BLUE);
-					channelsToProcess.clear();
-					channelsToProcess.add(Channel.RED);
-					channelsToProcess.add(Channel.GREEN);
-					channelForROIDraw = Channel.BLUE;
-					GUI.outputLocation = null;
-					Preferences.writeSettingsFromGUI();
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.out.println(e.getMessage());
-					if (JOptionPane.showConfirmDialog(null, "A directory for holding contents of this application could not be created on your computer."
-							+ " Would you like to retry?", "Could not create file.", JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.CANCEL_OPTION ) {
-						doExit();
-					}
-
-				}
-				
-
-			}
-
-		} else {
-
-			Preferences.readSettingsIntoGUI();	
-
-		}
+		
 		initialize();
 
 
@@ -218,14 +165,14 @@ public class GUI  {
 		});
 		
 		mntmPreferences = new JMenuItem("Preferences");
-		prefs = new Preferences(this);
+		prefs = new Preferences2(this);
 		mntmPreferences.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							prefs.display(quantFrame);
+							prefs.display(quantFrame, false);
 							unfocusTemporarily();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -342,7 +289,6 @@ public class GUI  {
 
 		// Log
 		pnlLog = new PnlLog(this);
-		this.progressReporter = new SynchronizedProgress(null, pnlLog);
 
 		pnlOptions = new PnlOptions(this);
 		this.brightnessAdjuster = new BrightnessAdjuster(pnlOptions);
@@ -377,11 +323,11 @@ public class GUI  {
 								.addGroup(gl_pnlCONTENT.createSequentialGroup()
 										.addComponent(pnlInstructions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/300, GroupLayout.PREFERRED_SIZE)
-										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlLog.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/270, GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(pnlOptions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+										.addPreferredGap(ComponentPlacement.RELATED)
+										.addComponent(pnlLog.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addPreferredGap(ComponentPlacement.RELATED)))
 						.addGap(5))
 				);
@@ -438,20 +384,16 @@ public class GUI  {
 		return this.quantFrame;
 	}
 
-	public synchronized void log(String message) {
-		this.progressReporter.setProgress(message, -1, -1);
+	public Logger getLogger() {
+		return this.pnlLog;
 	}
-
-	public synchronized void log(String message, int progressSoFar, int totalProgress) {
-		this.progressReporter.setProgress(message, progressSoFar, totalProgress);
+	
+	public PnlLog getLogPanel() {
+		return this.pnlLog;
 	}
 
 	public Wizard getWizard() {
 		return this.wizard;
-	}
-
-	public SynchronizedProgress getProgressReporter() {
-		return this.progressReporter;
 	}
 
 	public BrightnessAdjuster getBrightnessAdjuster() {
@@ -465,8 +407,7 @@ public class GUI  {
 
 	public void setMenuItemsEnabledDuringRun(boolean enabled) {
 		this.mntmPreferences.setEnabled(enabled);
-		
-		this.prefs.removeDisplay();
+		this.prefs.setEnabled(enabled);
 		this.statsGUI.removeDisplay();
 		this.statsGUI.resetFields();
 		this.prefs.resetPreferences();

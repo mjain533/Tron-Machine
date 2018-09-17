@@ -11,7 +11,8 @@ import java.awt.Font;
 import java.util.Arrays;
 import java.util.Vector;
 
-import com.typicalprojects.CellQuant.util.SynchronizedProgress;
+import com.typicalprojects.CellQuant.util.Logger;
+
 
 
 public class Custom3DCounter {
@@ -59,7 +60,7 @@ public class Custom3DCounter {
 
 	boolean gotCentreOfMass=false, gotCentroid=false, gotSurfList=false, gotSurfCoord=false;
 
-	public Custom3DCounter(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, SynchronizedProgress progressID, NeuronProcessor np) {
+	public Custom3DCounter(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, Logger progressID, NeuronProcessor np) {
 
 		this.thr = thr;
 		this.width=img.getWidth();
@@ -91,7 +92,7 @@ public class Custom3DCounter {
 
 	/** Generates the connexity analysis.
 	 */
-	private void findObjects(SynchronizedProgress progressID) {
+	private void findObjects(Logger progressID) {
 		//First ID attribution
 		int currID=0;
 		int currPos=0;
@@ -112,7 +113,7 @@ public class Custom3DCounter {
 		 */
 
 		objID=new int[length];
-
+		progressID.setCurrentTask("Step 1/3: Finding structures");
 		for (int z=1; z<=nbSlices; z++){
 			for (int y=0; y<height; y++){
 				for (int x=0; x<width; x++){
@@ -127,12 +128,13 @@ public class Custom3DCounter {
 			}
 			//IJ.showStatus("Finding structures "+z*100/nbSlices+"%");
 			if (!np.isCancelled()) {
-				progressID.setProgress("Step 1/3: Finding structures", z, nbSlices);
+				progressID.setCurrentTaskProgress(z, nbSlices);
 			} else {
 				return;
 			}
 		}
-
+		progressID.setCurrentTaskComplete();
+		
 		IDcount=new int[currID];
 		for (int i=0; i<length; i++) IDcount[objID[i]]++;
 		IDisAtEdge=new boolean[currID];
@@ -148,7 +150,7 @@ public class Custom3DCounter {
 		isSurf=new boolean[length];
 		currPos=0;
 		minID=1;
-
+		progressID.setCurrentTask("Step 2/3: Connecting structures");
 		for (int z=1; z<=nbSlices; z++){
 			for (int y=0; y<height; y++){
 				for (int x=0; x<width; x++){
@@ -199,16 +201,18 @@ public class Custom3DCounter {
 				}
 			}
 			if (!np.isCancelled()) {
-				progressID.setProgress("Step 2/3: Connecting structures", z, nbSlices);
+				progressID.setCurrentTaskProgress(z, nbSlices);
 				
 			} else {
 				return;
 			}
 		}
+		progressID.setCurrentTaskComplete();
 
 		int newCurrID=0;
 
 		//Renumbering of all the found objects and update of their respective number of pixels while filtering based on the number of pixels
+		progressID.setCurrentTask("Step 3/3: Renumbering structures");
 		for (int i=1; i<IDcount.length; i++){
 			if ((IDcount[i]!=0 && IDcount[i]>=minSize && IDcount[i]<=maxSize)&& (!exclude || !(exclude && IDisAtEdge[i]))){
 				newCurrID++;
@@ -220,12 +224,13 @@ public class Custom3DCounter {
 			}
 			
 			if (!np.isCancelled()) {
-				progressID.setProgress("Step 3/3: Renumbering structures", i, IDcount.length - 1);
+				progressID.setCurrentTaskProgress(i, IDcount.length - 1);
 				
 			} else {
 				return;
 			}
 		}
+		progressID.setCurrentTaskComplete();
 
 		nbObj=newCurrID;
 

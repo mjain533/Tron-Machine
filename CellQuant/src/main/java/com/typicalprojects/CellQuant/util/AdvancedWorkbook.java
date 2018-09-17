@@ -95,8 +95,11 @@ public class AdvancedWorkbook {
 
 			XSSFSheet sheet = sheetEN.getValue();
 
-			for (int numColToCalc = 0; numColToCalc < 20; numColToCalc++) {
-				Cell cell = sheet.getRow(0).getCell(3 + numColToCalc);
+			for (int numColToCalc = 0; numColToCalc < 200; numColToCalc++) {
+				Row headingRow = sheet.getRow(0);
+				if (headingRow == null)
+					break;
+				Cell cell = headingRow.getCell(3 + numColToCalc);
 				if (cell == null || !cell.getStringCellValue().startsWith("Distance from")) {
 					break;
 				} else {

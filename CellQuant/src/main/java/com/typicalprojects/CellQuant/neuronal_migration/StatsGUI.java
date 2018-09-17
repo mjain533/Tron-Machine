@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.FileDialog;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +11,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,10 +23,11 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-
+import com.typicalprojects.CellQuant.neuronal_migration.Settings.SettingsLoader;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Analyzer;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Analyzer.Calculation;
 import com.typicalprojects.CellQuant.util.AdvancedWorkbook;
+import com.typicalprojects.CellQuant.util.FileBrowser;
 import com.typicalprojects.CellQuant.util.FileContainer;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 import com.typicalprojects.CellQuant.util.SimpleJList;
@@ -64,6 +63,9 @@ public class StatsGUI extends JFrame {
 	private volatile boolean processing = false;
 	private FileContainer storeDir = null;
 	private JLabel lblStatus;
+	private FileBrowser fileBrowser = null;
+	private FileBrowser fileBrowserSingular = null;
+
 
 	/**
 	 * Launch the application.
@@ -87,6 +89,9 @@ public class StatsGUI extends JFrame {
 	public StatsGUI(GUI mainGUI) {
 		this.mainGUI = mainGUI;
 		this.self = this;
+		this.fileBrowser = new FileBrowser(FileBrowser.MODE_DIRECTORIES, null, true);
+		this.fileBrowserSingular = new FileBrowser(FileBrowser.MODE_DIRECTORIES, null, false);
+
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		Dimension dimOfWindow = new Dimension(550, 380);
 		setBounds(100, 100, dimOfWindow.width, dimOfWindow.height);
@@ -121,32 +126,28 @@ public class StatsGUI extends JFrame {
 		btnAddFile.setFocusable(false);
 		btnAddFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
-
-				FileDialog fd = new FileDialog(self);
-				if (GUI.lastSelectFileLocation != null) {
-					fd.setDirectory(GUI.lastSelectFileLocation.getPath());
+				Settings settings = GUI.settings;
+				if (settings != null && settings.recentOpenAnalysisOutputLocations != null) {
+					fileBrowser.startBrowsing(settings.recentOpenAnalysisOutputLocations, self);
+				} else {
+					fileBrowser.startBrowsing(null, self);
 				}
-				fd.setMode(FileDialog.LOAD);
-				fd.setMultipleMode(true);
-				fd.setVisible(true);
+	
 
 				List<FileContainer> inputFiles = new ArrayList<FileContainer>();
-				File[] files = fd.getFiles();
-				File lastOutputLocation = null;
-				if (files != null && files.length != 0) {
-					for (int i = 0; i < files.length; i++) {
-						if (!files[i].isDirectory())
+				List<File> files = fileBrowser.getSelectedFiles();
+	
+				if (files != null && files.size() != 0) {
+					for (int i = 0; i < files.size(); i++) {
+						if (!files.get(i).isDirectory())
 							continue;
-						lastOutputLocation = files[i];
-						File[] analysisFile = files[i].listFiles(new FilenameFilter() {
+						File[] analysisFile = files.get(i).listFiles(new FilenameFilter() {
 							public boolean accept(File directory, String fileName) {
 								return fileName.endsWith(".xlsx");
 							}
 						});
 						
 						if (analysisFile.length > 0) {
-							System.out.println(3);
 							FileContainer newInputDir = new FileContainer(analysisFile[0]);
 							if (inputFiles.contains(newInputDir)) {
 								JOptionPane.showMessageDialog(contentPane, "You cannot add duplicate files.", "Error Selecting Files.", JOptionPane.ERROR_MESSAGE);
@@ -159,22 +160,23 @@ public class StatsGUI extends JFrame {
 					for (FileContainer fc : inputFiles) {
 						listSelectedFiles.addItem(fc);
 					}
-					listSelectedFiles.setSelection(0);
+					listSelectedFiles.setSelectedIndex(0);
 				}
-				System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+
 				if (!listSelectedFiles.isEmpty() && !txtOutputLocation.getText().equals("")) {
 					btnProcess.setEnabled(true);
 				} else {
 					btnProcess.setEnabled(false);
 				}
-				if (lastOutputLocation != null) {
-					GUI.lastSelectFileLocation = lastOutputLocation;
-					try {
-						Preferences.writeSettingsFromGUI();
-					} catch (IOException e1) {
-						// TODO shouldn't happen
-						e1.printStackTrace();
+				
+				List<File> fileRecents = fileBrowser.getRecents();
+				if (fileRecents != null && fileRecents.size() > 0) {
+					if (settings.recentOpenAnalysisOutputLocations == null) {
+						settings.recentOpenAnalysisOutputLocations = new ArrayList<File>();
 					}
+					settings.recentOpenAnalysisOutputLocations.addAll(fileRecents);
+					SettingsLoader.saveSettings(settings);
+
 				}
 
 			}
@@ -184,8 +186,8 @@ public class StatsGUI extends JFrame {
 		btnRemoveFile.setFocusable(false);
 		btnRemoveFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (listSelectedFiles.getSelected() != null) {
-					listSelectedFiles.removeItem(listSelectedFiles.getSelected());
+				if (listSelectedFiles.getSelectedValue() != null) {
+					listSelectedFiles.removeItem(listSelectedFiles.getSelectedValue());
 					if (!listSelectedFiles.isEmpty() && !txtOutputLocation.getText().equals("")) {
 						btnProcess.setEnabled(true);
 					} else {
@@ -216,29 +218,37 @@ public class StatsGUI extends JFrame {
 		btnBrowse.setFocusable(false);
 		btnBrowse.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.setProperty("apple.awt.fileDialogForDirectories", "true"); 
-
-				FileDialog fd = new FileDialog(self);
-
-				fd.setMode(FileDialog.LOAD);
-				if (GUI.lastSelectFileLocation != null) {
-					fd.setDirectory(GUI.lastSelectFileLocation.getPath());
+				
+				Settings settings = GUI.settings;
+				if (settings != null && settings.recentOpenAnalysisOutputLocations != null) {
+					fileBrowserSingular.startBrowsing(settings.recentOpenAnalysisOutputLocations, self);
+				} else {
+					fileBrowserSingular.startBrowsing(null, self);
 				}
-				fd.setMultipleMode(false);
-				fd.setVisible(true);
+	
 
-				File[] file = fd.getFiles();
-				if (file != null && file.length != 0) {
+				List<File> file = fileBrowserSingular.getSelectedFiles();
+				if (file != null && file.size() != 0) {
 						
-					storeDir = new FileContainer(file[0]);
+					storeDir = new FileContainer(file.get(0));
 					txtOutputLocation.setText(storeDir.file.getPath());
 					
 				}
-				System.setProperty("apple.awt.fileDialogForDirectories", "false"); 
+
 				if (!listSelectedFiles.isEmpty() && !txtOutputLocation.getText().equals("")) {
 					btnProcess.setEnabled(true);
 				} else {
 					btnProcess.setEnabled(false);
+				}
+				
+				List<File> fileRecents = fileBrowserSingular.getRecents();
+				if (fileRecents != null && fileRecents.size() > 0) {
+					if (settings.recentOpenAnalysisOutputLocations == null) {
+						settings.recentOpenAnalysisOutputLocations = new ArrayList<File>();
+					}
+					settings.recentOpenAnalysisOutputLocations.addAll(fileRecents);
+					SettingsLoader.saveSettings(settings);
+
 				}
 			}
 		});
@@ -306,8 +316,8 @@ public class StatsGUI extends JFrame {
 
 		this.listSelectedFiles = new SimpleJList<FileContainer>();
 
-		this.listSelectedFiles.getGUIComponent().setFocusable(false);
-		scrollPane.setViewportView(this.listSelectedFiles.getGUIComponent());
+		this.listSelectedFiles.setFocusable(false);
+		scrollPane.setViewportView(this.listSelectedFiles);
 		pnlMain.setLayout(gl_pnlMain);
 
 		JPanel pnlControl = new JPanel();
@@ -391,6 +401,9 @@ public class StatsGUI extends JFrame {
 						AdvancedWorkbook inputExcel = new AdvancedWorkbook(inputExcelFile.file);
 						LinkedHashMap<String, Map<Channel, double[]>> neuronCounterData = inputExcel.pullNeuronCounterData();
 						
+						if (!neuronCounterData.entrySet().iterator().hasNext()) {
+							continue;
+						}
 						Map<Channel, double[]> counterDataFirstLine = neuronCounterData.entrySet().iterator().next().getValue();
 						lblStatus.setText("Performing Calculations...");
 

@@ -1,23 +1,30 @@
 package com.typicalprojects.CellQuant.neuronal_migration.panels;
 
+import java.awt.BorderLayout;
+
 import javax.swing.GroupLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 import javax.swing.text.BadLocationException;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
-import com.typicalprojects.CellQuant.util.SynchronizedProgress.SynchronizedProgressReceiver;
+import com.typicalprojects.CellQuant.util.Logger;
 
-public class PnlLog implements SynchronizedProgressReceiver {
+public class PnlLog implements Logger {
 	
 	private JPanel rawPanel;
-	private JTextArea textLog;
-	private JScrollPane spLog;
+	private volatile JTextArea textLog;
+	private volatile JScrollPane spLog;
+	
+	private volatile String task;
+	private JLabel lblLog;
+	private JLabel lblDisabled = new JLabel("");
 	
 	public PnlLog(GUI gui) {
 		
@@ -25,38 +32,19 @@ public class PnlLog implements SynchronizedProgressReceiver {
 		rawPanel = new JPanel();
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		
-		JLabel lblLog = new JLabel("Status:");
+		lblLog = new JLabel("Status:");
 		lblLog.setFocusable(false);
 		
 		spLog = new JScrollPane();
 		spLog.setFocusable(false);
-		GroupLayout gl_pnlLog = new GroupLayout(rawPanel);
-		gl_pnlLog.setHorizontalGroup(
-			gl_pnlLog.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_pnlLog.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(gl_pnlLog.createParallelGroup(Alignment.LEADING)
-						.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
-						.addComponent(lblLog))
-					.addContainerGap())
-		);
-		gl_pnlLog.setVerticalGroup(
-			gl_pnlLog.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_pnlLog.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(lblLog)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
-					.addContainerGap())
-		);
+		
 		
 		textLog = new JTextArea();
 		textLog.setEditable(false);
 		textLog.setEnabled(true);
 		textLog.setFocusable(false);
 		spLog.setViewportView(textLog);
-		rawPanel.setLayout(gl_pnlLog);
-		
+		setDisplayState(false);
 
 	}
 	
@@ -96,6 +84,134 @@ public class PnlLog implements SynchronizedProgressReceiver {
 		}
 		spLog.getVerticalScrollBar().setValue(0);
 		
+	}
+
+	@Override
+	public synchronized void setCurrentTask(final String newTask) {
+		
+		/*Runnable run = new Runnable() {
+			@Override
+			public void run() {*/
+				task = newTask;
+				if (task == null) {
+					return;
+				}
+				if (textLog.getLineCount() > 300) {
+					try {
+						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+					} catch (BadLocationException e) {
+						// won't happen
+					}
+				}
+				textLog.setText(task + '\n' + textLog.getText());
+				spLog.getVerticalScrollBar().setValue(0);
+
+	/*		}
+		};
+		SwingUtilities.invokeLater(run);*/
+		
+		
+	}
+	
+	@Override
+	public synchronized void setCurrentTaskComplete() {
+		
+		/*Runnable run = new Runnable() {
+			@Override
+			public void run() {*/
+				if (task == null || textLog.getLineCount() == 0)
+					return;
+				
+					
+				if (textLog.getLineCount() > 300) {
+					try {
+						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+					} catch (BadLocationException e) {
+						// won't happen
+					}
+
+				}
+
+				
+				try {
+					textLog.setText(task + " Done." + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
+				} catch (BadLocationException e) {
+					// won't happen
+				}
+
+				task = null;
+				spLog.getVerticalScrollBar().setValue(0);
+
+		/*	}
+		};
+		SwingUtilities.invokeLater(run);*/
+		
+	}
+
+	@Override
+	public synchronized void setCurrentTaskProgress(int progress, int total) {
+		/*Runnable run = new Runnable() {
+			@Override
+			public void run() {*/
+				if (task == null)
+					return;
+					
+				if (textLog.getLineCount() > 300) {
+					try {
+						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+					} catch (BadLocationException e) {
+						// won't happen
+					}
+
+				}
+				
+				try {
+					textLog.setText(task + " (" + progress + "/" + total + ")" + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
+				} catch (BadLocationException e) {
+					// won't happen
+				}
+
+				spLog.getVerticalScrollBar().setValue(0);
+		/*	}
+		};
+		SwingUtilities.invokeLater(run);*/
+	}
+	
+	public void setDisplayState(boolean enabled) {
+
+		this.rawPanel.removeAll();
+		if (enabled) {
+			this.rawPanel.setBackground(PnlDisplay.colorEnabled);
+			GroupLayout gl_pnlLog = new GroupLayout(rawPanel);
+			gl_pnlLog.setHorizontalGroup(
+				gl_pnlLog.createParallelGroup(Alignment.LEADING)
+					.addGroup(gl_pnlLog.createSequentialGroup()
+						.addContainerGap()
+						.addGroup(gl_pnlLog.createParallelGroup(Alignment.LEADING)
+							.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
+							.addComponent(lblLog))
+						.addContainerGap())
+			);
+			gl_pnlLog.setVerticalGroup(
+				gl_pnlLog.createParallelGroup(Alignment.LEADING)
+					.addGroup(gl_pnlLog.createSequentialGroup()
+						.addContainerGap()
+						.addComponent(lblLog)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+						.addContainerGap())
+			);
+			this.rawPanel.setLayout(gl_pnlLog);
+
+		} else {
+
+			lblDisabled = new JLabel("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
+			lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
+			this.rawPanel.setBackground(PnlDisplay.colorDisabled);
+			this.rawPanel.updateUI();
+			this.rawPanel.setLayout(new BorderLayout(0,0));
+			this.rawPanel.add(lblDisabled, BorderLayout.CENTER);
+		}
 	}
 	
 }
