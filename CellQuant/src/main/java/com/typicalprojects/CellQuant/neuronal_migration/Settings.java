@@ -19,6 +19,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import com.typicalprojects.CellQuant.util.FileBrowser;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -80,9 +81,10 @@ public class Settings {
 		@SuppressWarnings("unchecked")
 		public static Settings loadSettings(boolean forceLoadDefault) throws FileNotFoundException, SecurityException, IOException {
 
-			ClassLoader classLoader = Settings.class.getClassLoader();
-			File defaultSettings = new File(classLoader.getResource("default_settings.yml").getFile());
-			InputStream defaultDataSource = new FileInputStream(defaultSettings);
+			//ClassLoader classLoader = Settings.class.getClassLoader();
+			
+			//File defaultSettings = new File(classLoader.getResource("default_settings.yml").getFile());
+			InputStream defaultDataSource = /*new FileInputStream(defaultSettings)*/Settings.class.getClassLoader().getResourceAsStream("default_settings.yml");
 			LinkedHashMap<String, Object> defaultData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor())).load(defaultDataSource);
 
 			LinkedHashMap<String, Object> customData = null;
