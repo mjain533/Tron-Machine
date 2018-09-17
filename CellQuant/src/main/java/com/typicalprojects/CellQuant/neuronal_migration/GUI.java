@@ -102,6 +102,7 @@ public class GUI  {
 				JOptionPane.showMessageDialog(parent, "<html>There was an error updating settings:<br><br>" + e.getMessage() + "</html>", "Settings Update Error", JOptionPane.ERROR_MESSAGE);
 
 			}
+			throw new IOException();
 		}
 		System.out.println(settings.channelsToProcess);
 		this.parentFrame = parent;
