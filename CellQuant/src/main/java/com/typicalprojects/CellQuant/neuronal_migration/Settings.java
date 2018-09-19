@@ -19,7 +19,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import com.typicalprojects.CellQuant.util.FileBrowser;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
 
@@ -41,6 +40,10 @@ public class Settings {
 	public int numberOfBins = -1;
 	public boolean excludePtsOutsideBin = true;
 	public List<Channel> channelToDrawBin = null;
+	public int processingMinThreshold = 0;
+	public int processingUnsharpMaskRadius = 20;
+	public double processingUnsharpMaskWeight = 0.8;
+	public double processingGaussianSigma = 0.5;
 
 	public static void main(String[] args) throws FileNotFoundException, SecurityException, IOException {
 		Settings settings = SettingsLoader.loadSettings(false);
@@ -73,6 +76,11 @@ public class Settings {
 		private static final String keyBinNum = "BinningNumber";
 		private static final String keyBinExclude = "BinningExcludeOutliers";
 		private static final String keyBinChannelsDraw = "BinningChannelsToDraw";
+		private static final String keyProcessingThreshMin = "MinimumThreshold";
+		private static final String keyProcessingUnsharpMaskRadius = "UnsharpMaskRadius";
+		private static final String keyProcessingUnsharpMaskWeight = "UnsharpMaskWeight";
+		private static final String keyProcessingGaussianSigma = "GaussianSigma";
+
 
 
 		public static final String settingsFilePath = "Neuronal_Migration_Resources" + File.separator + "settings.yml";
@@ -188,6 +196,12 @@ public class Settings {
 			for (String channelString : listChansBinDraw) {
 				settings.channelToDrawBin.add(Channel.parse(channelString));
 			}
+			
+			// Processing
+			settings.processingMinThreshold = (Integer) dataToParse.get(keyProcessingThreshMin);
+			settings.processingUnsharpMaskRadius = (Integer) dataToParse.get(keyProcessingUnsharpMaskRadius);
+			settings.processingUnsharpMaskWeight = (Double) dataToParse.get(keyProcessingUnsharpMaskWeight);
+			settings.processingGaussianSigma = (Double) dataToParse.get(keyProcessingGaussianSigma);
 
 			return settings;
 
@@ -239,6 +253,11 @@ public class Settings {
 			}
 			newSettings.put(keyBinChannelsDraw, chansForBins);
 
+			// Processing
+			newSettings.put(keyProcessingThreshMin, settings.processingMinThreshold);
+			newSettings.put(keyProcessingUnsharpMaskRadius, settings.processingUnsharpMaskRadius);
+			newSettings.put(keyProcessingUnsharpMaskWeight, settings.processingUnsharpMaskWeight);
+			newSettings.put(keyProcessingGaussianSigma, settings.processingGaussianSigma);
 			
 		    DumperOptions options = new DumperOptions();
 		    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

@@ -5,8 +5,10 @@ import java.awt.Font;
 import java.awt.Polygon;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
@@ -28,6 +30,7 @@ public class BinnedRegion {
 	private int[] dimensions;
 	private PolarizedPolygonROI firstLine;
 	private PolarizedPolygonROI lastLine;
+	public Set<Point> points = new HashSet<Point>();
 
 
 	/**
@@ -41,30 +44,102 @@ public class BinnedRegion {
 	 * @throws MalformedBinException 
 	 */
 	public BinnedRegion(PolarizedPolygonROI polygon1ROI, PolarizedPolygonROI polygon2ROI, int numBins, double binPrecision, int[] dimensions, Logger logger) throws MalformedBinException {
+		
+
+		
 		this.dimensions = dimensions;
 		try {
 			firstLine = polygon1ROI;
 			lastLine = polygon2ROI;
-
+			
 			Polygon polygon1 = polygon1ROI.get().getPolygon();
 			Polygon polygon2 = polygon2ROI.get().getPolygon();
 			binPrecision = binPrecision > 100 ? 100 : binPrecision;
 			binPrecision = binPrecision < 1 ? 1 : binPrecision;
+			int counterp = 1;
+			
+			for (int x = 0; x < dimensions[0]; x++) {
+				for (int y = 0; y < dimensions[1]; y++) {
+					
+					int bestIndex = -1;
+					double bestDistance = -1;
+					for (int k = 0; k < polygon1.npoints; k++) {
+						if (bestIndex == -1) {
+							bestIndex = k;
+							bestDistance = Analyzer.calculate(Calculation.SQ_DIST, polygon1.xpoints[k], x, polygon1.ypoints[k], y);
+						} else {
+							double distance = Analyzer.calculate(Calculation.SQ_DIST, polygon1.xpoints[k], x, polygon1.ypoints[k], y);
+							if (distance < bestDistance) {
+								bestIndex = k;
+								bestDistance = distance;
+							}
+						}
+					}
+					
+					int bestIndex2 = -1;
+					double bestDistance2 = -1;
+					for (int k = 0; k < polygon2.npoints; k++) {
+						if (bestIndex2 == -1) {
+							bestIndex2 = k;
+							bestDistance2 = Analyzer.calculate(Calculation.SQ_DIST, polygon2.xpoints[k], x, polygon2.ypoints[k], y);
+						} else {
+							double distance = Analyzer.calculate(Calculation.SQ_DIST, polygon2.xpoints[k], x, polygon2.ypoints[k], y);
+							if (distance < bestDistance2) {
+								bestIndex2 = k;
+								bestDistance2 = distance;
+							}
+						}
+					}
+					
+					if (Math.abs(bestDistance - bestDistance2) <= 10) {
+						System.out.println("Found point " + counterp + " " + x + "," + y);
+						counterp++;
+						this.points.add(new Point(x, y, null));
+					}
+					
+				}
+			}
 
-			int scaledBinPrecision = (int) (Math.max(polygon1.npoints, polygon2.npoints) * ((binPrecision) / 100.0));
+			//int scaledBinPrecision = (int) (Math.max(polygon1.npoints, polygon2.npoints) * ((binPrecision) / 100.0));
+			int scaledBinPrecision = (int) (polygon1.npoints * ((binPrecision) / 100.0));
+
 			
+			/*double indexDistance1 = polygon1.npoints / ((double) scaledBinPrecision);
+			double indexDistance2 = polygon2.npoints / ((double) scaledBinPrecision);*/
 			
-			double indexDistance1 = polygon1.npoints / ((double) scaledBinPrecision);
-			double indexDistance2 = polygon2.npoints / ((double) scaledBinPrecision);
+
+			double indexDistance = polygon1.npoints / ((double) scaledBinPrecision);
 			Point[][] points = new Point[scaledBinPrecision][];
 
 			logger.setCurrentTask("Drawing bins...");
 
 			for (int i = 1; i <= scaledBinPrecision; i++) {
-				int binLocateLineIndex1 = Math.max(Math.min((int) (indexDistance1 * i), polygon1.npoints - 1), 0);
+				/*int binLocateLineIndex1 = Math.max(Math.min((int) (indexDistance1 * i), polygon1.npoints - 1), 0);
 				int binLocateLineIndex2 = Math.max(Math.min((int) (indexDistance2 * i), polygon2.npoints - 1), 0);
 				Line binLocateLine = new Line(polygon1.xpoints[binLocateLineIndex1], polygon1.ypoints[binLocateLineIndex1],
 						polygon2.xpoints[binLocateLineIndex2], polygon2.ypoints[binLocateLineIndex2]);
+
+				points[i - 1] = binLocateLine.getSpacedSectionsWithinLine(numBins - 1);*/
+				
+				int binLocateLineIndex1 = Math.max(Math.min((int) (indexDistance * i), polygon1.npoints - 1), 0);
+				int bestIndex = -1;
+				double bestDistance = -1;
+				for (int k = 0; k < polygon2.npoints; k++) {
+					if (bestIndex == -1) {
+						bestIndex = k;
+						bestDistance = Analyzer.calculate(Calculation.SQ_DIST, polygon1.xpoints[binLocateLineIndex1], polygon2.xpoints[k], polygon1.ypoints[binLocateLineIndex1], polygon2.ypoints[k]);
+					} else {
+						double distance = Analyzer.calculate(Calculation.SQ_DIST, polygon1.xpoints[binLocateLineIndex1], polygon2.xpoints[k], polygon1.ypoints[binLocateLineIndex1], polygon2.ypoints[k]);
+						if (distance < bestDistance) {
+							bestIndex = k;
+							bestDistance = distance;
+						}
+					}
+				}
+				
+				//int binLocateLineIndex2 = Math.max(Math.min((int) (indexDistance2 * i), polygon2.npoints - 1), 0);
+				Line binLocateLine = new Line(polygon1.xpoints[binLocateLineIndex1], polygon1.ypoints[binLocateLineIndex1],
+						polygon2.xpoints[bestIndex], polygon2.ypoints[bestIndex]);
 
 				points[i - 1] = binLocateLine.getSpacedSectionsWithinLine(numBins - 1);
 
@@ -121,7 +196,7 @@ public class BinnedRegion {
 		middleY= Math.min(middleY, dimensions[1] - 4);
 		middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
 		ip.setColor(Color.RED);
-		ip.drawString(firstLine.getName(), middleX, middleY, Color.BLACK);
+		ip.drawString(lastLine.getName(), middleX, middleY, Color.BLACK);
 		
 		ip.setColor(Color.GREEN);
 		for (int i = 1 ; i < this.binLines.size() - 1; i++) {
@@ -132,6 +207,10 @@ public class BinnedRegion {
 		}
 		ip.setColor(Color.RED);
 		ip.setFont(new Font("Arial", Font.BOLD, 13));
+		
+		for (Point p : this.points) {
+			ip.fillRect(p.x, p.y, 3, 3);
+		}
 		
 		if (GUI.settings.drawBinLabels) {
 			for (int i = 1; i < this.binLines.size(); i++) {
@@ -193,9 +272,22 @@ public class BinnedRegion {
 		}
 
 		public Point getProjectedPoint(int projectionDistance) {
-			Point[] potentialPts =  _getPointDownLine(projectionDistance, this, this.point2);
-			return !isWithinBoundingBox(potentialPts[0]) ? potentialPts[0] : potentialPts[1];
+			
+			if (hasInfiniteSlope()) {
+				Point returnedPoint = new Point(this.point2.x, 
+						this.point1.y < this.point2.y ? this.point2.y + projectionDistance : this.point2.y - projectionDistance, null);
+					
+				return returnedPoint;
+			} else {
+				double xDiff = (projectionDistance / Math.sqrt(1 + Math.pow(slope, 2)));
+				
+				int x = this.point1.x < this.point2.x ? (int) (this.point2.x + xDiff) : (int) (this.point2.x - xDiff);
+				return new Point(x, getY(x), null);
+
+
+			}
 		}
+
 
 		public boolean isWithinBoundingBox(Point p) {
 			if (p.x >= Math.min(point1.x, point2.x) && p.x <= Math.max(point1.x, point2.x) &&
@@ -240,12 +332,13 @@ public class BinnedRegion {
 
 			if (xPts.size() >= 8) {
 				endExtension = new Line(xPts.get(xPts.size() - 8), yPts.get(yPts.size() - 8), xPts.get(xPts.size() - 1), yPts.get(yPts.size() - 1));
-				beginningExtension = new Line(xPts.get(25), yPts.get(25), xPts.get(0), yPts.get(0));
+				beginningExtension = new Line(xPts.get(8), yPts.get(8), xPts.get(0), yPts.get(0));
 			} else {
 				endExtension = new Line(xPts.get(xPts.size() - 2), yPts.get(yPts.size() - 2), xPts.get(xPts.size() - 1), yPts.get(yPts.size() - 1));
 				beginningExtension = new Line(xPts.get(1), yPts.get(1), xPts.get(0), yPts.get(0));
 
 			}
+			System.out.println("Begin:" + beginningExtension.slope + " "+ beginningExtension.point1 + " " + beginningExtension.point2);
 
 
 			boolean edgeFound = false;

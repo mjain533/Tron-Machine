@@ -955,8 +955,11 @@ public class FileBrowser extends JDialog {
 			public boolean accept(File directory, String fileName) {
 				if (directory == null || fileName == null)
 					return false;
-				else if (!(new File(directory.getPath() + File.separator + fileName)).isDirectory() && !fileName.contains("."))
+				
+				File file = new File(directory.getPath() + File.separator + fileName);
+				if (!file.isDirectory() && !fileName.contains("."))
 					return false;
+
 				return !fileName.startsWith(".");
 			}
 		});

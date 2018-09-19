@@ -203,8 +203,8 @@ public class PnlSelectFiles implements ListDropReceiver {
 
 				List<File> fileRecents = fileBrowser.getRecents();
 				if (fileRecents != null && fileRecents.size() > 0) {
-					if (settings.recentOpenFileLocations == null) {
-						settings.recentOpenFileLocations = new ArrayList<File>();
+					if (settings.recentOpenFileLocations != null) {
+						settings.recentOpenFileLocations.clear();
 					}
 					settings.recentOpenFileLocations.addAll(fileRecents);
 					Settings.SettingsLoader.saveSettings(settings);

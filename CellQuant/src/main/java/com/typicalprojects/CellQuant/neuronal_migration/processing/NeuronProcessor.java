@@ -135,11 +135,11 @@ public class NeuronProcessor {
 		duplicate.setTitle(duplicate.getTitle().substring(4));
 		
 		log(progressReporter, "Applying unsharp mask...");
-		IJ.run(duplicate, "Unsharp Mask...", "radius=20 mask=0.80 stack");
+		IJ.run(duplicate, "Unsharp Mask...", "radius=" + GUI.settings.processingUnsharpMaskRadius + " mask=" + GUI.settings.processingUnsharpMaskWeight + " stack");
 		logDone(progressReporter);
 
 		log(progressReporter, "Applying Gaussian Blur...");
-		IJ.run(duplicate, "Gaussian Blur...", "sigma=0.50 stack");
+		IJ.run(duplicate, "Gaussian Blur...", "sigma=" + GUI.settings.processingGaussianSigma + " stack");
 		logDone(progressReporter);
 		
 		log(progressReporter, "Converting to 8-bit...");
@@ -147,7 +147,7 @@ public class NeuronProcessor {
 		logDone(progressReporter);
 	
 		log(progressReporter, "Thresholding...");
-		new Thresholder(duplicate).threshold();
+		new Thresholder(duplicate).threshold(GUI.settings.processingMinThreshold);
 		logDone(progressReporter);
 		
 		log(progressReporter, "Setting binary options...");

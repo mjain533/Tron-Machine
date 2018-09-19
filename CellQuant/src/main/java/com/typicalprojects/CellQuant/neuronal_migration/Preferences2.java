@@ -1,12 +1,15 @@
 package com.typicalprojects.CellQuant.neuronal_migration;
 
 import java.awt.Component;
+import java.awt.Dimension;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.CellQuant.util.ImageContainer.Channel;
+import com.typicalprojects.CellQuant.neuronal_migration.Preferences2.SettingPage;
+import com.typicalprojects.CellQuant.neuronal_migration.Preferences2.SettingsPanel;
 import com.typicalprojects.CellQuant.neuronal_migration.Settings.SettingsLoader;
 import com.typicalprojects.CellQuant.util.FileBrowser;
 import com.typicalprojects.CellQuant.util.SimpleJList;
@@ -96,27 +99,16 @@ public class Preferences2 extends JFrame {
 	private static final long serialVersionUID = 6738766494677442465L;
 	private JPanel contentPane;
 	private JPanel activePanel;
-	private JPanel pnlOptionsChanConfig;
 	private GUI mainGUI;
 	private JLabel lblPageName;
-	private JCheckBox chkSelectGreen;
-	private JCheckBox chkSelectRed;
-	private JCheckBox chkSelectBlue;
-	private JCheckBox chkSelectWhite;
-	private JComboBox<String> comBoxCh3;
-	private JComboBox<String> comBoxCh2;
-	private JComboBox<String> comBoxCh1;
-	private JComboBox<String> comBoxCh0;
-	private JComboBox<String> comBoxChanROI;
+	
 	private JButton btnApplyAndClose;
 	private JButton btnCancel;
 	private JLabel lblCannotEdit;
 	private GroupLayout gl_contentPane;
 	private SimpleJList<SettingPage> menuList;
-	private JLabel lblChanConfigError;
-	private PnlSaveOptions pnlOptionsSaving;
+	private List<SettingsPanel> settingsPanel = new ArrayList<SettingsPanel>();
 	private boolean listSelectionChanging = false;
-	private PnlBinOptions pnlOptionsBin;
 	public static Preferences2 SINGLETON_FRAME = null;
 	
 	/**
@@ -163,10 +155,10 @@ public class Preferences2 extends JFrame {
 		JPanel pnlSepMiddle = new JPanel();
 		pnlSepMiddle.setBorder(new LineBorder(Color.GRAY));
 
-		_createPanelChanConfig();
-
-		this.pnlOptionsSaving = new PnlSaveOptions();
-		this.pnlOptionsBin = new PnlBinOptions();
+		this.settingsPanel.add(new PnlChanOptions());
+		this.settingsPanel.add(new PnlProcessingOptions());
+		this.settingsPanel.add(new PnlBinOptions());
+		this.settingsPanel.add(new PnlSaveOptions());
 
 		lblCannotEdit = new JLabel("There were errors in your configuration.");
 		lblCannotEdit.setForeground(Color.RED);
@@ -200,7 +192,7 @@ public class Preferences2 extends JFrame {
 
 		JPanel pnlPageName = new JPanel();
 
-		this.activePanel = this.pnlOptionsChanConfig;
+		this.activePanel = this.settingsPanel.get(0).getRawComponent();
 		gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
 				gl_contentPane.createParallelGroup(Alignment.TRAILING)
@@ -245,7 +237,11 @@ public class Preferences2 extends JFrame {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting() && !listSelectionChanging) {
-					setCurrentPage(menuList.getSelectedValue());
+					SettingPage sp = menuList.getSelectedValue();
+					for (SettingsPanel panel : settingsPanel) {
+						if (panel.getPageDesignation().equals(sp))
+							setCurrentPage(panel);
+					}
 				}
 				
 			}
@@ -273,23 +269,7 @@ public class Preferences2 extends JFrame {
 
 		contentPane.setLayout(gl_contentPane);
 
-		List<String> values = new ArrayList<String>();
-		for (Channel chan : Channel.values()) {
-			values.add(chan.toReadableString());
-		}
-		values.add("<none>");
-		if (getSettings().channelsToProcess.contains(Channel.GREEN)) {
-			this.chkSelectGreen.setSelected(true);
-		}
-		if (getSettings().channelsToProcess.contains(Channel.WHITE)) {
-			this.chkSelectWhite.setSelected(true);
-		}
-		if (getSettings().channelsToProcess.contains(Channel.RED)) {
-			this.chkSelectRed.setSelected(true);
-		}
-		if (getSettings().channelsToProcess.contains(Channel.BLUE)) {
-			this.chkSelectBlue.setSelected(true);
-		}
+
 
 		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
 		while (keys.hasMoreElements()) {
@@ -312,19 +292,16 @@ public class Preferences2 extends JFrame {
 			if (this.lblCannotEdit.getText().equals("To make changes you must cancel the current run.")) {
 				this.lblCannotEdit.setVisible(false);
 			}
-			this.pnlOptionsSaving.btnBrowseFolders.setEnabled(true);
 		} else {
 			this.btnApplyAndClose.setEnabled(false);
 			this.lblCannotEdit.setText("To make changes you must cancel the current run.");
 			this.lblCannotEdit.setVisible(true);
-			this.pnlOptionsSaving.btnBrowseFolders.setEnabled(false);
-
 		}
 	}
 
 	public void display(Component parent, boolean running) {
 		removeErrorMessages();
-		setCurrentPage(SettingPage.ChannelConfiguration);
+		setCurrentPage(this.settingsPanel.get(0));
 		setEnabled(!running);
 		resetPreferences();
 		pack();
@@ -335,105 +312,15 @@ public class Preferences2 extends JFrame {
 	public Object[] applyPreferences(boolean resetIfIncorrect) {
 		
 		Settings settings = getSettings();
-		List<String> values = new ArrayList<String>();
-		for (Channel chan : Channel.values()) {
-			values.add(chan.toReadableString());
-		}
-		values.add("<none>");
-		values.add("<none>");
-		values.add("<none>");
-		values.add("<none>");
-		if (!values.remove(this.comBoxCh0.getSelectedItem()) || !values.remove(this.comBoxCh1.getSelectedItem()) ||
-				!values.remove(this.comBoxCh2.getSelectedItem()) || !values.remove(this.comBoxCh3.getSelectedItem())) {
-			if (resetIfIncorrect) resetPreferences();
-			return new Object[] {SettingPage.ChannelConfiguration, "Incorrect channel config. Each channel # must have a unique color."};
-		} else if (!this.chkSelectBlue.isSelected() && !this.chkSelectGreen.isSelected() && !this.chkSelectRed.isSelected() && !this.chkSelectWhite.isSelected()) {
-			if (resetIfIncorrect) resetPreferences();
-			return new Object[] {SettingPage.ChannelConfiguration, "Incorrect channel config. At least 1 one channel must be processed."};
-		} else if (!values.contains("<none>")) {
-			return new Object[] {SettingPage.ChannelConfiguration, "Incorrect channel config. At least one channel must be assigned."};
-		} else if (values.contains((String) this.comBoxChanROI.getSelectedItem())) {
-			return new Object[] {SettingPage.ChannelConfiguration, "The channel chosen for drawing ROIs was not assigned a number."};
-		}
 
-		settings.channelForROIDraw = Channel.parse((String) this.comBoxChanROI.getSelectedItem());
-		Map<Integer, Channel> newChanMap = new HashMap<Integer, Channel>();
-		if (!this.comBoxCh0.getSelectedItem().equals("<none>")) {
-			newChanMap.put(0, Channel.parse((String) this.comBoxCh0.getSelectedItem()));
-		}
-		if (!this.comBoxCh1.getSelectedItem().equals("<none>")) {
-			newChanMap.put(1, Channel.parse((String) this.comBoxCh1.getSelectedItem()));
-		}
-		if (!this.comBoxCh2.getSelectedItem().equals("<none>")) {
-			newChanMap.put(2, Channel.parse((String) this.comBoxCh2.getSelectedItem()));
-		}
-		if (!this.comBoxCh3.getSelectedItem().equals("<none>")) {
-			newChanMap.put(3, Channel.parse((String) this.comBoxCh3.getSelectedItem()));
-		}
-
-		List<Channel> channelForProcess = new ArrayList<Channel>();
-		if (this.chkSelectBlue.isSelected()) {
-			if (newChanMap.containsValue(Channel.BLUE)) {
-				channelForProcess.add(Channel.BLUE);
-			} else {
-				return new Object[] {SettingPage.ChannelConfiguration, "All channels to be processed must be mapped."};
-			}
-		}
-		if (this.chkSelectRed.isSelected()) {
-			if (newChanMap.containsValue(Channel.RED)) {
-				channelForProcess.add(Channel.RED);
-			} else {
-				return new Object[] {SettingPage.ChannelConfiguration, "All channels to be processed must be mapped."};
-			}
-		}
-		if (this.chkSelectGreen.isSelected()) {
-			if (newChanMap.containsValue(Channel.GREEN)) {
-				channelForProcess.add(Channel.GREEN);
-			} else {
-				return new Object[] {SettingPage.ChannelConfiguration, "All channels to be processed must be mapped."};
-			}		
-			
-		}
-		if (this.chkSelectWhite.isSelected()) {
-			if (newChanMap.containsValue(Channel.WHITE)) {
-				channelForProcess.add(Channel.WHITE);
-			} else {
-				return new Object[] {SettingPage.ChannelConfiguration, "All channels to be processed must be mapped."};
-			}	
-			
-		}
 		
-		if (!this.pnlOptionsBin.validateFields()) {
-			return new Object[] {SettingPage.BinConfiguration, ""};
-		}
-		settings.calculateBins = this.pnlOptionsBin.chkCalcBins.isSelected();
-		settings.drawBinLabels = this.pnlOptionsBin.chkDrawBinLabels.isSelected();
-		settings.excludePtsOutsideBin = this.pnlOptionsBin.chkExcludeOutsider.isSelected();
-		settings.numberOfBins = (int) Math.round(((Number) this.pnlOptionsBin.spnNumBins.getValue()).doubleValue());
-		List<Channel> selectedChans = new ArrayList<Channel>();
-		if (this.pnlOptionsBin.chkDrawBlue.isSelected())
-			selectedChans.add(Channel.BLUE);
-		if (this.pnlOptionsBin.chkDrawGreen.isSelected())
-			selectedChans.add(Channel.GREEN);
-		if (this.pnlOptionsBin.chkDrawRed.isSelected())
-			selectedChans.add(Channel.RED);
-		if (this.pnlOptionsBin.chkDrawWhite.isSelected())
-			selectedChans.add(Channel.WHITE);
-		settings.channelToDrawBin = selectedChans;
-		settings.channelMap = newChanMap;
-		settings.channelsToProcess = channelForProcess;
-		settings.channelForROIDraw = (Channel.parse((String) this.comBoxChanROI.getSelectedItem()));
 		settings.needsUpdate = true;
 
-		if (!pnlOptionsSaving.fullPathName.getText().equals("")) {
-			File file = new File(pnlOptionsSaving.fullPathName.getText());
-			if (file.exists()) {
-				settings.outputLocation = file;
+		for (SettingsPanel settingsPanel : settingsPanel) {
+			if (!settingsPanel.applyFields(GUI.settings)) {
+				return new Object[] {settingsPanel, ""};
 			}
-		} else {
-			settings.outputLocation = null;
 		}
-		
 		
 		try {
 			SettingsLoader.saveSettings(settings);
@@ -448,54 +335,10 @@ public class Preferences2 extends JFrame {
 	}
 
 	public void resetPreferences() {
-		Settings settings = getSettings();
-		if (settings.channelMap.get(0) == null) {
-			this.comBoxCh0.setSelectedItem("<none>");
-		} else {
-			this.comBoxCh0.setSelectedItem(settings.channelMap.get(0).toReadableString());
-
+				
+		for (SettingsPanel panel : this.settingsPanel) {
+			panel.reset(GUI.settings);
 		}
-
-		if (settings.channelMap.get(1) == null) {
-			this.comBoxCh1.setSelectedItem("<none>");
-		} else {
-			this.comBoxCh1.setSelectedItem(settings.channelMap.get(1).toReadableString());
-
-		}
-
-		if (settings.channelMap.get(2) == null) {
-			this.comBoxCh2.setSelectedItem("<none>");
-		} else {
-			this.comBoxCh2.setSelectedItem(settings.channelMap.get(2).toReadableString());
-
-		}
-
-		if (settings.channelMap.get(3) == null) {
-			this.comBoxCh3.setSelectedItem("<none>");
-		} else {
-			this.comBoxCh3.setSelectedItem(settings.channelMap.get(3).toReadableString());
-
-		}
-		this.chkSelectGreen.setSelected(settings.channelsToProcess.contains(Channel.GREEN));
-		this.chkSelectRed.setSelected(settings.channelsToProcess.contains(Channel.RED));
-		this.chkSelectWhite.setSelected(settings.channelsToProcess.contains(Channel.WHITE));
-		this.chkSelectBlue.setSelected(settings.channelsToProcess.contains(Channel.BLUE));
-		this.comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
-		if (settings.outputLocation == null) {
-			this.pnlOptionsSaving.folderName.setText("");
-			this.pnlOptionsSaving.fullPathName.setText("");
-		} else {
-			this.pnlOptionsSaving.folderName.setText(settings.outputLocation.getName());
-			this.pnlOptionsSaving.fullPathName.setText(settings.outputLocation.getPath());
-		}
-		this.pnlOptionsBin.chkCalcBins.setSelected(settings.calculateBins);
-		this.pnlOptionsBin.chkDrawBinLabels.setSelected(settings.drawBinLabels);
-		this.pnlOptionsBin.chkDrawBlue.setSelected(settings.channelToDrawBin.contains(Channel.BLUE));
-		this.pnlOptionsBin.chkDrawGreen.setSelected(settings.channelToDrawBin.contains(Channel.GREEN));
-		this.pnlOptionsBin.chkDrawRed.setSelected(settings.channelToDrawBin.contains(Channel.RED));
-		this.pnlOptionsBin.chkDrawWhite.setSelected(settings.channelToDrawBin.contains(Channel.WHITE));
-		this.pnlOptionsBin.spnNumBins.setValue(settings.numberOfBins);
-		this.pnlOptionsBin.chkExcludeOutsider.setSelected(settings.excludePtsOutsideBin);
 
 	}
 
@@ -503,9 +346,143 @@ public class Preferences2 extends JFrame {
 		return this.isVisible();
 	}
 
+	private void displayError() {
+		this.lblCannotEdit.setText("There were errors in your configuration.");
+		this.lblCannotEdit.setVisible(true);
+	}
+
+	public void removeErrorMessages() {
+		if (!this.lblCannotEdit.getText().equals("To make changes you must cancel the current run.")) {
+			this.lblCannotEdit.setVisible(false);
+		}
+				
+		for (SettingsPanel panel : this.settingsPanel) {
+			panel.removeError();
+		}
+
+	}
+	
+	
+
+
+	public void setCurrentPage(SettingsPanel settings) {
+		this.listSelectionChanging = true;
+		gl_contentPane.replace(this.activePanel, settings.getRawComponent());
+		this.lblPageName.setText(settings.getPageDesignation().friendly());
+		this.menuList.setSelectedValue(settings.getPageDesignation(), true);
+		this.activePanel = settings.getRawComponent();
+		this.listSelectionChanging = false;
+
+	}
+	
+	public Settings getSettings() {
+		return GUI.settings;
+	}
+	
+	private void userTriedToApplyChanges() {
+		removeErrorMessages();
+
+		Object[] errors = applyPreferences(false);;
+
+		if (errors != null) {
+			displayError();
+
+			if (errors[0] == null) {
+				JOptionPane.showMessageDialog(contentPane, "<html>Failure writing preferences:<br><br>" + errors[1] + "</html>", "I/O Failure", JOptionPane.ERROR_MESSAGE);
+			} else {
+				setCurrentPage((SettingsPanel) errors[0]);
+			}	
+
+		} else {
+			removeDisplay();
+		}
+	}
+
+	public enum SettingPage {
+		ChannelConfiguration("Channel Setup"), Processing("Processing"), BinConfiguration("Bins"), Saving("Save Options");
+
+		private String friendlyName;
+
+		private SettingPage(String friendlyName) {
+			this.friendlyName = friendlyName;
+		}
+
+		public String friendly() {
+			return this.friendlyName;
+		}
+		
+		public String toString() {
+			return this.friendlyName;
+		}
+
+	}
+	
+	public interface SettingsPanel {
+		public void removeError();
+		public void reset(Settings settings);
+		public boolean applyFields(Settings settings);
+		public void displayError(String errors);
+		public SettingPage getPageDesignation();
+		public JPanel getRawComponent();
+	}
+
+}
+
+@SuppressWarnings("rawtypes")
+class ChannelRenderer<K> implements ListCellRenderer {
+
+	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
+	private static final Color normalColor = Color.BLACK;
+
+
+
+	public Component getListCellRendererComponent(JList list, Object value,
+			int index, boolean isSelected, boolean cellHasFocus) {
+
+
+
+		JLabel renderer = (JLabel) defaultRenderer
+				.getListCellRendererComponent(list, value, index, isSelected,
+						cellHasFocus);
+		String valueString = (String) value;
+		if (valueString.equals("<none>")) {
+			renderer.setForeground(normalColor);
+		} else {
+			for (Channel chan : Channel.values()) {
+				if (chan.toReadableString().equalsIgnoreCase(valueString)) {
+					renderer.setForeground(chan.getColor());
+					break;
+				}
+			}
+		}
+
+		return renderer;
+
+
+	}
+
+
+
+}
+class PnlChanOptions extends JPanel implements SettingsPanel {
+	
+
+	private static final long serialVersionUID = 1423951480886612209L;
+	private JCheckBox chkSelectGreen;
+	private JCheckBox chkSelectRed;
+	private JCheckBox chkSelectBlue;
+	private JCheckBox chkSelectWhite;
+	private JComboBox<String> comBoxCh3;
+	private JComboBox<String> comBoxCh2;
+	private JComboBox<String> comBoxCh1;
+	private JComboBox<String> comBoxCh0;
+	private JComboBox<String> comBoxChanROI;
+	private JLabel lblError;
+	private static final SettingPage setttingPage = SettingPage.ChannelConfiguration;
+	
 	@SuppressWarnings("unchecked")
-	private void _createPanelChanConfig() {
-		this.pnlOptionsChanConfig = new JPanel();
+	public PnlChanOptions() {
+		
 		JPanel pnlChanMap = new JPanel();
 		pnlChanMap.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlChanMap.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -603,7 +580,7 @@ public class Preferences2 extends JFrame {
 		pnlChanProcess.setLayout(gl_pnlChanProcess);
 
 		JLabel lblProcessChanSelect = new JLabel("Select Channels:");
-		Settings settings = getSettings();
+		Settings settings = GUI.settings;
 		chkSelectGreen = new JCheckBox("Green");
 		chkSelectGreen.setFocusable(false);
 		chkSelectGreen.setForeground(Channel.GREEN.getColor());
@@ -672,12 +649,12 @@ public class Preferences2 extends JFrame {
 		comBoxChanROI.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
 		comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
 
-		lblChanConfigError = new JLabel("Error");
-		lblChanConfigError.setFont(GUI.mediumFont);
-		lblChanConfigError.setForeground(Color.RED);
-		lblChanConfigError.setVisible(false);
+		lblError = new JLabel("Error");
+		lblError.setFont(GUI.mediumFont);
+		lblError.setForeground(Color.RED);
+		lblError.setVisible(false);
 
-		GroupLayout groupLayout = new GroupLayout(this.pnlOptionsChanConfig);
+		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
 				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
@@ -712,7 +689,7 @@ public class Preferences2 extends JFrame {
 										.addComponent(lblROISelectChan)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(comBoxChanROI, GroupLayout.PREFERRED_SIZE, 141, GroupLayout.PREFERRED_SIZE))
-								.addComponent(lblChanConfigError))
+								.addComponent(lblError))
 						.addContainerGap())
 				);
 		groupLayout.setVerticalGroup(
@@ -752,7 +729,7 @@ public class Preferences2 extends JFrame {
 								.addComponent(lblROISelectChan)
 								.addComponent(comBoxChanROI, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 						.addPreferredGap(ComponentPlacement.RELATED, 72, Short.MAX_VALUE)
-						.addComponent(lblChanConfigError)
+						.addComponent(lblError)
 						.addContainerGap())
 				);
 
@@ -770,32 +747,145 @@ public class Preferences2 extends JFrame {
 				.addComponent(lblChanMap, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
 				);
 		pnlChanMap.setLayout(gl_pnlChanMap);
-		this.pnlOptionsChanConfig.setLayout(groupLayout);
-	}
-
-
-	private void displayError() {
-		this.lblCannotEdit.setText("There were errors in your configuration.");
-		this.lblCannotEdit.setVisible(true);
-	}
-
-	private void displayChanConfigError(String error) {
-		this.lblChanConfigError.setText(error);
-		this.lblChanConfigError.setVisible(true);
-		setCurrentPage(SettingPage.ChannelConfiguration);
-		displayError();
-	}
-
-	public void removeErrorMessages() {
-		if (!this.lblCannotEdit.getText().equals("To make changes you must cancel the current run.")) {
-			this.lblCannotEdit.setVisible(false);
-		}
+		setLayout(groupLayout);
 		
-		this.lblChanConfigError.setVisible(false);
-		this.pnlOptionsSaving.removeError();
-		this.pnlOptionsBin.removeError();
+	}
+
+	@Override
+	public void reset(Settings settings) {
+		if (settings.channelMap.get(0) == null) {
+			this.comBoxCh0.setSelectedItem("<none>");
+		} else {
+			this.comBoxCh0.setSelectedItem(settings.channelMap.get(0).toReadableString());
+
+		}
+
+		if (settings.channelMap.get(1) == null) {
+			this.comBoxCh1.setSelectedItem("<none>");
+		} else {
+			this.comBoxCh1.setSelectedItem(settings.channelMap.get(1).toReadableString());
+
+		}
+
+		if (settings.channelMap.get(2) == null) {
+			this.comBoxCh2.setSelectedItem("<none>");
+		} else {
+			this.comBoxCh2.setSelectedItem(settings.channelMap.get(2).toReadableString());
+
+		}
+
+		if (settings.channelMap.get(3) == null) {
+			this.comBoxCh3.setSelectedItem("<none>");
+		} else {
+			this.comBoxCh3.setSelectedItem(settings.channelMap.get(3).toReadableString());
+
+		}
+		this.chkSelectGreen.setSelected(settings.channelsToProcess.contains(Channel.GREEN));
+		this.chkSelectRed.setSelected(settings.channelsToProcess.contains(Channel.RED));
+		this.chkSelectWhite.setSelected(settings.channelsToProcess.contains(Channel.WHITE));
+		this.chkSelectBlue.setSelected(settings.channelsToProcess.contains(Channel.BLUE));
+		this.comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
+		
 	}
 	
+	@Override
+	public void displayError(String error) {
+		this.lblError.setText(error);
+		this.lblError.setVisible(true);
+	}
+	
+	@Override
+	public void removeError() {
+		this.lblError.setVisible(false);
+	}
+
+	@Override
+	public boolean applyFields(Settings settings) {
+		
+		List<String> values = new ArrayList<String>();
+		for (Channel chan : Channel.values()) {
+			values.add(chan.toReadableString());
+		}
+		values.add("<none>");
+		values.add("<none>");
+		values.add("<none>");
+		values.add("<none>");
+		if (!values.remove(this.comBoxCh0.getSelectedItem()) || !values.remove(this.comBoxCh1.getSelectedItem()) ||
+				!values.remove(this.comBoxCh2.getSelectedItem()) || !values.remove(this.comBoxCh3.getSelectedItem())) {
+			displayError("Incorrect channel config. Each channel # must have a unique color.");
+			return false;
+		} else if (!this.chkSelectBlue.isSelected() && !this.chkSelectGreen.isSelected() && !this.chkSelectRed.isSelected() && !this.chkSelectWhite.isSelected()) {
+			displayError("Incorrect channel config. At least 1 one channel must be processed.");
+			return false;
+		} else if (!values.contains("<none>")) {
+			displayError("Incorrect channel config. At least one channel must be assigned.");
+			return false;
+		} else if (values.contains((String) this.comBoxChanROI.getSelectedItem())) {
+			displayError("The channel chosen for drawing ROIs was not assigned a number.");
+			return false;
+		}
+
+		settings.channelForROIDraw = Channel.parse((String) this.comBoxChanROI.getSelectedItem());
+		Map<Integer, Channel> newChanMap = new HashMap<Integer, Channel>();
+		if (!this.comBoxCh0.getSelectedItem().equals("<none>")) {
+			newChanMap.put(0, Channel.parse((String) this.comBoxCh0.getSelectedItem()));
+		}
+		if (!this.comBoxCh1.getSelectedItem().equals("<none>")) {
+			newChanMap.put(1, Channel.parse((String) this.comBoxCh1.getSelectedItem()));
+		}
+		if (!this.comBoxCh2.getSelectedItem().equals("<none>")) {
+			newChanMap.put(2, Channel.parse((String) this.comBoxCh2.getSelectedItem()));
+		}
+		if (!this.comBoxCh3.getSelectedItem().equals("<none>")) {
+			newChanMap.put(3, Channel.parse((String) this.comBoxCh3.getSelectedItem()));
+		}
+
+		List<Channel> channelForProcess = new ArrayList<Channel>();
+		if (this.chkSelectBlue.isSelected()) {
+			if (newChanMap.containsValue(Channel.BLUE)) {
+				channelForProcess.add(Channel.BLUE);
+			} else {
+				displayError("All channels to be processed must be mapped.");
+				return false;
+			}
+		}
+		if (this.chkSelectRed.isSelected()) {
+			if (newChanMap.containsValue(Channel.RED)) {
+				channelForProcess.add(Channel.RED);
+			} else {
+				displayError("All channels to be processed must be mapped.");
+				return false;
+			}
+		}
+		if (this.chkSelectGreen.isSelected()) {
+			if (newChanMap.containsValue(Channel.GREEN)) {
+				channelForProcess.add(Channel.GREEN);
+			} else {
+				displayError("All channels to be processed must be mapped.");
+				return false;
+			}		
+			
+		}
+		if (this.chkSelectWhite.isSelected()) {
+			if (newChanMap.containsValue(Channel.WHITE)) {
+				channelForProcess.add(Channel.WHITE);
+			} else {
+				displayError("All channels to be processed must be mapped.");
+				return false;
+			}	
+			
+		}
+		settings.channelMap = newChanMap;
+		settings.channelsToProcess = channelForProcess;
+		settings.channelForROIDraw = (Channel.parse((String) this.comBoxChanROI.getSelectedItem()));
+		return true;
+	}
+
+
+	@Override
+	public SettingPage getPageDesignation() {
+		return setttingPage;
+	}
 	
 	public void changeComboxColor(JComboBox<String> comboBox, String channelString) {
 		for (Channel chan : Channel.values()) {
@@ -808,127 +898,13 @@ public class Preferences2 extends JFrame {
 		comboBox.setForeground(Color.BLACK);
 	}
 
-	public void setCurrentPage(SettingPage settings) {
-		this.listSelectionChanging = true;
-		switch (settings) {
-		case ChannelConfiguration:
-			gl_contentPane.replace(this.activePanel, this.pnlOptionsChanConfig);
-			this.lblPageName.setText(SettingPage.ChannelConfiguration.friendly());
-			this.menuList.setSelectedValue(SettingPage.ChannelConfiguration, true);
-			this.activePanel = this.pnlOptionsChanConfig;
-			break;
-		case Saving:
-			gl_contentPane.replace(this.activePanel, this.pnlOptionsSaving);
-			this.lblPageName.setText(SettingPage.Saving.friendly());
-			this.menuList.setSelectedValue(SettingPage.Saving, true);
-			this.activePanel = this.pnlOptionsSaving;
-			break;
-		case BinConfiguration:
-			gl_contentPane.replace(this.activePanel, this.pnlOptionsBin);
-			this.lblPageName.setText(SettingPage.BinConfiguration.friendly());
-			this.menuList.setSelectedValue(SettingPage.BinConfiguration, true);
-			this.activePanel = this.pnlOptionsBin;
-			break;
-
-		}
-		this.listSelectionChanging = false;
-
+	@Override
+	public JPanel getRawComponent() {
+		return this;
 	}
 	
-	public Settings getSettings() {
-		return GUI.settings;
-	}
-	
-	private void userTriedToApplyChanges() {
-		removeErrorMessages();
-
-		Object[] errors = applyPreferences(false);;
-
-		if (errors != null) {
-			if (errors[0] == null) {
-				displayError();
-
-				JOptionPane.showMessageDialog(contentPane, "<html>Failure writing preferences:<br><br>" + errors[1] + "</html>", "I/O Failure", JOptionPane.ERROR_MESSAGE);
-			} else {
-				switch ((SettingPage) errors[0]) {
-				case ChannelConfiguration:
-					displayChanConfigError((String) errors[1]);
-					break;
-				case Saving:
-					pnlOptionsSaving.displayError((String) errors[1]);
-					displayError();
-					setCurrentPage(SettingPage.ChannelConfiguration);
-					break;
-				case BinConfiguration:
-					displayError();
-					setCurrentPage(SettingPage.BinConfiguration);
-					break;
-				}
-			}	
-
-		} else {
-			removeDisplay();
-		}
-	}
-
-	private enum SettingPage {
-		ChannelConfiguration("Channel Configuration"), BinConfiguration("Bin Configuration"), Saving("Save Options");
-
-		private String friendlyName;
-
-		private SettingPage(String friendlyName) {
-			this.friendlyName = friendlyName;
-		}
-
-		public String friendly() {
-			return this.friendlyName;
-		}
-		
-		public String toString() {
-			return this.friendlyName;
-		}
-
-	}
-
 }
-
-@SuppressWarnings("rawtypes")
-class ChannelRenderer<K> implements ListCellRenderer {
-
-	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
-	private static final Color normalColor = Color.BLACK;
-
-
-
-	public Component getListCellRendererComponent(JList list, Object value,
-			int index, boolean isSelected, boolean cellHasFocus) {
-
-
-
-		JLabel renderer = (JLabel) defaultRenderer
-				.getListCellRendererComponent(list, value, index, isSelected,
-						cellHasFocus);
-		String valueString = (String) value;
-		if (valueString.equals("<none>")) {
-			renderer.setForeground(normalColor);
-		} else {
-			for (Channel chan : Channel.values()) {
-				if (chan.toReadableString().equalsIgnoreCase(valueString)) {
-					renderer.setForeground(chan.getColor());
-					break;
-				}
-			}
-		}
-
-		return renderer;
-
-
-	}
-
-
-
-}
-class PnlSaveOptions extends JPanel {
+class PnlSaveOptions extends JPanel implements SettingsPanel {
 
 	private static final long serialVersionUID = -1576497004345094528L;
 	protected JTextField fullPathName;
@@ -937,6 +913,7 @@ class PnlSaveOptions extends JPanel {
 	protected JButton btnBrowseFolders;
 	protected FileBrowser fileBrowser;
 	private JPanel thisObject = this;
+	private static final SettingPage setttingPage = SettingPage.Saving;
 
 	/**
 	 * Create the panel.
@@ -993,8 +970,8 @@ class PnlSaveOptions extends JPanel {
 				
 				List<File> fileRecents = fileBrowser.getRecents();
 				if (fileRecents != null && fileRecents.size() > 0) {
-					if (settings.recentOpenFileLocations == null) {
-						settings.recentOpenFileLocations = new ArrayList<File>();
+					if (settings.recentOpenFileLocations != null) {
+						settings.recentOpenFileLocations.clear();
 					}
 					settings.recentOpenFileLocations.addAll(fileRecents);
 					settings.needsUpdate= true;
@@ -1074,8 +1051,47 @@ class PnlSaveOptions extends JPanel {
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
+	
+	public void reset(Settings settings) {
+		if (settings.outputLocation == null) {
+			folderName.setText("");
+			fullPathName.setText("");
+		} else {
+			folderName.setText(settings.outputLocation.getName());
+			fullPathName.setText(settings.outputLocation.getPath());
+		}
+	}
+	
+	public boolean applyFields(Settings settings) {
+
+		if (!fullPathName.getText().equals("")) {
+			File file = new File(fullPathName.getText());
+			if (!file.exists()) {
+				displayError("The selected output directory no longer exists.");
+				return false;
+			} else if (!file.canWrite()) {
+				displayError("The directory you selected doesn't have write access.");
+				return false;
+			} else {
+				settings.outputLocation = file;
+			}
+		} else {
+			settings.outputLocation = null;
+		}
+		return true;
+	}
+
+	public SettingPage getPageDesignation() {
+		return setttingPage;
+	}
+
+	@Override
+	public JPanel getRawComponent() {
+		return this;
+	}
+	
 }
-class PnlBinOptions extends JPanel {
+class PnlBinOptions extends JPanel implements SettingsPanel {
 	/**
 	 * 
 	 */
@@ -1089,6 +1105,7 @@ class PnlBinOptions extends JPanel {
 	protected JCheckBox chkDrawBinLabels;
 	protected JCheckBox chkCalcBins;
 	protected JCheckBox chkExcludeOutsider;
+	private final static SettingPage settingPage = SettingPage.BinConfiguration;
 
 	/**
 	 * Create the panel.
@@ -1257,14 +1274,288 @@ class PnlBinOptions extends JPanel {
 		this.lblError.setVisible(false);
 	}
 	
-	public boolean validateFields() {
+	public boolean applyFields(Settings settings) {
+		
 		if (!this.chkDrawRed.isSelected() && !this.chkDrawGreen.isSelected() && !this.chkDrawBlue.isSelected() && !this.chkDrawWhite.isSelected()) {
 			displayError("Bins must be drawn on at least one channel.");
 			return false;
 		} else {
 			removeError();
-			return true;
 		}
+		settings.calculateBins = chkCalcBins.isSelected();
+		settings.drawBinLabels = chkDrawBinLabels.isSelected();
+		settings.excludePtsOutsideBin = chkExcludeOutsider.isSelected();
+		settings.numberOfBins = (int) Math.round(((Number) spnNumBins.getValue()).doubleValue());
+		List<Channel> selectedChans = new ArrayList<Channel>();
+		if (chkDrawBlue.isSelected())
+			selectedChans.add(Channel.BLUE);
+		if (chkDrawGreen.isSelected())
+			selectedChans.add(Channel.GREEN);
+		if (chkDrawRed.isSelected())
+			selectedChans.add(Channel.RED);
+		if (chkDrawWhite.isSelected())
+			selectedChans.add(Channel.WHITE);
+		settings.channelToDrawBin = selectedChans;
+		return true;
+
+		
+	}
+	
+	public SettingPage getPageDesignation() {
+		return settingPage;
+	}
+	
+	public void reset(Settings settings) {
+		
+		chkCalcBins.setSelected(settings.calculateBins);
+		chkDrawBinLabels.setSelected(settings.drawBinLabels);
+		chkDrawBlue.setSelected(settings.channelToDrawBin.contains(Channel.BLUE));
+		chkDrawGreen.setSelected(settings.channelToDrawBin.contains(Channel.GREEN));
+		chkDrawRed.setSelected(settings.channelToDrawBin.contains(Channel.RED));
+		chkDrawWhite.setSelected(settings.channelToDrawBin.contains(Channel.WHITE));
+		spnNumBins.setValue(settings.numberOfBins);
+		chkExcludeOutsider.setSelected(settings.excludePtsOutsideBin);
+	}
+
+	@Override
+	public JPanel getRawComponent() {
+		return this;
+	}
+	
+}
+class PnlProcessingOptions extends JPanel implements SettingsPanel {
+
+	private static final long serialVersionUID = -6622171153906374924L;
+	private JLabel lblError;
+	private JTextField txtMinThresh;
+	private JTextField txtUnsharpRadius;
+	private JTextField txtUnsharpWeight;
+	private JTextField txtGaussianSigma;
+	private static final SettingPage settingPage = SettingPage.Processing;
+
+	public PnlProcessingOptions() {
+		setPreferredSize(new Dimension(518, 384));
+
+		JPanel pnlProcessingSettings = new JPanel();
+		pnlProcessingSettings.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlProcessingSettings.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlProcessingSettings.setBackground(new Color(211, 211, 211));
+		
+		JLabel lblProcessingSettings = new JLabel("Parameter Values");
+		
+		GroupLayout gl_pnlProcessingSettings = new GroupLayout(pnlProcessingSettings);
+		gl_pnlProcessingSettings.setHorizontalGroup(
+			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGroup(gl_pnlProcessingSettings.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblProcessingSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		gl_pnlProcessingSettings.setVerticalGroup(
+			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addComponent(lblProcessingSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+		);
+		pnlProcessingSettings.setLayout(gl_pnlProcessingSettings);
+		
+		lblError = new JLabel("Error:");
+		lblError.setFont(GUI.mediumFont);
+		lblError.setForeground(Color.RED);
+		
+		JLabel lblMinimumThreshold = new JLabel("Auto-Threshold Minimum Value (0-255):");
+		
+		txtMinThresh = new JTextField();
+		txtMinThresh.setText("0");
+		txtMinThresh.setColumns(10);
+		
+		JLabel lblUnsharpMaskRadius = new JLabel("Unsharp Mask Pixel Radius (1-1000):");
+		
+		txtUnsharpRadius = new JTextField();
+		txtUnsharpRadius.setText("20");
+		txtUnsharpRadius.setColumns(10);
+		
+		JLabel lblUnsharpMaskPixel = new JLabel("Unsharp Mask Pixel Width (0.1-0.9):");
+		
+		txtUnsharpWeight = new JTextField();
+		txtUnsharpWeight.setColumns(10);
+		
+		JLabel lblGaussianBlurSigma = new JLabel("Gaussian Blur Sigma Value (0.01-100):");
+		
+		txtGaussianSigma = new JTextField();
+		txtGaussianSigma.setColumns(10);
+		
+
+		GroupLayout groupLayout = new GroupLayout(this);
+		groupLayout.setHorizontalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addComponent(pnlProcessingSettings, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblError)
+
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblGaussianBlurSigma, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+								.addComponent(txtMinThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpWeight, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
+							
+							.addGap(180))
+						
+						
+						/*.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(pnlProcessingSettings, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+							.addContainerGap())
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblGaussianBlurSigma, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+								.addComponent(txtMinThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpWeight, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
+							.addGap(198))
+						
+						.addComponent(lblError)*/)
+					
+					.addContainerGap())
+		);
+		groupLayout.setVerticalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(pnlProcessingSettings, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblMinimumThreshold)
+						.addComponent(txtMinThresh, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblUnsharpMaskRadius)
+						.addComponent(txtUnsharpRadius, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblUnsharpMaskPixel)
+						.addComponent(txtUnsharpWeight, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(lblGaussianBlurSigma)
+						.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						//.addPreferredGap(ComponentPlacement.UNRELATED)
+					/*.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGap(2)
+							.addComponent(lblGaussianBlurSigma))
+						.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))*/
+					.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+					.addComponent(lblError)
+					.addContainerGap())
+		);
+		setLayout(groupLayout);
+		
+		
+
+	}
+	
+	
+	
+	public void displayError(String error) {
+		this.lblError.setText(error);
+		this.lblError.setVisible(true);
+	}
+	
+	public void removeError() {
+		this.lblError.setVisible(false);
+	}
+	
+	public void reset(Settings settings) {
+		this.lblError.setVisible(false);
+		this.txtGaussianSigma.setText(settings.processingGaussianSigma + "");
+		this.txtUnsharpRadius.setText(settings.processingUnsharpMaskRadius + "");
+		this.txtUnsharpWeight.setText(settings.processingUnsharpMaskWeight + "");
+		this.txtMinThresh.setText(settings.processingMinThreshold + "");
+
+	}
+	
+	public boolean applyFields(Settings settings) {
+		int minThresh = -1;
+		int unsharpRadius = -1;
+		double unsharpWeight = -1;
+		double gaussianSigma = -1;
+
+		try {
+			String text = this.txtMinThresh.getText();
+			minThresh = Integer.parseInt(text);
+			if (minThresh < 0 || minThresh > 255)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Thresholding minimum must be an integer between 0 and 255.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtUnsharpRadius.getText();
+			unsharpRadius = Integer.parseInt(text);
+			if (unsharpRadius < 1 || unsharpRadius > 1000)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Unsharp mask radius must be an integer between 1 and 1000.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtUnsharpWeight.getText();
+			unsharpWeight = Double.parseDouble(text);
+			if (unsharpWeight < 0.1 || unsharpWeight > 0.9)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Unsharp mask radius must be a decimal between 0.1 and 0.9.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtGaussianSigma.getText();
+			gaussianSigma = Double.parseDouble(text);
+			if (gaussianSigma < 0.01 || gaussianSigma > 100)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Gaussian blur sigma must be a decimal between 0.01 and 100.");
+			return false;
+		}
+		settings.processingMinThreshold = minThresh;
+		settings.processingUnsharpMaskRadius = unsharpRadius;
+		settings.processingUnsharpMaskWeight = unsharpWeight;
+		settings.processingGaussianSigma = gaussianSigma;
+
+		removeError();
+		return true;
+
+	}
+
+	@Override
+	public SettingPage getPageDesignation() {
+		return settingPage;
+	}
+
+
+
+	@Override
+	public JPanel getRawComponent() {
+		return this;
 	}
 }
 

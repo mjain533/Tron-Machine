@@ -171,8 +171,8 @@ public class StatsGUI extends JFrame {
 				
 				List<File> fileRecents = fileBrowser.getRecents();
 				if (fileRecents != null && fileRecents.size() > 0) {
-					if (settings.recentOpenAnalysisOutputLocations == null) {
-						settings.recentOpenAnalysisOutputLocations = new ArrayList<File>();
+					if (settings.recentOpenAnalysisOutputLocations != null) {
+						settings.recentOpenAnalysisOutputLocations.clear();
 					}
 					settings.recentOpenAnalysisOutputLocations.addAll(fileRecents);
 					SettingsLoader.saveSettings(settings);

@@ -1,22 +1,16 @@
 package com.typicalprojects.CellQuant.neuronal_migration;
 
 import javax.swing.JPanel;
-import javax.swing.JSpinner;
 
 import java.awt.Dimension;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.JLabel;
 import java.awt.Color;
 import javax.swing.border.LineBorder;
-import javax.swing.SwingConstants;
 import java.awt.Font;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.JComboBox;
-import javax.swing.JCheckBox;
 import javax.swing.JTextField;
-import javax.swing.JButton;
 
 public class asdf extends JPanel {
 
@@ -28,13 +22,10 @@ public class asdf extends JPanel {
 	
 	private static final long serialVersionUID = -6622171153906374924L;
 	private JLabel lblError;
-	private JCheckBox chkDrawGreen;
-	private JCheckBox chkDrawRed;
-	private JCheckBox chkDrawBlue;
-	private JCheckBox chkDrawWhite;
-	private JSpinner spnNumBins;
-	private JCheckBox chkDrawBinLabels;
-	private JCheckBox chkCalcBins;
+	private JTextField minThresh;
+	private JTextField txtUnsharpRadius;
+	private JTextField txtUnsharpWidth;
+	private JTextField txtGaussianSigma;
 
 	/**
 	 * Create the panel.
@@ -42,88 +33,56 @@ public class asdf extends JPanel {
 	public asdf() {
 		setPreferredSize(new Dimension(518, 384));
 
-		JPanel pnlBinOptions = new JPanel();
-		pnlBinOptions.setFont(new Font("Arial", Font.PLAIN, 13));
-		pnlBinOptions.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlBinOptions.setBackground(new Color(211, 211, 211));
+		JPanel pnlProcessingSettings = new JPanel();
+		pnlProcessingSettings.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlProcessingSettings.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlProcessingSettings.setBackground(new Color(211, 211, 211));
 		
-		JLabel lblBinSettings = new JLabel("Bin Settings");
+		JLabel lblProcessingSettings = new JLabel("Parameter Values");
 		
-		GroupLayout gl_pnlBinOptions = new GroupLayout(pnlBinOptions);
-		gl_pnlBinOptions.setHorizontalGroup(
-			gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
+		GroupLayout gl_pnlProcessingSettings = new GroupLayout(pnlProcessingSettings);
+		gl_pnlProcessingSettings.setHorizontalGroup(
+			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGap(0, 494, Short.MAX_VALUE)
-				.addGroup(gl_pnlBinOptions.createSequentialGroup()
+				.addGroup(gl_pnlProcessingSettings.createSequentialGroup()
 					.addContainerGap()
-					.addComponent(lblBinSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+					.addComponent(lblProcessingSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
 					.addContainerGap())
 		);
-		gl_pnlBinOptions.setVerticalGroup(
-			gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
+		gl_pnlProcessingSettings.setVerticalGroup(
+			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addGap(0, 25, Short.MAX_VALUE)
-				.addComponent(lblBinSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+				.addComponent(lblProcessingSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
 		);
-		pnlBinOptions.setLayout(gl_pnlBinOptions);
-		
-		chkCalcBins = new JCheckBox("Calculate Bins");
-		chkCalcBins.setFocusable(false);
-		
-		JLabel lblNumberOfBins = new JLabel("Number of Bins:");
-		
-		spnNumBins = new JSpinner();
-		((DefaultEditor) spnNumBins.getEditor()).getTextField().setEditable(false);
-		spnNumBins.setBackground(Color.WHITE);
-		spnNumBins.setFocusable(false);
-		
-		JPanel pnlBinOutput = new JPanel();
-		pnlBinOutput.setFont(new Font("Arial", Font.PLAIN, 13));
-		pnlBinOutput.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlBinOutput.setBackground(new Color(211, 211, 211));
-		
-		JLabel lblBinOutput = new JLabel("Binning Output");
-		GroupLayout gl_pnlBinOutput = new GroupLayout(pnlBinOutput);
-		gl_pnlBinOutput.setHorizontalGroup(
-			gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
-				.addGap(0, 494, Short.MAX_VALUE)
-				.addGap(0, 492, Short.MAX_VALUE)
-				.addGroup(gl_pnlBinOutput.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(lblBinOutput, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
-					.addContainerGap())
-		);
-		gl_pnlBinOutput.setVerticalGroup(
-			gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
-				.addGap(0, 25, Short.MAX_VALUE)
-				.addGap(0, 23, Short.MAX_VALUE)
-				.addComponent(lblBinOutput, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
-		);
-		pnlBinOutput.setLayout(gl_pnlBinOutput);
-		
-		JCheckBox chkExcludeOutsider = new JCheckBox("Exclude points outside of bin region");
-		chkExcludeOutsider.setFocusable(false);
-		
-		chkDrawBinLabels = new JCheckBox("Draw bin labels");
-		chkDrawBinLabels.setFocusable(false);
-		
-		JLabel lblChanDrawBin = new JLabel("Channels to Draw Bins:");
-		
-		chkDrawGreen = new JCheckBox("Green");
-		chkDrawGreen.setFocusable(false);
-		
-		chkDrawRed = new JCheckBox("Red");
-		chkDrawRed.setFocusable(false);
-		
-		chkDrawBlue = new JCheckBox("Blue");
-		chkDrawBlue.setFocusable(false);
-		
-		chkDrawWhite = new JCheckBox("White");
-		chkDrawWhite.setFocusable(false);
+		pnlProcessingSettings.setLayout(gl_pnlProcessingSettings);
 		
 		lblError = new JLabel("Error:");
 		lblError.setFont(GUI.mediumFont);
 		lblError.setForeground(Color.RED);
+		
+		JLabel lblMinimumThreshold = new JLabel("Auto-Threshold Minimum Value (0-255):");
+		
+		minThresh = new JTextField();
+		minThresh.setText("0");
+		minThresh.setColumns(10);
+		
+		JLabel lblUnsharpMaskRadius = new JLabel("Unsharp Mask Pixel Radius (1-1000):");
+		
+		txtUnsharpRadius = new JTextField();
+		txtUnsharpRadius.setText("20");
+		txtUnsharpRadius.setColumns(10);
+		
+		JLabel lblUnsharpMaskPixel = new JLabel("Unsharp Mask Pixel Width (0.1-0.9):");
+		
+		txtUnsharpWidth = new JTextField();
+		txtUnsharpWidth.setColumns(10);
+		
+		JLabel lblGaussianBlurSigma = new JLabel("Gaussian Blur Sigma Value (0.01-100):");
+		
+		txtGaussianSigma = new JTextField();
+		txtGaussianSigma.setColumns(10);
 		
 
 		GroupLayout groupLayout = new GroupLayout(this);
@@ -132,53 +91,53 @@ public class asdf extends JPanel {
 				.addGroup(groupLayout.createSequentialGroup()
 					.addContainerGap()
 					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addComponent(chkDrawBinLabels)
-						.addComponent(chkCalcBins)
 						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(lblNumberOfBins)
+							.addComponent(pnlProcessingSettings, GroupLayout.DEFAULT_SIZE, 497, Short.MAX_VALUE)
+							.addContainerGap())
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+								.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, 45, GroupLayout.PREFERRED_SIZE))
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+								.addComponent(minThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpWidth, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
+							.addGap(198))
 						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(chkDrawGreen)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawRed)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawBlue)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawWhite))
-						.addComponent(chkExcludeOutsider)
-						.addComponent(pnlBinOptions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-						.addComponent(lblError)
-						.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
-						.addComponent(lblChanDrawBin))
-					.addContainerGap())
+							.addComponent(lblGaussianBlurSigma, GroupLayout.PREFERRED_SIZE, 257, GroupLayout.PREFERRED_SIZE)
+							.addGap(12)
+							.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, 42, GroupLayout.PREFERRED_SIZE)
+							.addContainerGap(195, Short.MAX_VALUE))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(lblError)
+							.addContainerGap(470, Short.MAX_VALUE))))
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
 					.addContainerGap()
-					.addComponent(pnlBinOptions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addComponent(pnlProcessingSettings, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkCalcBins)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkDrawBinLabels)
-					.addGap(10)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblNumberOfBins)
-						.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addGap(12)
-					.addComponent(pnlBinOutput, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkExcludeOutsider)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(lblChanDrawBin)
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addComponent(lblMinimumThreshold)
+						.addComponent(minThresh, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(chkDrawGreen)
-						.addComponent(chkDrawRed)
-						.addComponent(chkDrawBlue)
-						.addComponent(chkDrawWhite))
-					.addPreferredGap(ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
+						.addComponent(txtUnsharpRadius, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblUnsharpMaskRadius))
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(txtUnsharpWidth, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addComponent(lblUnsharpMaskPixel))
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGap(2)
+							.addComponent(lblGaussianBlurSigma))
+						.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+					.addGap(191)
 					.addComponent(lblError)
 					.addContainerGap())
 		);
@@ -188,6 +147,8 @@ public class asdf extends JPanel {
 
 	}
 	
+	
+	
 	public void displayError(String error) {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
@@ -195,5 +156,60 @@ public class asdf extends JPanel {
 	
 	public void removeError() {
 		this.lblError.setVisible(false);
+	}
+	
+	public boolean applyFields(Settings settings) {
+		int minThresh = -1;
+		int unsharpRadius = -1;
+		double unsharpWeight = -1;
+		double gaussianSigma = -1;
+
+		try {
+			String text = this.minThresh.getText();
+			minThresh = Integer.parseInt(text);
+			if (minThresh < 0 || minThresh > 255)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Thresholding minimum must be an integer between 0 and 255.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtUnsharpRadius.getText();
+			unsharpRadius = Integer.parseInt(text);
+			if (unsharpRadius < 1 || unsharpRadius > 1000)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Unsharp mask radius must be an integer between 1 and 1000.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtUnsharpWidth.getText();
+			unsharpWeight = Double.parseDouble(text);
+			if (unsharpWeight < 0.1 || unsharpWeight > 0.9)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Unsharp mask radius must be a decimal between 0.1 and 0.9.");
+			return false;
+		}
+		
+		try {
+			String text = this.txtGaussianSigma.getText();
+			gaussianSigma = Double.parseDouble(text);
+			if (gaussianSigma < 0.01 || gaussianSigma > 100)
+				throw new Exception();
+		} catch (Exception e) {
+			displayError("Gaussian blur sigma must be a decimal between 0.01 and 100.");
+			return false;
+		}
+		settings.processingMinThreshold = minThresh;
+		settings.processingUnsharpMaskRadius = unsharpRadius;
+		settings.processingUnsharpMaskWeight = unsharpWeight;
+		settings.processingGaussianSigma = gaussianSigma;
+
+		removeError();
+		return true;
+
 	}
 }

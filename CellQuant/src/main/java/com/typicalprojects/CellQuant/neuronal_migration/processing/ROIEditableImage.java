@@ -413,12 +413,12 @@ public class ROIEditableImage {
 			map.put(en.getKey(), calculateDistances(en.getValue(), Channel.parse(en.getKey()), progress, calculations));
 		}
 
-		if (GUI.settings.calculateBins) {
+		/*if (GUI.settings.calculateBins) {
 			ResultsTable rt = processBins(progress);
 			if (rt != null) {
-				map.put("BINS", processBins(progress));
+				map.put("BINS", rt);
 			}
-		}
+		}*/
 
 		return map;
 	}
@@ -431,7 +431,7 @@ public class ROIEditableImage {
 		}
 		BinnedRegion binnedRegion = null;
 		try {
-			binnedRegion = new BinnedRegion(this.rois.get(0), this.rois.get(this.rois.size() - 1), GUI.settings.numberOfBins, 100, this.ic.getDimensions(), gui.getLogger());
+			binnedRegion = new BinnedRegion(this.rois.get(0), this.rois.get(this.rois.size() - 1), GUI.settings.numberOfBins, 2, this.ic.getDimensions(), gui.getLogger());
 
 
 		} catch (MalformedBinException e1) {

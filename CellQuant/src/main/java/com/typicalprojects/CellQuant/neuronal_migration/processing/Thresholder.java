@@ -22,7 +22,7 @@ public class Thresholder {
 	}
 	
 	@SuppressWarnings("unused")
-	public void threshold() {
+	public void threshold(int minThreshold) {
 
 		if (imp.getBitDepth()!=8 && imp.getBitDepth()!=16) {
 			throw new IllegalArgumentException();
@@ -34,7 +34,7 @@ public class Thresholder {
 		boolean success = false;
 		if (stackSize>1 && (this.opUseStack || this.opUseHistogram) ) {
 			if (this.opUseHistogram) {// one global histogram
-				Object[] result = execute();
+				Object[] result = execute(minThreshold);
 				if (((Integer) result[0]) != -1 && imp.getBitDepth()==16)
 					new StackConverter(imp).convertToGray8();
 			}
@@ -42,7 +42,7 @@ public class Thresholder {
 				success=true;
 				for (int k=1; k<=stackSize; k++){
 					imp.setSlice(k);
-					Object[] result = execute();
+					Object[] result = execute(minThreshold);
 					if (((Integer) result[0]) == -1) success = false;// the threshold existed
 				}
 				if (success && imp.getBitDepth()==16)
@@ -51,7 +51,7 @@ public class Thresholder {
 			imp.setSlice(1);
 		}
 		else { //just one slice, leave as it is
-			Object[] result = execute();
+			Object[] result = execute(minThreshold);
 			if(((Integer) result[0]) != -1 && stackSize==1 &&  imp.getBitDepth()==16) {
 				imp.setDisplayRange(0, 65535);  
 				imp.setProcessor(null, imp.getProcessor().convertToByte(true));
@@ -66,7 +66,7 @@ public class Thresholder {
 	/** Execute the plugin functionality.
 	 * @return an Object[] array with the threshold and the ImagePlus.
 	 * Does NOT show the new, image; just returns it. */
-	private Object[] execute() {
+	private Object[] execute(int minThreshold) {
 
 		// 0 - Check validity of parameters
 		if (null == imp) return null;
@@ -123,14 +123,21 @@ public class Thresholder {
 
 		if (data2.length < 2){
 			threshold = 0;
+			
 		} else {
 			threshold = IJDefault(data2);
+			
+			
+			
 		}
 		
 
 		threshold+=minbin; // add the offset of the histogram
 
-		// show treshold in log window if required
+		if (threshold < minThreshold) {
+			threshold = minThreshold;
+		}
+		// show threshold in log window if required
 		if (threshold>-1) { 
 			//threshold it
 			if (this.opSetThresholdInsteadOfThreshold){
@@ -169,9 +176,7 @@ public class Thresholder {
 				imp.getProcessor().setThreshold(data.length - 1, data.length - 1, ImageProcessor.NO_LUT_UPDATE);
 			}
 		}
-		//IJ.showProgress((double)(255-i)/255);
 		imp.updateAndDraw();
-		// 2 - Return the threshold and the image
 		return new Object[] {threshold, imp};
 	}
 
