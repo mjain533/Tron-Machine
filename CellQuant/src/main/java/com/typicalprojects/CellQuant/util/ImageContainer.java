@@ -113,6 +113,10 @@ public class ImageContainer {
 				}
 			}
 			
+			if (this.dimensions[0] < 50 || this.dimensions[1] < 50) {
+				throw new Exception("Image size is too small (must be at least 50x50 pixels)");
+			}
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();

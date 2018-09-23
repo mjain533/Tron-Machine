@@ -20,7 +20,6 @@ import javax.swing.JOptionPane;
 import org.apache.commons.lang.StringUtils;
 
 import com.typicalprojects.CellQuant.neuronal_migration.GUI;
-import com.typicalprojects.CellQuant.neuronal_migration.processing.BinnedRegion.MalformedBinException;
 import com.typicalprojects.CellQuant.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.CellQuant.util.ImageContainer;
 import com.typicalprojects.CellQuant.util.Point;
@@ -242,6 +241,7 @@ public class ROIEditableImage {
 	}
 
 	public boolean convertSelectionToRoi(String name) {
+		System.out.println("test");
 		if (this.points.size() < 2) {
 			return false;
 		}
@@ -255,19 +255,22 @@ public class ROIEditableImage {
 
 
 		Point newStart = getStretchedPoint(this.points.get(0), drawImage.getDimensions());
-
+		System.out.println("test2");
 		if (newStart != null) {
+			System.out.println("New start: " + newStart.x + ", " + newStart.y);
 			this.points.add(0, newStart);
 		}
 
 		Point newEnd = getStretchedPoint(this.points.get(this.points.size() - 1), drawImage.getDimensions());
 
 		if (newEnd != null) {
+			System.out.println("New end: " + newEnd.x + ", " + newEnd.y);
+
 			this.points.add(newEnd);
 		}
 
 		Object[] obj = convertPointsToArray();
-
+		
 		PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
 
 		pgr.setStrokeColor(Color.GREEN);
@@ -276,7 +279,16 @@ public class ROIEditableImage {
 
 		pgr.setStrokeWidth(imgSize / 300.0);
 		pgr.fitSplineForStraightening();
+		System.out.println("test4");
 
+		if (newStart == null) {
+			newStart = this.points.get(0);
+		}
+		
+		if (newEnd == null) {
+			newEnd = this.points.get(this.points.size() - 1);
+		}
+		
 		pgr.setName(name);
 		Polygon polygon = pgr.getPolygon();
 		int[] newxs = new int[polygon.npoints + 2];
@@ -291,10 +303,12 @@ public class ROIEditableImage {
 
 		pgr = new PolygonRoi(newxs, newys, polygon.npoints + 2, Roi.POLYLINE);
 		polygon = pgr.getPolygon();
+		System.out.println("test5");
 		this.rois.add(new PolarizedPolygonROI(name, pgr, createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))));
 
 		this.points.clear();
 		this.cache.clear();
+		System.out.println("test6");
 
 		return true;
 	}
@@ -413,12 +427,12 @@ public class ROIEditableImage {
 			map.put(en.getKey(), calculateDistances(en.getValue(), Channel.parse(en.getKey()), progress, calculations));
 		}
 
-		/*if (GUI.settings.calculateBins) {
+		if (GUI.settings.calculateBins) {
 			ResultsTable rt = processBins(progress);
 			if (rt != null) {
 				map.put("BINS", rt);
 			}
-		}*/
+		}
 
 		return map;
 	}
@@ -429,12 +443,12 @@ public class ROIEditableImage {
 		if (this.rois.size() <= 1) {
 			return null;
 		}
-		BinnedRegion binnedRegion = null;
+		BinnedRegionMod binnedRegion = null;
 		try {
-			binnedRegion = new BinnedRegion(this.rois.get(0), this.rois.get(this.rois.size() - 1), GUI.settings.numberOfBins, 2, this.ic.getDimensions(), gui.getLogger());
+			binnedRegion = new BinnedRegionMod(this.rois.get(0), this.rois.get(this.rois.size() - 1), GUI.settings.numberOfBins, 2, this.ic.getDimensions(), gui.getLogger());
 
 
-		} catch (MalformedBinException e1) {
+		} catch (BinnedRegionMod.MalformedBinException e1) {
 			JOptionPane.showMessageDialog(this.gui.getComponent(), "There was an error processing bins. This is likely due to misshapen bin lines. Bin data will be neglected.", "Bin error", JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
@@ -515,6 +529,7 @@ public class ROIEditableImage {
 		logger.setCurrentTaskComplete();
 
 		return rt;
+		
 
 
 
@@ -670,14 +685,16 @@ public class ROIEditableImage {
 
 	public static Point getStretchedPoint(Point p, int[] dimensions) {
 
+		System.out.println("Dimensions: " + dimensions[0] + "," + dimensions[1]);
 		int distTop = p.y;
-		int distBottom = dimensions[1] - p.y + 1;
+		int distBottom = dimensions[1] - p.y - 1;
 		int distLeft = p.x;
-		int distRight = dimensions[0] - p.x + 1;
+		int distRight = dimensions[0] - p.x - 1;
 
 		int min = Math.min(Math.min(distTop, distBottom), Math.min(distLeft, distRight));
 
 		if (min != 0) {
+			System.out.println("Not zero to wall");
 			if (min == distTop) {
 				return new Point(p.x, 0, false);
 			} else if (min == distBottom) {
@@ -687,6 +704,7 @@ public class ROIEditableImage {
 			} else if (min == distRight) {
 				return new Point(dimensions[0] - 1, p.y, false);
 			}
+			
 		}
 		return null;
 	}
@@ -707,6 +725,7 @@ public class ROIEditableImage {
 		xPtsAdd.addAll(Arrays.stream(xPts).boxed().collect(Collectors.toList()));
 		yPtsAdd.addAll(Arrays.stream(yPts).boxed().collect(Collectors.toList()));
 		Point stopPoint = new Point(xPts[0], yPts[0], null);
+		System.out.println("stop point: " + stopPoint.x + "," + stopPoint.y);
 		// start at end pt, find closest corner
 		// If start pt is closer, go to it and be done. Otherwise add that corner.
 		// Detect which direction we are going, and then determine which way through the list we should iterate.
@@ -729,7 +748,7 @@ public class ROIEditableImage {
 
 		}
 
-
+		System.out.println("reached");
 
 
 		return new PolygonRoi(_convertToPrimFloatArray(xPtsAdd), _convertToPrimFloatArray(yPtsAdd), xPtsAdd.size(), Roi.POLYLINE) ;
