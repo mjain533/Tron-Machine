@@ -1,0 +1,6 @@
+image: maven:4.0.0
+pipelines:
+  default:
+    - step:
+        script:
+          - mvn -version
