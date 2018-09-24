@@ -139,22 +139,18 @@ public class BinnedRegionMod {
 			
 			Map<Integer, List<Point>> cleanedPoints = _cleanPointData();
 			for (int i = 1; i < numBins; i++) {
-				System.out.println("Getting line " + i);
 				List<Point> linePoints = cleanedPoints.get(i);
 				
 				if (linePoints == null)
 					throw new MalformedBinException();
-				for (Point p : linePoints) {
-					if (p == null)
-						System.out.println("There is a null point");
-				}
+
 				this.binLines.add(new BinLine(linePoints, dimensions, i));
 			}
 			this.binLines.add(0, new BinLine(polygon1, 0));
 			this.binLines.add(new BinLine(polygon2, numBins));
 			
 			this.bins = calculateBins(this.binLines);
-
+			
 			logger.setCurrentTaskComplete();
 
 
@@ -315,8 +311,7 @@ public class BinnedRegionMod {
 			List<Point> newOrderedPoints = new ArrayList<Point>();
 			Map<Point, Double> map = en.getValue();
 			// First find point closest to a side
-			System.out.println(en.getKey());
-			System.out.println(map.size());
+
 			Point ptNearSide = null;
 			int closestDist = -1;
 			for (Point p : map.keySet()) {
@@ -336,7 +331,7 @@ public class BinnedRegionMod {
 			
 			map.remove(ptNearSide);
 			
-			Point pointAtSide = getStretchedPoint(ptNearSide);
+			Point pointAtSide = getStretchedPoint(ptNearSide, false);
 			if (pointAtSide != null) { // ptNearSide is not AT the side. Get that point and add
 				newOrderedPoints.add(pointAtSide);
 			}
@@ -370,7 +365,7 @@ public class BinnedRegionMod {
 			}
 			
 			Point lastPoint = newOrderedPoints.get(newOrderedPoints.size() - 1);
-			Point lastPointAtSide = getStretchedPoint(lastPoint);
+			Point lastPointAtSide = getStretchedPoint(lastPoint, false);
 			if (lastPointAtSide != null)
 				newOrderedPoints.add(lastPointAtSide);
 			lines.put(en.getKey(), newOrderedPoints);
@@ -443,8 +438,6 @@ public class BinnedRegionMod {
 		}
 		
 
-
-
 	}
 
 	public class BinLine {
@@ -481,8 +474,8 @@ public class BinnedRegionMod {
 
 		private BinLine(Polygon pg, int binNum) {
 			
-			Point beginStretch = getStretchedPoint(new Point(pg.xpoints[0], pg.ypoints[0], null));
-			Point endStretch = getStretchedPoint(new Point(pg.xpoints[pg.npoints - 1], pg.ypoints[pg.npoints - 1], null));
+			Point beginStretch = getStretchedPoint(new Point(pg.xpoints[0], pg.ypoints[0], null), false);
+			Point endStretch = getStretchedPoint(new Point(pg.xpoints[pg.npoints - 1], pg.ypoints[pg.npoints - 1], null), false);
 
 			if (beginStretch != null) {
 				if (endStretch != null) {
@@ -607,10 +600,11 @@ public class BinnedRegionMod {
 			CircularListIterator<Point> circularItr = new CircularListIterator<Point>(perimPoints, startIndex, true);
 			circularItr.next();
 
-			if (previousBinLine == null || binNum == -1) {
-				BinLine oppLine = previousBinLine == null ? binLines.get(binLines.size() - 1) : binLines.get(0);
-				previousPt1 = getStretchedPoint(new Point(oppLine.xPts[0], oppLine.yPts[0], null));
-				previousPt2 = getStretchedPoint(new Point(oppLine.xPts[oppLine.xPts.length - 1], oppLine.yPts[oppLine.yPts.length - 1], null));
+			if (binNum == -1) {
+				BinLine oppLine = binLines.get(binLines.size() - 1);
+				previousPt1 = getStretchedPoint(new Point(oppLine.xPts[0], oppLine.yPts[0], null), true);
+				previousPt2 = getStretchedPoint(new Point(oppLine.xPts[oppLine.xPts.length - 1], oppLine.yPts[oppLine.yPts.length - 1], null), true);
+
 				boolean switchDirection = false;
 				while (circularItr.hasNext()) {
 					Point perimPoint = circularItr.next();
@@ -773,7 +767,7 @@ public class BinnedRegionMod {
 	}
 
 
-	private Point getStretchedPoint(Point p) {
+	private Point getStretchedPoint(Point p, boolean returnOriginal) {
 
 		int distTop = p.y;
 		int distBottom = dimensions[1] - p.y + 1;
@@ -793,7 +787,10 @@ public class BinnedRegionMod {
 				return new Point(dimensions[0] - 1, p.y, false);
 			}
 		}
-		return null;
+		if (returnOriginal)
+			return p;
+		else
+			return null;
 	}
 	
 	public static List<int[]> makeContinuous(int[] listToMakeContinuous, int[] list2) {
