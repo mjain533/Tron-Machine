@@ -2,7 +2,5 @@ image: maven:4.0.0
 pipelines:
   default:
     - step:
-        caches:
-          - maven
         script:
           - mvn -version
