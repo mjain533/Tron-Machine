@@ -34,7 +34,7 @@
 									<mainClass>com.typicalprojects.CellQuant.MainFrame</mainClass>
 								</transformer>
 							</transformers>
-							<outputFile>../${project.artifactId}-${project.version}.jar</outputFile>
+							<outputFile>JarBuilds/${project.artifactId}-${project.version}.jar</outputFile>
 						</configuration>
 					</execution>
 				</executions>
