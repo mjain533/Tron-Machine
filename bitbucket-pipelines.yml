@@ -7,8 +7,10 @@ image: maven:3.3.9
 
 pipelines:
   custom:
-    build-to-downloads:
+    build-to-downloads:      
       - step:
+          caches:
+            - maven
           script:
             - echo "Building to download"
             - mvn clean package
