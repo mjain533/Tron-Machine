@@ -6,9 +6,16 @@
 image: maven:3.3.9
 
 pipelines:
-  default:
-    - step:
-        script: # Modify the commands below to build your repository.
-          - cd CellQuant
-          - mvn clean package
-          - curl -X POST "https://${BB_AUTH_STRING}@api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"target/CellQuant-*.jar"   
+  custom:
+    build-to-downloads:
+      - step
+          script:
+            - echo "Building to download"
+            - mvn clean package
+            - ./send_to_downloads.sh
+    build-to-downloads2:
+      - step
+          script:
+            - echo "Building to download"
+            - mvn clean package
+            - ./send_to_downloads.sh
