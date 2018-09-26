@@ -133,7 +133,6 @@ public class GUI  {
 			}
 			throw new IOException();
 		}
-		System.out.println(settings.channelsToProcess);
 		this.parentFrame = parent;
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();

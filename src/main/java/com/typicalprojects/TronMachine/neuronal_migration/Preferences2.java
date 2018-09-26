@@ -185,6 +185,8 @@ public class Preferences2 extends JFrame {
 		this.settingsPanel.add(new PnlBinOptions());
 		this.settingsPanel.add(new PnlSaveOptions());
 		this.settingsPanel.add(new PnlImageOptions());
+		this.settingsPanel.add(new PnlReset(this));
+
 
 		lblCannotEdit = new JLabel("There were errors in your configuration.");
 		lblCannotEdit.setForeground(Color.RED);
@@ -367,6 +369,12 @@ public class Preferences2 extends JFrame {
 		}
 
 	}
+	
+	protected void invokeReset() {
+		for (SettingsPanel panel : this.settingsPanel) {
+			panel.reset(GUI.settings);
+		}
+	}
 
 	public boolean isDisplaying() {
 		return this.isVisible();
@@ -387,8 +395,6 @@ public class Preferences2 extends JFrame {
 		}
 
 	}
-	
-	
 
 
 	public void setCurrentPage(SettingsPanel settings) {
@@ -425,7 +431,7 @@ public class Preferences2 extends JFrame {
 	}
 
 	public enum SettingPage {
-		ChannelConfiguration("Channel Setup"), ImageSettings("Image Settings"), Processing("Processing"), BinConfiguration("Bins"), Saving("Save Options");
+		ChannelConfiguration("Channel Setup"), ImageSettings("Image Settings"), Processing("Processing"), BinConfiguration("Bins"), Saving("Save Options"), Reset("Reset");
 
 		private String friendlyName;
 
@@ -1788,5 +1794,119 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
+}
+class PnlReset extends JPanel implements SettingsPanel {
+
+	private static final long serialVersionUID = 2016027296304991330L;
+	private JPanel self;
+	public final Preferences2 prefs;
+	
+	public PnlReset(Preferences2 prefs) {
+		this.self = this;
+		this.prefs = prefs;
+		JPanel pnlPixelConverstions = new JPanel();
+		pnlPixelConverstions.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlPixelConverstions.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlPixelConverstions.setBackground(new Color(211, 211, 211));
+
+		JLabel lblPixelConversions = new JLabel("Hard Reset");
+
+		GroupLayout gl_pnlPixelConverstions = new GroupLayout(pnlPixelConverstions);
+		gl_pnlPixelConverstions.setHorizontalGroup(
+				gl_pnlPixelConverstions.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGroup(gl_pnlPixelConverstions.createSequentialGroup()
+						.addContainerGap()
+						.addComponent(lblPixelConversions, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+						.addContainerGap())
+				);
+		gl_pnlPixelConverstions.setVerticalGroup(
+				gl_pnlPixelConverstions.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addComponent(lblPixelConversions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+				);
+		pnlPixelConverstions.setLayout(gl_pnlPixelConverstions);
+		
+		JLabel lblbyClickingreset = new JLabel("<html>By clicking 'Reset to Default' below, you will reset all settings to their default values. This action cannot be undone. This will affect your Channel configuration and you will likely need to re-map channels following a reset. In addition, you will need to re-select an output folder; you will not be able to run the program until an output location has been set.</html>");
+		
+		JButton btnReset = new JButton("Reset to Defaults");
+		btnReset.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (JOptionPane.showConfirmDialog(self, "Are you sure you want to reset settings?", "Confirm Reset", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+					Settings oldSettings = GUI.settings;
+					try {
+						GUI.settings = null;
+						GUI.settings = SettingsLoader.loadSettings(true);
+						SettingsLoader.saveSettings(GUI.settings);
+						
+						prefs.invokeReset();
+					} catch (Exception ex) {
+						ex.printStackTrace();
+						if (GUI.settings == null) {
+							JOptionPane.showMessageDialog(self, "<html>There was an error loading settings:<br><br>" + ex.getMessage() + "</html>", "Settings Load Error", JOptionPane.ERROR_MESSAGE);
+						} else {
+							JOptionPane.showMessageDialog(self, "<html>There was an error updating settings:<br><br>" + ex.getMessage() + "</html>", "Settings Update Error", JOptionPane.ERROR_MESSAGE);
+
+						}
+						GUI.settings = oldSettings;
+
+					}
+				}
+			}
+		});
+
+		GroupLayout groupLayout = new GroupLayout(this);
+		groupLayout.setHorizontalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addContainerGap()
+							.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+								.addComponent(lblbyClickingreset, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE)
+								.addComponent(pnlPixelConverstions, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGap(183)
+							.addComponent(btnReset)))
+					.addContainerGap())
+		);
+		groupLayout.setVerticalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(lblbyClickingreset)
+					.addGap(12)
+					.addComponent(btnReset)
+					.addContainerGap(220, Short.MAX_VALUE))
+		);
+		setLayout(groupLayout);
+	}
+
+	@Override
+	public void removeError() {}
+
+	@Override
+	public void reset(Settings settings) {}
+
+	@Override
+	public boolean applyFields(Settings settings) {return true;}
+
+	@Override
+	public void displayError(String errors) {}
+
+	@Override
+	public SettingPage getPageDesignation() {
+		return SettingPage.Reset;
+	}
+
+	@Override
+	public JPanel getRawComponent() {
+		return this;
+	}
+	
 }
 

@@ -41,24 +41,15 @@ import javax.swing.border.LineBorder;
 import java.awt.Font;
 
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.JTextField;
-import javax.swing.JScrollPane;
-import javax.swing.JList;
 
 public class PrefPaneBuilder extends JPanel {
 
 	/**
 	 * Create the panel.
 	 */
-		
-		
-	
+
 	private static final long serialVersionUID = -6622171153906374924L;
-	private JLabel lblError;
-	private JTextField minThresh;
-	private JTextField txtUnsharpRadius;
-	private JTextField txtUnsharpWidth;
-	private JTextField txtGaussianSigma;
+
 
 	/**
 	 * Create the panel.
@@ -72,7 +63,7 @@ public class PrefPaneBuilder extends JPanel {
 		pnlPixelConverstions.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlPixelConverstions.setBackground(new Color(211, 211, 211));
 
-		JLabel lblPixelConversions = new JLabel("Image Pixel Units");
+		JLabel lblPixelConversions = new JLabel("Hard Reset");
 
 		GroupLayout gl_pnlPixelConverstions = new GroupLayout(pnlPixelConverstions);
 		gl_pnlPixelConverstions.setHorizontalGroup(
@@ -91,127 +82,42 @@ public class PrefPaneBuilder extends JPanel {
 				.addComponent(lblPixelConversions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
 				);
 		pnlPixelConverstions.setLayout(gl_pnlPixelConverstions);
-
-		lblError = new JLabel("Error");
-		lblError.setVisible(false);
-		lblError.setFont(GUI.mediumFont);
-		lblError.setForeground(Color.RED);
 		
-		JLabel lblNewLabel = new JLabel("Calibration (if not supplied by image file):");
+		JLabel lblbyClickingreset = new JLabel("<html>By clicking 'Reset to Default' below, you will reset all settings to their default values. This action cannot be undone. This will affect your Channel configuration and you will likely need to re-map channels following a reset. In addition, you will need to re-select an output folder; you will not be able to run the program until an output location has been set.</html>");
 		
-		JScrollPane scrollPane = new JScrollPane();
-		
-		JButton btnNewButton = new JButton("New Calibration");
-		
-		JButton btnRemove = new JButton("Remove");
+		JButton btnNewButton = new JButton("Reset to Defaults");
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(pnlPixelConverstions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addComponent(lblError, Alignment.TRAILING)
-								.addComponent(lblNewLabel)
-								.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE))
-							.addContainerGap())
+							.addContainerGap()
+							.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+								.addComponent(lblbyClickingreset, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE)
+								.addComponent(pnlPixelConverstions, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
 						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(btnRemove)
-							.addPreferredGap(ComponentPlacement.RELATED, 275, Short.MAX_VALUE)
-							.addComponent(btnNewButton))))
+							.addGap(183)
+							.addComponent(btnNewButton)))
+					.addContainerGap())
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
 					.addContainerGap()
 					.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(lblNewLabel)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnNewButton)
-						.addComponent(btnRemove))
-					.addPreferredGap(ComponentPlacement.RELATED, 161, Short.MAX_VALUE)
-					.addComponent(lblError)
-					.addContainerGap())
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(lblbyClickingreset)
+					.addGap(12)
+					.addComponent(btnNewButton)
+					.addContainerGap(220, Short.MAX_VALUE))
 		);
-		
-		JList<String> list = new JList<String>();
-		scrollPane.setViewportView(list);
 		setLayout(groupLayout);
 		
 		
 
 	}
 	
-	
-	
-	public void displayError(String error) {
-		this.lblError.setText(error);
-		this.lblError.setVisible(true);
-	}
-	
-	public void removeError() {
-		this.lblError.setVisible(false);
-	}
-	
-	public boolean applyFields(Settings settings) {
-		int minThresh = -1;
-		int unsharpRadius = -1;
-		double unsharpWeight = -1;
-		double gaussianSigma = -1;
 
-		try {
-			String text = this.minThresh.getText();
-			minThresh = Integer.parseInt(text);
-			if (minThresh < 0 || minThresh > 255)
-				throw new Exception();
-		} catch (Exception e) {
-			displayError("Thresholding minimum must be an integer between 0 and 255.");
-			return false;
-		}
-		
-		try {
-			String text = this.txtUnsharpRadius.getText();
-			unsharpRadius = Integer.parseInt(text);
-			if (unsharpRadius < 1 || unsharpRadius > 1000)
-				throw new Exception();
-		} catch (Exception e) {
-			displayError("Unsharp mask radius must be an integer between 1 and 1000.");
-			return false;
-		}
-		
-		try {
-			String text = this.txtUnsharpWidth.getText();
-			unsharpWeight = Double.parseDouble(text);
-			if (unsharpWeight < 0.1 || unsharpWeight > 0.9)
-				throw new Exception();
-		} catch (Exception e) {
-			displayError("Unsharp mask radius must be a decimal between 0.1 and 0.9.");
-			return false;
-		}
-		
-		try {
-			String text = this.txtGaussianSigma.getText();
-			gaussianSigma = Double.parseDouble(text);
-			if (gaussianSigma < 0.01 || gaussianSigma > 100)
-				throw new Exception();
-		} catch (Exception e) {
-			displayError("Gaussian blur sigma must be a decimal between 0.01 and 100.");
-			return false;
-		}
-		settings.processingMinThreshold = minThresh;
-		settings.processingUnsharpMaskRadius = unsharpRadius;
-		settings.processingUnsharpMaskWeight = unsharpWeight;
-		settings.processingGaussianSigma = gaussianSigma;
-
-		removeError();
-		return true;
-
-	}
 }
