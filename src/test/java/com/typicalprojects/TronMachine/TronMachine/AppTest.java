@@ -1,4 +1,4 @@
-package com.typicalprojects.CellQuant.CellQuant;
+package com.typicalprojects.TronMachine.TronMachine;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
