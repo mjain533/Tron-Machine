@@ -122,8 +122,10 @@ public class MainFrame extends JFrame {
 													wf.disappear();
 
 												} catch (final Exception e) {
-													// Shouldn't happen;
 													e.printStackTrace();
+													JOptionPane.showMessageDialog(null, "Initialization error. Contact Justin Carrington at the Dent Research Lab.", "Startup Error", JOptionPane.ERROR_MESSAGE);;
+													wf.disappear();
+													System.exit(0);
 												}
 
 												break;

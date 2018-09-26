@@ -57,6 +57,13 @@ public class ImageContainer {
 					io.setSplitChannels(true);
 					ImagePlus[]  ips= BF.openImagePlus(io);
 					this.cal = ips[0].getCalibration();
+
+					System.out.println(this.cal);
+					if (this.cal != null) {
+						System.out.println(this.cal.getUnits());
+						System.out.println(this.cal.getUnit());
+
+					}
 					if (ips.length != validChannels.size()) {
 						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 					}
@@ -67,6 +74,7 @@ public class ImageContainer {
 							ip.setProcessor(ip.getProcessor().convertToShortProcessor());
 							ip.setTitle(this.title + " Chan-" + chanEn.getValue().getAbbreviation());
 							if (this.dimensions == null) this.dimensions = ip.getDimensions();
+							this.applyLUT(ip, chanEn.getValue());
 							origImages.put(chanEn.getValue(), ip);
 						} else {
 							throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");

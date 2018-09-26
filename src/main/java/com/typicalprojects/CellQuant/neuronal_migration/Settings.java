@@ -44,6 +44,9 @@ public class Settings {
 	public int processingUnsharpMaskRadius = 20;
 	public double processingUnsharpMaskWeight = 0.8;
 	public double processingGaussianSigma = 0.5;
+	public List<String> calibrations = null;
+	public int calibrationNumber = -1;
+
 
 	public static void main(String[] args) throws FileNotFoundException, SecurityException, IOException {
 		Settings settings = SettingsLoader.loadSettings(false);
@@ -80,6 +83,8 @@ public class Settings {
 		private static final String keyProcessingUnsharpMaskRadius = "UnsharpMaskRadius";
 		private static final String keyProcessingUnsharpMaskWeight = "UnsharpMaskWeight";
 		private static final String keyProcessingGaussianSigma = "GaussianSigma";
+		private static final String keyCalibrations = "Calibrations";
+		private static final String keySelectedCalibration = "SelectedCalibration";
 
 
 
@@ -203,6 +208,10 @@ public class Settings {
 			settings.processingUnsharpMaskWeight = (Double) dataToParse.get(keyProcessingUnsharpMaskWeight);
 			settings.processingGaussianSigma = (Double) dataToParse.get(keyProcessingGaussianSigma);
 
+			// Calibrations
+			settings.calibrations = (List<String>) dataToParse.get(keyCalibrations);
+			settings.calibrationNumber = (Integer) dataToParse.get(keySelectedCalibration);
+
 			return settings;
 
 
@@ -258,6 +267,10 @@ public class Settings {
 			newSettings.put(keyProcessingUnsharpMaskRadius, settings.processingUnsharpMaskRadius);
 			newSettings.put(keyProcessingUnsharpMaskWeight, settings.processingUnsharpMaskWeight);
 			newSettings.put(keyProcessingGaussianSigma, settings.processingGaussianSigma);
+			
+			// Calibration
+			newSettings.put(keyCalibrations, settings.calibrations);
+			newSettings.put(keySelectedCalibration, settings.calibrationNumber);
 			
 		    DumperOptions options = new DumperOptions();
 		    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 	public PnlSelectFiles( GUI guiRef) {
 
 		this.gui = guiRef;
-		this.fileBrowser = new FileBrowser(FileBrowser.MODE_BOTH, Arrays.asList("czi"), true);
+		this.fileBrowser = new FileBrowser(FileBrowser.MODE_BOTH, Arrays.asList("czi", "tif", "tiff"), true);
 		rawPanel = new JPanel();
 		rawPanel.setVisible(false);
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
@@ -176,64 +177,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 				}
 
 				List<File> files = fileBrowser.getSelectedFiles();
-				if (files == null || files.size() == 0)
-					return;
-
-				List<FileContainer> cziFiles = new ArrayList<FileContainer>();
-				for (File file : files) {
-
-					if (file.isDirectory()) {
-
-						DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6, true, true);
-
-						try {
-							cziFiles.addAll(ddw.getFilteredFiles(file));
-						} catch (IOException e1) {
-							JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-							return;
-						}
-
-
-					} else {
-
-						cziFiles.add(new FileContainer(file));
-					}
-				}
-
-
-				List<File> fileRecents = fileBrowser.getRecents();
-				if (fileRecents != null && fileRecents.size() > 0) {
-					if (settings.recentOpenFileLocations != null) {
-						settings.recentOpenFileLocations.clear();
-					}
-					settings.recentOpenFileLocations.addAll(fileRecents);
-					Settings.SettingsLoader.saveSettings(settings);
-
-				}
-
-				if (cziFiles.isEmpty()) {
-					JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-				Enumeration<FileContainer> en = listSelectedFiles.getElements();
-				while (en.hasMoreElements()) {
-					FileContainer fc = en.nextElement();
-					if (cziFiles.contains(fc)) {
-						JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-				}
-
-				for (FileContainer fileToAdd : cziFiles) {
-					listSelectedFiles.addItem(fileToAdd);
-				}
-				if (listSelectedFiles.getSelectedValue() == null) {
-					listSelectedFiles.setSelectedIndex(0);;
-				}
-				if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
-					setDisplayState(STATE_FILE_ADDED);
-				}
-
+				processFiles(files);
 			}
 
 		});
@@ -351,67 +295,79 @@ public class PnlSelectFiles implements ListDropReceiver {
 		this.processor = null;
 	}
 
-	private void processFiles(File[] files) {
-		if (files != null && files.length != 0) {
-			Settings settings = GUI.settings;
-			List<FileContainer> cziFiles = new ArrayList<FileContainer>();
+	private void processFiles(List<File> files) {
+		HashSet<String> endings = new HashSet<String>();
+		endings.add("czi");
+		endings.add("tiff");
+		endings.add("tif");
+		
+		if (files == null || files.size() == 0)
+			return;
+		
+		Settings settings = GUI.settings;
+		
+		List<FileContainer> cziFiles = new ArrayList<FileContainer>();
+		for (File file : files) {
 
-			for (File file : files) {
+			if (file.isDirectory()) {
+				
+				DeepDirectoryWalker ddw = new DeepDirectoryWalker(endings, 6, true, true);
 
-				if (file.isDirectory()) {
-
-					DeepDirectoryWalker ddw = new DeepDirectoryWalker(".czi", 6, true, true);
-
-					try {
-						cziFiles.addAll(ddw.getFilteredFiles(file));
-					} catch (IOException e1) {
-						JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-						return;
-					}
-
-
-				} else if (!file.getName().endsWith(".czi")){
-					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have extension '.czi'", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+				try {
+					cziFiles.addAll(ddw.getFilteredFiles(file));
+				} catch (IOException e1) {
+					JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 					return;
-				} else {
-					cziFiles.add(new FileContainer(file));
 				}
-			}
 
-			List<File> fileRecents = fileBrowser.getRecents();
-			if (fileRecents != null && fileRecents.size() > 0) {
-				if (settings.recentOpenFileLocations == null) {
-					settings.recentOpenFileLocations = new ArrayList<File>();
+
+			} else {
+				boolean hasEnding = false;
+				for (String ending : endings) {
+					if (file.getName().endsWith(ending)) {
+						hasEnding = true;
+						break;
+					}
 				}
-				settings.recentOpenFileLocations.addAll(fileRecents);
-				Settings.SettingsLoader.saveSettings(settings);
-
+				if (!hasEnding) {
+					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have a valid extension.", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				cziFiles.add(new FileContainer(file));
 			}
+		}
 
-			if (cziFiles.isEmpty()) {
-				JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+		List<File> fileRecents = fileBrowser.getRecents();
+		if (fileRecents != null && fileRecents.size() > 0) {
+			if (settings.recentOpenFileLocations == null) {
+				settings.recentOpenFileLocations = new ArrayList<File>();
+			}
+			settings.recentOpenFileLocations.addAll(fileRecents);
+			Settings.SettingsLoader.saveSettings(settings);
+
+		}
+
+		if (cziFiles.isEmpty()) {
+			JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		Enumeration<FileContainer> en = listSelectedFiles.getElements();
+		while (en.hasMoreElements()) {
+			FileContainer fc = en.nextElement();
+			if (cziFiles.contains(fc)) {
+				JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-			Enumeration<FileContainer> en = listSelectedFiles.getElements();
-			while (en.hasMoreElements()) {
-				FileContainer fc = en.nextElement();
-				if (cziFiles.contains(fc)) {
-					JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
-					return;
-				}
-			}
+		}
 
-			for (FileContainer fileToAdd : cziFiles) {
-				listSelectedFiles.addItem(fileToAdd);
-			}
-			if (listSelectedFiles.getSelectedValue() == null) {
-				listSelectedFiles.setSelectedIndex(0);;
-			}
-			if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
-				setDisplayState(STATE_FILE_ADDED);
-			}
-
-
+		for (FileContainer fileToAdd : cziFiles) {
+			listSelectedFiles.addItem(fileToAdd);
+		}
+		if (listSelectedFiles.getSelectedValue() == null) {
+			listSelectedFiles.setSelectedIndex(0);;
+		}
+		if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
+			setDisplayState(STATE_FILE_ADDED);
 		}
 	}
 
@@ -425,7 +381,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 			}
 		}
 
-		processFiles(files.toArray(new File[files.size()]));
+		processFiles(files);
 
 	}
 

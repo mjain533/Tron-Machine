@@ -557,7 +557,12 @@ public class ROIEditableImage {
 
 			progress.setCurrentTask("Cleaning Data...");
 			ResultsTable newTable = new ResultsTable();
-			Calibration cal = this.ic.getCalibration();
+			Calibration calib = this.ic.getCalibration();
+			String stringCalib = GUI.settings.calibrations.get(GUI.settings.calibrationNumber - 1);
+			stringCalib = stringCalib.substring(stringCalib.lastIndexOf('('));
+			String[] number = stringCalib.substring(stringCalib.indexOf(":") + 2, stringCalib.lastIndexOf(')')).split(" ", 2);
+			Double converter = Double.parseDouble(number[0]);
+			String units = calib == null ? number[1] : calib.getUnits();
 
 			newTable.setHeading(0, "Object Num");
 			newTable.setHeading(1, "X (pixels)");
@@ -567,10 +572,10 @@ public class ROIEditableImage {
 			List<Map<Integer, Integer>> coords = new ArrayList<Map<Integer, Integer>>();
 
 
-
+			
 
 			for (PolarizedPolygonROI roiWrapper : this.rois) {
-				newTable.setHeading(counter, "Distance from " + roiWrapper.getName() + " (" + cal.getUnits() +")");
+				newTable.setHeading(counter, "Distance from " + roiWrapper.getName() + " (" + units +")");
 				Map<Integer, Integer> pts = new HashMap<Integer, Integer>();
 
 				Polygon p = roiWrapper.get().getPolygon();
@@ -616,9 +621,21 @@ public class ROIEditableImage {
 
 
 						if (roi.isPositive((int) xObjValues[i], (int) yObjValues[i])) {
-							newTable.addValue(r, cal.getX(shortestDist)); // could be X or Y, just for conversion
+							if (calib != null) {
+								newTable.addValue(r, calib.getX(shortestDist)); // could be X or Y, just for conversion
+
+							} else {
+								newTable.addValue(r, shortestDist * converter); // could be X or Y, just for conversion
+
+							}
 						} else {
-							newTable.addValue(r, -1 * cal.getX(shortestDist));
+							if (calib != null) {
+								newTable.addValue(r, -1 * calib.getX(shortestDist));
+
+							} else {
+								newTable.addValue(r, -1 * shortestDist * converter);
+
+							}
 						}
 						r++;
 					}

@@ -13,6 +13,7 @@ import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.TooManyListenersException;
@@ -85,6 +86,15 @@ public class SimpleJList<K> extends JList<K>{
 
 	public Enumeration<K> getElements() {
 		return this.listModel.elements();
+	}
+	
+	public List<K> toList() {
+		List<K> list = new ArrayList<K>();
+		Enumeration<K> elements = getElements();
+		while (elements.hasMoreElements()) {
+			list.add(elements.nextElement());
+		}
+		return list;
 	}
 	
 	public void clear() {

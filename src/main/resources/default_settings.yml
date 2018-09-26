@@ -20,3 +20,6 @@ MinimumThreshold: 0
 UnsharpMaskRadius: 20
 UnsharpMaskWeight: 0.8
 GaussianSigma: 0.5
+Calibrations:
+- 'Default (one pixel : 1.0 microns)'
+SelectedCalibration: 1

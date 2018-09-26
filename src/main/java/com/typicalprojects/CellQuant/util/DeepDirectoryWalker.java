@@ -5,18 +5,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.DirectoryWalker;
 
 public class DeepDirectoryWalker extends DirectoryWalker{
 	
-	private final String ending;
+	private final Set<String> endings;
 	private final int depth;
 	private final boolean enforceDepth;
 	private final boolean enforceFileLimit;
-	public DeepDirectoryWalker(String ending, int depth, boolean enforceDepth, boolean enforceFileLimit) {
+	public DeepDirectoryWalker(Set<String> endings, int depth, boolean enforceDepth, boolean enforceFileLimit) {
 		super();
-		this.ending = ending;
+		this.endings = endings;
 		this.depth = depth;
 		this.enforceDepth = enforceDepth;
 		this.enforceFileLimit = enforceFileLimit;
@@ -33,13 +34,26 @@ public class DeepDirectoryWalker extends DirectoryWalker{
 	}
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected void handleFile(File file, int depth, Collection results) throws IOException {
-		if (ending == null || file.getPath().endsWith(ending)) {
+		
+		boolean justAccept = endings == null;
+		
+		if (!justAccept) {
+			for (String ending : endings) {
+				if (file.getPath().endsWith(ending)) {
+					justAccept = true;
+					break;
+				}
+			}
+			
+		}
+		if (justAccept) {
 			if (depth <= this.depth) {
 				results.add(file);
 			} else if (this.enforceDepth) {
 				throw new IOException();
 			}
 		}
+		
 
 	}
 
