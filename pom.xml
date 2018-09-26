@@ -2,11 +2,11 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.typicalprojects.CellQuant</groupId>
-	<artifactId>CellQuant</artifactId>
+	<groupId>com.typicalprojects.TronMachine</groupId>
+	<artifactId>TronMachine</artifactId>
 	<version>1.2.5</version>
 
-	<name>CellQuant</name>
+	<name>TronMachine</name>
 	<url>http://maven.apache.org</url>
 
 
@@ -31,7 +31,7 @@
 								<!-- add Main-Class to manifest file -->
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.typicalprojects.CellQuant.MainFrame</mainClass>
+									<mainClass>com.typicalprojects.TronMachine.MainFrame</mainClass>
 								</transformer>
 							</transformers>
 							<outputFile>JarBuilds/${project.artifactId}-${project.version}.jar</outputFile>
