@@ -17,6 +17,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,6 +29,7 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
@@ -264,6 +268,7 @@ public class GUI  {
 		});
 		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.META_MASK));
 		
+		
 		final Properties properties = new Properties();
 		try {
 			properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
@@ -275,7 +280,49 @@ public class GUI  {
 		lblAttributes.setFont(new Font("PingFang TC", Font.BOLD, 13));
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
 		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
+		
+		JMenu mnHelp = new JMenu("Help");
+		mnHelp.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		menuBar.add(mnHelp);
+		
+		JMenuItem mntmQuickStart = new JMenuItem("Quick Start Quide");
+		mnHelp.add(mntmQuickStart);
+		
+		mntmQuickStart.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 
+				EventQueue.invokeLater(new Runnable() {
+					public void run() {
+						try {
+							openWebpage(new URL("https://bitbucket.org/JustinCarr/tronmachine/wiki/Quick%20Start"));
+						}catch (Exception e) {
+							
+						}
+					}
+				});
+
+			}
+		});
+		
+		JMenuItem mntmDocuments = new JMenuItem("Documentation");
+		mnHelp.add(mntmDocuments);
+		
+		mntmDocuments.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				EventQueue.invokeLater(new Runnable() {
+					public void run() {
+						try {
+							openWebpage(new URL("https://bitbucket.org/JustinCarr/tronmachine/wiki/Documentation"));
+						}catch (Exception e) {
+							
+						}
+					}
+				});
+
+			}
+		});
+		
 
 		// main content area
 		JPanel pnlCONTENT = new JPanel();
@@ -412,6 +459,28 @@ public class GUI  {
 		this.statsGUI.removeDisplay();
 		this.statsGUI.resetFields();
 		this.prefs.resetPreferences();
+	}
+	
+	private static boolean openWebpage(URI uri) {
+	    Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+	    if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+	        try {
+	            desktop.browse(uri);
+	            return true;
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    return false;
+	}
+
+	public static boolean openWebpage(URL url) {
+	    try {
+	        return openWebpage(url.toURI());
+	    } catch (URISyntaxException e) {
+	        e.printStackTrace();
+	    }
+	    return false;
 	}
 	
 
