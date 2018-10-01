@@ -28,15 +28,19 @@ package com.typicalprojects.TronMachine.neuronal_migration.panels;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.MouseInfo;
+import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.swing.GroupLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -52,6 +56,7 @@ import javax.swing.event.ChangeListener;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
+import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Zoom;
@@ -69,8 +74,7 @@ public class PnlDisplay  {
 	public static Color colorEnabled = new Color(220, 220, 220);
 
 	private JPanel rawPanel;	
-
-
+	private Cursor cursor;
 
 	private ImagePanel pnlImage;
 
@@ -90,6 +94,15 @@ public class PnlDisplay  {
 
 
 	public PnlDisplay(GUI gui, PnlDisplayFeedbackReceiver sliderOutputHandler) {
+		
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Image img = new ImageIcon(FileBrowser.class.getClassLoader().getResource("cursor.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
+
+		cursor = toolkit.createCustomCursor(img , new java.awt.Point(7, 
+		           7), "img");
+
+		
+		
 		this.outputHandler = sliderOutputHandler;
 		rawPanel = new JPanel();
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
@@ -314,21 +327,39 @@ public class PnlDisplay  {
 			}
 		});
 
+		this.pnlImage.addMouseMotionListener(new MouseMotionListener() {
 
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				if (e.getX() >= 0 && e.getX() < pnlImage.getWidth() && 
+						e.getY() >= 0 && e.getY() < pnlImage.getHeight()) {
+					pnlImage.setCursor(cursor);
+				}/* else {
+					pnlImage.setCursor(Cursor.getDefaultCursor());
+				}*/
+			}
+			
+		});
 		this.pnlImage.addMouseListener(new MouseListener() {
 
 			public void mouseClicked(MouseEvent e) {
-				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+				pnlImage.setCursor(cursor);
 
 			}
 
 			public void mousePressed(MouseEvent e) {	
-				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+				pnlImage.setCursor(cursor);
 
 			}
 
 			public void mouseReleased(MouseEvent e) {
-				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+				pnlImage.setCursor(cursor);
 
 				if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 					if (SwingUtilities.isRightMouseButton(e)){
@@ -363,7 +394,7 @@ public class PnlDisplay  {
 			}
 
 			public void mouseEntered(MouseEvent e) {
-				pnlImage.setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+				pnlImage.setCursor(cursor);
 			}
 
 			public void mouseExited(MouseEvent e) {	

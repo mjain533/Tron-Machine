@@ -80,7 +80,7 @@ import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 public class Preferences2 extends JFrame {
 
-	
+
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -126,7 +126,7 @@ public class Preferences2 extends JFrame {
 	private JPanel activePanel;
 	private GUI mainGUI;
 	private JLabel lblPageName;
-	
+
 	private JButton btnApplyAndClose;
 	private JButton btnCancel;
 	private JLabel lblCannotEdit;
@@ -135,12 +135,12 @@ public class Preferences2 extends JFrame {
 	private List<SettingsPanel> settingsPanel = new ArrayList<SettingsPanel>();
 	private boolean listSelectionChanging = false;
 	public static Preferences2 SINGLETON_FRAME = null;
-	
+
 	/**
 	 * Create the frame.
 	 */
 	public Preferences2(GUI gui) {
-		
+
 		SINGLETON_FRAME = this;
 		this.mainGUI = gui;
 
@@ -155,7 +155,7 @@ public class Preferences2 extends JFrame {
 					userTriedToApplyChanges();
 
 				} else {
-					resetPreferences();
+					resetPreferences(true);
 					removeDisplay();
 				}
 
@@ -209,7 +209,7 @@ public class Preferences2 extends JFrame {
 		btnCancel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				resetPreferences();
+				resetPreferences(true);
 				removeDisplay();
 
 			}
@@ -271,7 +271,7 @@ public class Preferences2 extends JFrame {
 							setCurrentPage(panel);
 					}
 				}
-				
+
 			}
 		});
 
@@ -309,7 +309,7 @@ public class Preferences2 extends JFrame {
 	}
 
 	public void removeDisplay() {
-		
+
 		setVisible(false);
 		mainGUI.refocus();
 	}
@@ -331,17 +331,17 @@ public class Preferences2 extends JFrame {
 		removeErrorMessages();
 		setCurrentPage(this.settingsPanel.get(0));
 		setEnabled(!running);
-		resetPreferences();
+		resetPreferences(!running);
 		pack();
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
 
 	public Object[] applyPreferences(boolean resetIfIncorrect) {
-		
+
 		Settings settings = getSettings();
 
-		
+
 		settings.needsUpdate = true;
 
 		for (SettingsPanel settingsPanel : settingsPanel) {
@@ -349,7 +349,7 @@ public class Preferences2 extends JFrame {
 				return new Object[] {settingsPanel, ""};
 			}
 		}
-		
+
 		try {
 			SettingsLoader.saveSettings(settings);
 			settings.needsUpdate = false;
@@ -362,17 +362,17 @@ public class Preferences2 extends JFrame {
 
 	}
 
-	public void resetPreferences() {
-				
+	public void resetPreferences(boolean enabled) {
+
 		for (SettingsPanel panel : this.settingsPanel) {
-			panel.reset(GUI.settings);
+			panel.reset(GUI.settings, enabled);
 		}
 
 	}
-	
-	protected void invokeReset() {
+
+	protected void invokeReset(boolean enabled) {
 		for (SettingsPanel panel : this.settingsPanel) {
-			panel.reset(GUI.settings);
+			panel.reset(GUI.settings, enabled);
 		}
 	}
 
@@ -389,7 +389,7 @@ public class Preferences2 extends JFrame {
 		if (!this.lblCannotEdit.getText().equals("To make changes you must cancel the current run.")) {
 			this.lblCannotEdit.setVisible(false);
 		}
-				
+
 		for (SettingsPanel panel : this.settingsPanel) {
 			panel.removeError();
 		}
@@ -406,11 +406,11 @@ public class Preferences2 extends JFrame {
 		this.listSelectionChanging = false;
 
 	}
-	
+
 	public Settings getSettings() {
 		return GUI.settings;
 	}
-	
+
 	private void userTriedToApplyChanges() {
 		removeErrorMessages();
 
@@ -442,16 +442,16 @@ public class Preferences2 extends JFrame {
 		public String friendly() {
 			return this.friendlyName;
 		}
-		
+
 		public String toString() {
 			return this.friendlyName;
 		}
 
 	}
-	
+
 	public interface SettingsPanel {
 		public void removeError();
-		public void reset(Settings settings);
+		public void reset(Settings settings, boolean enabled);
 		public boolean applyFields(Settings settings);
 		public void displayError(String errors);
 		public SettingPage getPageDesignation();
@@ -497,7 +497,7 @@ class ChannelRenderer<K> implements ListCellRenderer {
 
 }
 class PnlChanOptions extends JPanel implements SettingsPanel {
-	
+
 
 	private static final long serialVersionUID = 1423951480886612209L;
 	private JCheckBox chkSelectGreen;
@@ -511,10 +511,10 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 	private JComboBox<String> comBoxChanROI;
 	private JLabel lblError;
 	private static final SettingPage setttingPage = SettingPage.ChannelConfiguration;
-	
+
 	@SuppressWarnings("unchecked")
 	public PnlChanOptions() {
-		
+
 		JPanel pnlChanMap = new JPanel();
 		pnlChanMap.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlChanMap.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -780,11 +780,11 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 				);
 		pnlChanMap.setLayout(gl_pnlChanMap);
 		setLayout(groupLayout);
-		
+
 	}
 
 	@Override
-	public void reset(Settings settings) {
+	public void reset(Settings settings, boolean enabled) {
 		if (settings.channelMap.get(0) == null) {
 			this.comBoxCh0.setSelectedItem("<none>");
 		} else {
@@ -817,15 +817,18 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 		this.chkSelectWhite.setSelected(settings.channelsToProcess.contains(Channel.WHITE));
 		this.chkSelectBlue.setSelected(settings.channelsToProcess.contains(Channel.BLUE));
 		this.comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
-		
+		for (Component component : this.getComponents()) {
+			component.setEnabled(enabled);
+		}
+
 	}
-	
+
 	@Override
 	public void displayError(String error) {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
 	}
-	
+
 	@Override
 	public void removeError() {
 		this.lblError.setVisible(false);
@@ -833,7 +836,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 
 	@Override
 	public boolean applyFields(Settings settings) {
-		
+
 		List<String> values = new ArrayList<String>();
 		for (Channel chan : Channel.values()) {
 			values.add(chan.toReadableString());
@@ -896,7 +899,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 				displayError("All channels to be processed must be mapped.");
 				return false;
 			}		
-			
+
 		}
 		if (this.chkSelectWhite.isSelected()) {
 			if (newChanMap.containsValue(Channel.WHITE)) {
@@ -905,7 +908,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 				displayError("All channels to be processed must be mapped.");
 				return false;
 			}	
-			
+
 		}
 		settings.channelMap = newChanMap;
 		settings.channelsToProcess = channelForProcess;
@@ -918,7 +921,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 	public SettingPage getPageDesignation() {
 		return setttingPage;
 	}
-	
+
 	public void changeComboxColor(JComboBox<String> comboBox, String channelString) {
 		for (Channel chan : Channel.values()) {
 			if (chan.toReadableString().equalsIgnoreCase(channelString)) {
@@ -926,7 +929,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 				return;
 			}
 		}
-		
+
 		comboBox.setForeground(Color.BLACK);
 	}
 
@@ -934,7 +937,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 	public JPanel getRawComponent() {
 		return this;
 	}
-	
+
 }
 class PnlSaveOptions extends JPanel implements SettingsPanel {
 
@@ -951,7 +954,7 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 	 * Create the panel.
 	 */
 	public PnlSaveOptions() {
-		
+
 		this.fileBrowser = new FileBrowser(FileBrowser.MODE_DIRECTORIES, null, false);
 
 		JPanel pnlOutputLocation = new JPanel();
@@ -995,11 +998,11 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 				} else {
 					fileBrowser.startBrowsing(null, thisObject);
 				}
-				
+
 				List<File> files = fileBrowser.getSelectedFiles();
 				if (files == null || files.size() == 0)
 					return;
-				
+
 				List<File> fileRecents = fileBrowser.getRecents();
 				if (fileRecents != null && fileRecents.size() > 0) {
 					if (settings.recentOpenFileLocations != null) {
@@ -1008,7 +1011,7 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 					settings.recentOpenFileLocations.addAll(fileRecents);
 					settings.needsUpdate= true;
 					boolean saved = SettingsLoader.saveSettings(settings);
-					
+
 					if (!saved) {
 						JOptionPane.showMessageDialog(thisObject, "Could not save settings.", "Error Saving.", JOptionPane.ERROR_MESSAGE);
 
@@ -1037,54 +1040,54 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addComponent(fullPathName, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-						.addComponent(pnlOutputLocation, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-						.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
-							.addComponent(lblFolderName)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(folderName, GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(btnBrowseFolders))
-						.addComponent(lblFullPath)
-						.addComponent(lblError))
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(fullPathName, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+								.addComponent(pnlOutputLocation, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+								.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
+										.addComponent(lblFolderName)
+										.addPreferredGap(ComponentPlacement.RELATED)
+										.addComponent(folderName, GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
+										.addPreferredGap(ComponentPlacement.UNRELATED)
+										.addComponent(btnBrowseFolders))
+								.addComponent(lblFullPath)
+								.addComponent(lblError))
+						.addContainerGap())
+				);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(pnlOutputLocation, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnBrowseFolders)
-						.addComponent(lblFolderName)
-						.addComponent(folderName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(lblFullPath)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(fullPathName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED, 234, Short.MAX_VALUE)
-					.addComponent(lblError)
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addComponent(pnlOutputLocation, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(btnBrowseFolders)
+								.addComponent(lblFolderName)
+								.addComponent(folderName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE))
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(lblFullPath)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(fullPathName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.RELATED, 234, Short.MAX_VALUE)
+						.addComponent(lblError)
+						.addContainerGap())
+				);
 		setLayout(groupLayout);
 
 	}
-	
+
 	public void displayError(String error) {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
 	}
-	
+
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
-	
-	public void reset(Settings settings) {
+
+	public void reset(Settings settings, boolean enabled) {
 		if (settings.outputLocation == null) {
 			folderName.setText("");
 			fullPathName.setText("");
@@ -1092,8 +1095,10 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 			folderName.setText(settings.outputLocation.getName());
 			fullPathName.setText(settings.outputLocation.getPath());
 		}
+		this.btnBrowseFolders.setEnabled(enabled);
+
 	}
-	
+
 	public boolean applyFields(Settings settings) {
 
 		if (!fullPathName.getText().equals("")) {
@@ -1121,7 +1126,7 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 	public JPanel getRawComponent() {
 		return this;
 	}
-	
+
 }
 class PnlBinOptions extends JPanel implements SettingsPanel {
 	/**
@@ -1144,37 +1149,37 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 	 * Create the panel.
 	 */
 	public PnlBinOptions() {
-		
+
 		JPanel pnlBinOptions = new JPanel();
 		pnlBinOptions.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlBinOptions.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlBinOptions.setBackground(new Color(211, 211, 211));
-		
+
 		JLabel lblBinSettings = new JLabel("Bin Settings");
-		
+
 		GroupLayout gl_pnlBinOptions = new GroupLayout(pnlBinOptions);
 		gl_pnlBinOptions.setHorizontalGroup(
-			gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
+				gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGroup(gl_pnlBinOptions.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(lblBinSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addComponent(lblBinSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+						.addContainerGap())
+				);
 		gl_pnlBinOptions.setVerticalGroup(
-			gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
+				gl_pnlBinOptions.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addComponent(lblBinSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
-		);
+				);
 		pnlBinOptions.setLayout(gl_pnlBinOptions);
-		
+
 		chkCalcBins = new JCheckBox("Calculate Bins");
 		chkCalcBins.setFocusable(false);
-		
+
 		JLabel lblNumberOfBins = new JLabel("Number of Bins:");
-		
+
 		SpinnerNumberModel model = new SpinnerNumberModel(5.0, 2.0, 100.0, 1.0);  
 
 		spnNumBins = new JSpinner(model);
@@ -1182,34 +1187,34 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		spnNumBins.setBackground(Color.WHITE);
 		((DefaultEditor) spnNumBins.getEditor()).getTextField().setEditable(false);
 		((DefaultEditor) spnNumBins.getEditor()).getTextField().setBackground(Color.WHITE);
-		
+
 		JPanel pnlBinOutput = new JPanel();
 		pnlBinOutput.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlBinOutput.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlBinOutput.setBackground(new Color(211, 211, 211));
-		
+
 		JLabel lblBinOutput = new JLabel("Binning Output");
 		GroupLayout gl_pnlBinOutput = new GroupLayout(pnlBinOutput);
 		gl_pnlBinOutput.setHorizontalGroup(
-			gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
+				gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGap(0, 492, Short.MAX_VALUE)
 				.addGroup(gl_pnlBinOutput.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(lblBinOutput, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addComponent(lblBinOutput, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+						.addContainerGap())
+				);
 		gl_pnlBinOutput.setVerticalGroup(
-			gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
+				gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addGap(0, 23, Short.MAX_VALUE)
 				.addComponent(lblBinOutput, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
-		);
+				);
 		pnlBinOutput.setLayout(gl_pnlBinOutput);
-		
+
 		chkExcludeOutsider = new JCheckBox("Exclude points outside of bin region");
 		chkExcludeOutsider.setFocusable(false);
-		
+
 		chkExcludeOutsider.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
 				if (chkExcludeOutsider.isSelected()) {
@@ -1219,111 +1224,111 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 				}
 			}
 		});
-		
+
 		chkCountOutsideAsOutermost = new JCheckBox("Lump points outside bin region with nearest bin");
-		
+
 		chkDrawBinLabels = new JCheckBox("Draw bin labels");
 		chkDrawBinLabels.setFocusable(false);
-		
+
 		JLabel lblChanDrawBin = new JLabel("Channels to Draw Bins:");
-		
+
 		chkDrawGreen = new JCheckBox("Green");
 		chkDrawGreen.setForeground(Channel.GREEN.getColor());
 		chkDrawGreen.setFocusable(false);
-		
+
 		chkDrawRed = new JCheckBox("Red");
 		chkDrawRed.setForeground(Channel.RED.getColor());
 		chkDrawRed.setFocusable(false);
-		
+
 		chkDrawBlue = new JCheckBox("Blue");
 		chkDrawBlue.setForeground(Channel.BLUE.getColor());
 		chkDrawBlue.setFocusable(false);
-		
+
 		chkDrawWhite = new JCheckBox("White");
 		chkDrawWhite.setForeground(Channel.WHITE.getColor());
 		chkDrawWhite.setFocusable(false);
-		
+
 		lblError = new JLabel("Error:");
 		lblError.setFont(GUI.mediumFont);
 		lblError.setForeground(Color.RED);
-		
+
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addComponent(chkDrawBinLabels)
-						.addComponent(chkCalcBins)
-						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(lblNumberOfBins)
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, 45, GroupLayout.PREFERRED_SIZE))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(chkDrawGreen)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawRed)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawBlue)
-							.addPreferredGap(ComponentPlacement.UNRELATED)
-							.addComponent(chkDrawWhite))
-						.addComponent(chkExcludeOutsider)
-						.addComponent(chkCountOutsideAsOutermost)
-						.addComponent(pnlBinOptions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-						.addComponent(lblError)
-						.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
-						.addComponent(lblChanDrawBin))
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(chkDrawBinLabels)
+								.addComponent(chkCalcBins)
+								.addGroup(groupLayout.createSequentialGroup()
+										.addComponent(lblNumberOfBins)
+										.addPreferredGap(ComponentPlacement.RELATED)
+										.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, 45, GroupLayout.PREFERRED_SIZE))
+								.addGroup(groupLayout.createSequentialGroup()
+										.addComponent(chkDrawGreen)
+										.addPreferredGap(ComponentPlacement.UNRELATED)
+										.addComponent(chkDrawRed)
+										.addPreferredGap(ComponentPlacement.UNRELATED)
+										.addComponent(chkDrawBlue)
+										.addPreferredGap(ComponentPlacement.UNRELATED)
+										.addComponent(chkDrawWhite))
+								.addComponent(chkExcludeOutsider)
+								.addComponent(chkCountOutsideAsOutermost)
+								.addComponent(pnlBinOptions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+								.addComponent(lblError)
+								.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+								.addComponent(lblChanDrawBin))
+						.addContainerGap())
+				);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(pnlBinOptions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkCalcBins)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkDrawBinLabels)
-					.addGap(10)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblNumberOfBins)
-						.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addGap(12)
-					.addComponent(pnlBinOutput, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(chkExcludeOutsider)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(chkCountOutsideAsOutermost)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(lblChanDrawBin)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(chkDrawGreen)
-						.addComponent(chkDrawRed)
-						.addComponent(chkDrawBlue)
-						.addComponent(chkDrawWhite))
-					.addPreferredGap(ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
-					.addComponent(lblError)
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addComponent(pnlBinOptions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(chkCalcBins)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(chkDrawBinLabels)
+						.addGap(10)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblNumberOfBins)
+								.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addGap(12)
+						.addComponent(pnlBinOutput, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(chkExcludeOutsider)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(chkCountOutsideAsOutermost)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(lblChanDrawBin)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(chkDrawGreen)
+								.addComponent(chkDrawRed)
+								.addComponent(chkDrawBlue)
+								.addComponent(chkDrawWhite))
+						.addPreferredGap(ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
+						.addComponent(lblError)
+						.addContainerGap())
+				);
 		setLayout(groupLayout);
-		
-		
+
+
 
 	}
-	
+
 	public void displayError(String error) {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
 	}
-	
+
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
-	
+
 	public boolean applyFields(Settings settings) {
-		
+
 		if (!this.chkDrawRed.isSelected() && !this.chkDrawGreen.isSelected() && !this.chkDrawBlue.isSelected() && !this.chkDrawWhite.isSelected()) {
 			displayError("Bins must be drawn on at least one channel.");
 			return false;
@@ -1347,15 +1352,22 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		settings.includePtsNearestBin = chkCountOutsideAsOutermost.isSelected();
 		return true;
 
-		
+
 	}
-	
+
 	public SettingPage getPageDesignation() {
 		return settingPage;
 	}
-	
-	public void reset(Settings settings) {
-		
+
+	public void reset(Settings settings, boolean enabled) {
+		for (Component component : this.getComponents()) {
+			if (!enabled) {
+				component.setEnabled(false);
+			} else {
+				component.setEnabled(true);
+
+			}
+		}
 		chkCalcBins.setSelected(settings.calculateBins);
 		chkDrawBinLabels.setSelected(settings.drawBinLabels);
 		chkDrawBlue.setSelected(settings.channelToDrawBin.contains(Channel.BLUE));
@@ -1365,19 +1377,23 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		spnNumBins.setValue(settings.numberOfBins);
 		chkExcludeOutsider.setSelected(settings.excludePtsOutsideBin);
 		chkCountOutsideAsOutermost.setSelected(settings.includePtsNearestBin);
-		if (chkExcludeOutsider.isSelected()) {
-			chkCountOutsideAsOutermost.setEnabled(false);
-		} else {
-			chkCountOutsideAsOutermost.setEnabled(true);
+		if (enabled) {
+			if (chkExcludeOutsider.isSelected()) {
+				chkCountOutsideAsOutermost.setEnabled(false);
+			} else {
+				chkCountOutsideAsOutermost.setEnabled(true);
 
+			}
 		}
+		
+
 	}
 
 	@Override
 	public JPanel getRawComponent() {
 		return this;
 	}
-	
+
 }
 class PnlProcessingOptions extends JPanel implements SettingsPanel {
 
@@ -1396,80 +1412,80 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		pnlProcessingSettings.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlProcessingSettings.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlProcessingSettings.setBackground(new Color(211, 211, 211));
-		
+
 		JLabel lblProcessingSettings = new JLabel("Parameter Values");
-		
+
 		GroupLayout gl_pnlProcessingSettings = new GroupLayout(pnlProcessingSettings);
 		gl_pnlProcessingSettings.setHorizontalGroup(
-			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
+				gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGap(0, 494, Short.MAX_VALUE)
 				.addGroup(gl_pnlProcessingSettings.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(lblProcessingSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
-					.addContainerGap())
-		);
+						.addContainerGap()
+						.addComponent(lblProcessingSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+						.addContainerGap())
+				);
 		gl_pnlProcessingSettings.setVerticalGroup(
-			gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
+				gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addGap(0, 25, Short.MAX_VALUE)
 				.addComponent(lblProcessingSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
-		);
+				);
 		pnlProcessingSettings.setLayout(gl_pnlProcessingSettings);
-		
+
 		lblError = new JLabel("Error:");
 		lblError.setFont(GUI.mediumFont);
 		lblError.setForeground(Color.RED);
-		
+
 		JLabel lblMinimumThreshold = new JLabel("Auto-Threshold Minimum Value (0-255):");
-		
+
 		txtMinThresh = new JTextField();
 		txtMinThresh.setText("0");
 		txtMinThresh.setColumns(10);
-		
+
 		JLabel lblUnsharpMaskRadius = new JLabel("Unsharp Mask Pixel Radius (1-1000):");
-		
+
 		txtUnsharpRadius = new JTextField();
 		txtUnsharpRadius.setText("20");
 		txtUnsharpRadius.setColumns(10);
-		
+
 		JLabel lblUnsharpMaskPixel = new JLabel("Unsharp Mask Pixel Width (0.1-0.9):");
-		
+
 		txtUnsharpWeight = new JTextField();
 		txtUnsharpWeight.setColumns(10);
-		
+
 		JLabel lblGaussianBlurSigma = new JLabel("Gaussian Blur Sigma Value (0.01-100):");
-		
+
 		txtGaussianSigma = new JTextField();
 		txtGaussianSigma.setColumns(10);
-		
+
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addComponent(pnlProcessingSettings, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
-						.addComponent(lblError)
+						.addContainerGap()
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(pnlProcessingSettings, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+								.addComponent(lblError)
 
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblGaussianBlurSigma, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
-								.addComponent(txtMinThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtUnsharpWeight, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
-							
-							.addGap(180))
-						
-						
-						/*.addGroup(groupLayout.createSequentialGroup()
+								.addGroup(groupLayout.createSequentialGroup()
+										.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+												.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
+												.addComponent(lblGaussianBlurSigma, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
+										.addPreferredGap(ComponentPlacement.RELATED)
+										.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+												.addComponent(txtMinThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+												.addComponent(txtUnsharpWeight, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+												.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
+												.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
+
+										.addGap(180))
+
+
+								/*.addGroup(groupLayout.createSequentialGroup()
 							.addComponent(pnlProcessingSettings, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
 							.addContainerGap())
 						.addGroup(groupLayout.createSequentialGroup()
@@ -1485,68 +1501,70 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
 								.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
 							.addGap(198))
-						
+
 						.addComponent(lblError)*/)
-					
-					.addContainerGap())
-		);
+
+						.addContainerGap())
+				);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(pnlProcessingSettings, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblMinimumThreshold)
-						.addComponent(txtMinThresh, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblUnsharpMaskRadius)
-						.addComponent(txtUnsharpRadius, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblUnsharpMaskPixel)
-						.addComponent(txtUnsharpWeight, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(lblGaussianBlurSigma)
-						.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addContainerGap()
+						.addComponent(pnlProcessingSettings, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblMinimumThreshold)
+								.addComponent(txtMinThresh, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblUnsharpMaskRadius)
+								.addComponent(txtUnsharpRadius, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblUnsharpMaskPixel)
+								.addComponent(txtUnsharpWeight, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(lblGaussianBlurSigma)
+								.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 						//.addPreferredGap(ComponentPlacement.UNRELATED)
-					/*.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						/*.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 						.addGroup(groupLayout.createSequentialGroup()
 							.addGap(2)
 							.addComponent(lblGaussianBlurSigma))
 						.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))*/
-					.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-					.addComponent(lblError)
-					.addContainerGap())
-		);
+						.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+						.addComponent(lblError)
+						.addContainerGap())
+				);
 		setLayout(groupLayout);
-		
-		
+
+
 
 	}
-	
-	
-	
+
+
+
 	public void displayError(String error) {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
 	}
-	
+
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
-	
-	public void reset(Settings settings) {
+
+	public void reset(Settings settings, boolean enabled) {
 		this.lblError.setVisible(false);
 		this.txtGaussianSigma.setText(settings.processingGaussianSigma + "");
 		this.txtUnsharpRadius.setText(settings.processingUnsharpMaskRadius + "");
 		this.txtUnsharpWeight.setText(settings.processingUnsharpMaskWeight + "");
 		this.txtMinThresh.setText(settings.processingMinThreshold + "");
-
+		for (Component component : this.getComponents()) {
+			component.setEnabled(enabled);
+		}
 	}
-	
+
 	public boolean applyFields(Settings settings) {
 		int minThresh = -1;
 		int unsharpRadius = -1;
@@ -1562,7 +1580,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 			displayError("Thresholding minimum must be an integer between 0 and 255.");
 			return false;
 		}
-		
+
 		try {
 			String text = this.txtUnsharpRadius.getText();
 			unsharpRadius = Integer.parseInt(text);
@@ -1572,7 +1590,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 			displayError("Unsharp mask radius must be an integer between 1 and 1000.");
 			return false;
 		}
-		
+
 		try {
 			String text = this.txtUnsharpWeight.getText();
 			unsharpWeight = Double.parseDouble(text);
@@ -1582,7 +1600,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 			displayError("Unsharp mask radius must be a decimal between 0.1 and 0.9.");
 			return false;
 		}
-		
+
 		try {
 			String text = this.txtGaussianSigma.getText();
 			gaussianSigma = Double.parseDouble(text);
@@ -1616,7 +1634,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 }
 class PnlImageOptions extends JPanel implements SettingsPanel {
 
-	
+
 	private static final long serialVersionUID = -6622171153906374924L;
 	private JLabel lblError;
 
@@ -1629,7 +1647,7 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 	 * Create the panel.
 	 */
 	public PnlImageOptions() {
-		
+
 		this.settingsPage = SettingPage.ImageSettings;
 		this.jpanel = this;
 
@@ -1662,11 +1680,11 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumFont);
 		lblError.setForeground(Color.RED);
-		
+
 		JLabel lblCalibration = new JLabel("Calibration (if not supplied by image file):");
-		
+
 		JScrollPane scrollPane = new JScrollPane();
-		
+
 		JButton btnNewCalibration = new JButton("New Calibration");
 		btnNewCalibration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1686,19 +1704,19 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 					JOptionPane.showMessageDialog(jpanel, "The conversion you provided was not a decimal number.", "New Calibration Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				
+
 				if (d <= 0) {
 					JOptionPane.showMessageDialog(jpanel, "The conversion you provided was negative. This is invalid.", "New Calibration Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				
+
 				String newCalibration = input + " (1 pixel : " + d + " " + calib + ")"; 
 				calibrationList.addItem(newCalibration);
 				calibrationList.setSelectedValue(newCalibration, true);
 
 			}
 		});
-				
+
 		JButton btnRemove = new JButton("Remove");
 		btnRemove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1736,57 +1754,61 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 					}
 
 				}
-				
+
 			}
 		});
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(pnlPixelConverstions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addComponent(lblError, Alignment.TRAILING)
-								.addComponent(lblCalibration)
-								.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE))
-							.addContainerGap())
-						.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(btnRemove)
-							.addPreferredGap(ComponentPlacement.RELATED, 275, Short.MAX_VALUE)
-							.addComponent(btnNewCalibration))))
-		);
+						.addContainerGap()
+						.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+								.addGroup(groupLayout.createSequentialGroup()
+										.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+												.addComponent(pnlPixelConverstions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+												.addComponent(lblError, Alignment.TRAILING)
+												.addComponent(lblCalibration)
+												.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE))
+										.addContainerGap())
+								.addGroup(groupLayout.createSequentialGroup()
+										.addComponent(btnRemove)
+										.addPreferredGap(ComponentPlacement.RELATED, 275, Short.MAX_VALUE)
+										.addComponent(btnNewCalibration))))
+				);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(lblCalibration)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.RELATED)
-					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-						.addComponent(btnNewCalibration)
-						.addComponent(btnRemove))
-					.addPreferredGap(ComponentPlacement.RELATED, 161, Short.MAX_VALUE)
-					.addComponent(lblError)
-					.addContainerGap())
-		);
-		
+						.addContainerGap()
+						.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(lblCalibration)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+								.addComponent(btnNewCalibration)
+								.addComponent(btnRemove))
+						.addPreferredGap(ComponentPlacement.RELATED, 161, Short.MAX_VALUE)
+						.addComponent(lblError)
+						.addContainerGap())
+				);
+
 		scrollPane.setViewportView(calibrationList);
 		setLayout(groupLayout);
-		
+
 
 	}
 
 	@Override
-	public void reset(Settings settings) {
+	public void reset(Settings settings, boolean enabled) {
 
 		this.calibrationList.setItems(settings.calibrations);
 		this.calibrationList.setSelectedIndex(settings.calibrationNumber - 1);
+		for (Component component : this.getComponents()) {
+			component.setEnabled(enabled);
+		}
+		this.calibrationList.setEnabled(enabled);
 	}
 
 
@@ -1814,7 +1836,7 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 		this.lblError.setText(error);
 		this.lblError.setVisible(true);
 	}
-	
+
 	public void removeError() {
 		this.lblError.setVisible(false);
 	}
@@ -1824,7 +1846,7 @@ class PnlReset extends JPanel implements SettingsPanel {
 	private static final long serialVersionUID = 2016027296304991330L;
 	private JPanel self;
 	public final Preferences2 prefs;
-	
+
 	public PnlReset(Preferences2 prefs) {
 		this.self = this;
 		this.prefs = prefs;
@@ -1852,9 +1874,9 @@ class PnlReset extends JPanel implements SettingsPanel {
 				.addComponent(lblPixelConversions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
 				);
 		pnlPixelConverstions.setLayout(gl_pnlPixelConverstions);
-		
+
 		JLabel lblbyClickingreset = new JLabel("<html>By clicking 'Reset to Default' below, you will reset all settings to their default values. This action cannot be undone. This will affect your Channel configuration and you will likely need to re-map channels following a reset. In addition, you will need to re-select an output folder; you will not be able to run the program until an output location has been set.</html>");
-		
+
 		JButton btnReset = new JButton("Reset to Defaults");
 		btnReset.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1864,8 +1886,8 @@ class PnlReset extends JPanel implements SettingsPanel {
 						GUI.settings = null;
 						GUI.settings = SettingsLoader.loadSettings(true);
 						SettingsLoader.saveSettings(GUI.settings);
-						
-						prefs.invokeReset();
+
+						prefs.invokeReset(true);
 					} catch (Exception ex) {
 						ex.printStackTrace();
 						if (GUI.settings == null) {
@@ -1883,30 +1905,30 @@ class PnlReset extends JPanel implements SettingsPanel {
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-						.addGroup(groupLayout.createSequentialGroup()
-							.addContainerGap()
-							.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
-								.addComponent(lblbyClickingreset, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE)
-								.addComponent(pnlPixelConverstions, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGap(183)
-							.addComponent(btnReset)))
-					.addContainerGap())
-		);
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addGroup(groupLayout.createSequentialGroup()
+										.addContainerGap()
+										.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+												.addComponent(lblbyClickingreset, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE)
+												.addComponent(pnlPixelConverstions, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+								.addGroup(groupLayout.createSequentialGroup()
+										.addGap(183)
+										.addComponent(btnReset)))
+						.addContainerGap())
+				);
 		groupLayout.setVerticalGroup(
-			groupLayout.createParallelGroup(Alignment.LEADING)
+				groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addContainerGap()
-					.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-					.addPreferredGap(ComponentPlacement.UNRELATED)
-					.addComponent(lblbyClickingreset)
-					.addGap(12)
-					.addComponent(btnReset)
-					.addContainerGap(220, Short.MAX_VALUE))
-		);
+						.addContainerGap()
+						.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(lblbyClickingreset)
+						.addGap(12)
+						.addComponent(btnReset)
+						.addContainerGap(220, Short.MAX_VALUE))
+				);
 		setLayout(groupLayout);
 	}
 
@@ -1914,7 +1936,11 @@ class PnlReset extends JPanel implements SettingsPanel {
 	public void removeError() {}
 
 	@Override
-	public void reset(Settings settings) {}
+	public void reset(Settings settings, boolean enabled) {
+		for (Component component : this.getComponents()) {
+			component.setEnabled(enabled);
+		}
+	}
 
 	@Override
 	public boolean applyFields(Settings settings) {return true;}
@@ -1931,6 +1957,6 @@ class PnlReset extends JPanel implements SettingsPanel {
 	public JPanel getRawComponent() {
 		return this;
 	}
-	
+
 }
 

@@ -140,6 +140,11 @@ public class Custom3DCounter {
 		objID=new int[length];
 		progressID.setCurrentTask("Step 1/3: Finding structures");
 		for (int z=1; z<=nbSlices; z++){
+			if (!np.isCancelled()) {
+				progressID.setCurrentTaskProgress(z, nbSlices);
+			} else {
+				return;
+			}
 			for (int y=0; y<height; y++){
 				for (int x=0; x<width; x++){
 					if (minID==currID) currID++;
@@ -152,11 +157,7 @@ public class Custom3DCounter {
 				}
 			}
 			//IJ.showStatus("Finding structures "+z*100/nbSlices+"%");
-			if (!np.isCancelled()) {
-				progressID.setCurrentTaskProgress(z, nbSlices);
-			} else {
-				return;
-			}
+			
 		}
 		progressID.setCurrentTaskComplete();
 		
@@ -177,6 +178,12 @@ public class Custom3DCounter {
 		minID=1;
 		progressID.setCurrentTask("Step 2/3: Connecting structures");
 		for (int z=1; z<=nbSlices; z++){
+			if (!np.isCancelled()) {
+				progressID.setCurrentTaskProgress(z, nbSlices);
+				
+			} else {
+				return;
+			}
 			for (int y=0; y<height; y++){
 				for (int x=0; x<width; x++){
 					if (imgArray[currPos]!=0){
@@ -225,12 +232,7 @@ public class Custom3DCounter {
 					currPos++;
 				}
 			}
-			if (!np.isCancelled()) {
-				progressID.setCurrentTaskProgress(z, nbSlices);
-				
-			} else {
-				return;
-			}
+			
 		}
 		progressID.setCurrentTaskComplete();
 
@@ -239,6 +241,12 @@ public class Custom3DCounter {
 		//Renumbering of all the found objects and update of their respective number of pixels while filtering based on the number of pixels
 		progressID.setCurrentTask("Step 3/3: Renumbering structures");
 		for (int i=1; i<IDcount.length; i++){
+			if (!np.isCancelled()) {
+				progressID.setCurrentTaskProgress(i, IDcount.length - 1);
+				
+			} else {
+				return;
+			}
 			if ((IDcount[i]!=0 && IDcount[i]>=minSize && IDcount[i]<=maxSize)&& (!exclude || !(exclude && IDisAtEdge[i]))){
 				newCurrID++;
 				int nbPix=IDcount[i];
@@ -248,12 +256,7 @@ public class Custom3DCounter {
 				replaceID(i,0);
 			}
 			
-			if (!np.isCancelled()) {
-				progressID.setCurrentTaskProgress(i, IDcount.length - 1);
-				
-			} else {
-				return;
-			}
+			
 		}
 		progressID.setCurrentTaskComplete();
 

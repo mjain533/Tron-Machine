@@ -129,11 +129,11 @@ public class ROIEditableImage {
 			dup = new ImagePlus("dup", 
 					this.
 					ic.
-					getImage(ImageTag.Objects, channelToDrawROI, /*note: changed to false*/false)
+					getImage(ImageTag.Objects, channelToDrawROI, /*note: changed to false*/true)
 					.getProcessor()
 					.convertToRGB());
 		} else {
-			dup = new ImagePlus("dup", this.ic.getImage(ImageTag.MaxProjected, channelToDrawROI, /*note: changed to false*/false).getProcessor().convertToRGB());
+			dup = new ImagePlus("dup", this.ic.getImage(ImageTag.MaxProjected, channelToDrawROI, /*note: changed to false*/true).getProcessor().convertToRGB());
 		}
 
 		BufferedImage bi = null;

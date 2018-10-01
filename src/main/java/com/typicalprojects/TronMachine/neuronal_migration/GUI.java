@@ -202,7 +202,7 @@ public class GUI  {
 				EventQueue.invokeLater(new Runnable() {
 					public void run() {
 						try {
-							prefs.display(quantFrame, false);
+							prefs.display(quantFrame, !wizard.getStatus().equals(Wizard.Status.SELECT_FILES));
 							unfocusTemporarily();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -212,7 +212,7 @@ public class GUI  {
 
 			}
 		});
-		mntmPreferences.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.META_MASK));
+		mntmPreferences.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		mnFile.add(mntmPreferences);
 
 		JSeparator separator = new JSeparator();
@@ -240,7 +240,7 @@ public class GUI  {
 
 			}
 		});
-		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.META_MASK));
+		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		mnOptions.add(mntmBrightnessAdj);
 		
 		JMenu mnProcess = new JMenu("Process");
@@ -265,7 +265,7 @@ public class GUI  {
 
 			}
 		});
-		mntmSummaryStats.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.META_MASK));
+		mntmSummaryStats.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
 		JMenu mnNavigation = new JMenu("Navigation");
 		mnNavigation.setFont(smallFont.deriveFont(Font.BOLD, 16));
@@ -291,7 +291,7 @@ public class GUI  {
 
 			}
 		});
-		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.META_MASK));
+		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		
 		
 		final Properties properties = new Properties();
@@ -478,11 +478,11 @@ public class GUI  {
 	}
 
 	public void setMenuItemsEnabledDuringRun(boolean enabled) {
-		this.mntmPreferences.setEnabled(enabled);
+		//this.mntmPreferences.setEnabled(enabled);
 		this.prefs.setEnabled(enabled);
 		this.statsGUI.removeDisplay();
 		this.statsGUI.resetFields();
-		this.prefs.resetPreferences();
+		this.prefs.resetPreferences(enabled);
 	}
 	
 	private static boolean openWebpage(URI uri) {
