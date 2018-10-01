@@ -65,6 +65,7 @@ public class Settings {
 	public boolean drawBinLabels = true;
 	public int numberOfBins = -1;
 	public boolean excludePtsOutsideBin = true;
+	public boolean includePtsNearestBin = false;
 	public List<Channel> channelToDrawBin = null;
 	public int processingMinThreshold = 0;
 	public int processingUnsharpMaskRadius = 20;
@@ -105,6 +106,7 @@ public class Settings {
 		private static final String keyBinNum = "BinningNumber";
 		private static final String keyBinExclude = "BinningExcludeOutliers";
 		private static final String keyBinChannelsDraw = "BinningChannelsToDraw";
+		private static final String keyBinIncludeNear = "BinningIncludeNearest";
 		private static final String keyProcessingThreshMin = "MinimumThreshold";
 		private static final String keyProcessingUnsharpMaskRadius = "UnsharpMaskRadius";
 		private static final String keyProcessingUnsharpMaskWeight = "UnsharpMaskWeight";
@@ -227,6 +229,7 @@ public class Settings {
 			for (String channelString : listChansBinDraw) {
 				settings.channelToDrawBin.add(Channel.parse(channelString));
 			}
+			settings.includePtsNearestBin = (boolean) dataToParse.get(keyBinIncludeNear);
 			
 			// Processing
 			settings.processingMinThreshold = (Integer) dataToParse.get(keyProcessingThreshMin);
@@ -287,6 +290,7 @@ public class Settings {
 				chansForBins.add(chan.toReadableString());
 			}
 			newSettings.put(keyBinChannelsDraw, chansForBins);
+			newSettings.put(keyBinIncludeNear, settings.includePtsNearestBin);
 
 			// Processing
 			newSettings.put(keyProcessingThreshMin, settings.processingMinThreshold);

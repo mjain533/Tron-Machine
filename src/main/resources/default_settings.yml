@@ -16,6 +16,7 @@ BinningNumber: 5
 BinningExcludeOutliers: true
 BinningChannelsToDraw:
 - Blue
+BinningIncludeNearest: true
 MinimumThreshold: 0
 UnsharpMaskRadius: 20
 UnsharpMaskWeight: 0.8

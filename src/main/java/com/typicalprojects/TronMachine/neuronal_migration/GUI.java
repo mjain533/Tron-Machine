@@ -116,7 +116,8 @@ public class GUI  {
 	 * @throws IOException 
 	 * @throws FormatException 
 	 */
-	public GUI(MainFrame parent) throws IOException {
+	public GUI(MainFrame parent) throws IOException {		
+		
 		settings = null;
 		try {
 			settings = SettingsLoader.loadSettings(false);
@@ -432,7 +433,6 @@ public class GUI  {
 	}
 
 	public void doExit() {
-		//TODO
 		System.exit(0);
 	}
 

@@ -445,7 +445,7 @@ public class ROIEditableImage {
 		}
 	}
 
-	public Map<String, ResultsTable> processDistances(Logger progress, List<Analyzer.Calculation> calculations) {		
+	public Map<String, ResultsTable> processMigration(Logger progress, List<Analyzer.Calculation> calculations) {		
 
 		Map<String, ResultsTable> map = new HashMap<String, ResultsTable>();
 		for (Entry<String, ResultsTable> en : this.tables.entrySet()) {
@@ -494,8 +494,10 @@ public class ROIEditableImage {
 		}
 		logger.setCurrentTaskComplete();
 
+		// SETUP
 		LinkedHashMap<Integer, Map<Channel, Integer>> pointsBinned = new LinkedHashMap<Integer, Map<Channel, Integer>>();
-
+		HashMap<Channel, Integer> totalNumCells = new HashMap<Channel,Integer>();
+		
 		for (int i = 1; i <= GUI.settings.numberOfBins; i++) {
 			pointsBinned.put(i, new HashMap<Channel, Integer>());
 			for (Channel chan : GUI.settings.channelsToProcess) {
@@ -507,12 +509,15 @@ public class ROIEditableImage {
 			pointsBinned.get(-1).put(chan, 0);
 		}
 
+
 		ResultsTable rt = new ResultsTable();
 		rt.setHeading(0, "Bin");
 		int counter = 1;
 		for (Channel chan : GUI.settings.channelsToProcess) {
-			rt.setHeading(counter, chan.toReadableString() + " Cells");
-			counter++;
+			rt.setHeading(counter, chan.toReadableString() + " Cells (Num)");
+			rt.setHeading(counter + 1, chan.toReadableString() + " Cells (%)");
+
+			counter = counter + 2;
 		}
 
 		logger.setCurrentTask("Binning points... ");
@@ -532,23 +537,50 @@ public class ROIEditableImage {
 
 			for (int i =0; i < xObjValues.length && i < yObjValues.length; i++) {
 				int bin = binnedRegion.getEnclosingBin((int) xObjValues[i], (int) yObjValues[i]);
-				Map<Channel, Integer> channelBinPtCount = pointsBinned.get(bin);
+				Map<Channel, Integer> channelBinPtCount;
+				if (bin < 1) {
+					if (GUI.settings.excludePtsOutsideBin) {
+						continue;
+					} else if (GUI.settings.includePtsNearestBin) {
+						if (bin == -1) {
+							channelBinPtCount = pointsBinned.get(1);
+						} else {
+							channelBinPtCount = pointsBinned.get(GUI.settings.numberOfBins);
+						}
+					} else {
+						channelBinPtCount = pointsBinned.get(-1);
+					}
+				} else {
+					channelBinPtCount = pointsBinned.get(bin);
+				}
 				channelBinPtCount.put(chan, channelBinPtCount.get(chan) + 1);
+				Integer totNum = totalNumCells.get(chan);
+				if (totNum == null)
+					totNum =0;
+				totNum++;
+				totalNumCells.put(chan, totNum);
 			}
 
 		}
 
 
 		for (Entry<Integer, Map<Channel, Integer>> binCounts : pointsBinned.entrySet()) {
-			if (binCounts.getKey() != -1 || !GUI.settings.excludePtsOutsideBin) {
-				rt.incrementCounter();
-				rt.addValue(0, binCounts.getKey());
-				counter = 1;
-				for (Channel chan : GUI.settings.channelsToProcess) {
-					rt.addValue(counter, binCounts.getValue().get(chan));
-					counter++;
-				}
+			if (binCounts.getKey() == -1 && (GUI.settings.excludePtsOutsideBin || GUI.settings.includePtsNearestBin)) {
+				continue;
 			}
+			rt.incrementCounter();
+			rt.addValue(0, binCounts.getKey());
+			counter = 1;
+			for (Channel chan : GUI.settings.channelsToProcess) {
+				int numCellsInBin = binCounts.getValue().get(chan);
+				int numCellsTotal = totalNumCells.get(chan);
+				double percent = (((int) ((((double) numCellsInBin) / numCellsTotal) * 10000)) / 100.0);
+				rt.addValue(counter, binCounts.getValue().get(chan));
+				rt.addValue(counter + 1, percent);
+
+				counter = counter + 2;
+			}
+			
 
 		}
 		logger.setCurrentTaskComplete();

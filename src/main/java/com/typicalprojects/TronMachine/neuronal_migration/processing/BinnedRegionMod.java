@@ -577,7 +577,7 @@ public class BinnedRegionMod {
 				return bin.binNum;
 		}
 
-		return -1;
+		return -2;
 
 	}
 

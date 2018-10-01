@@ -780,7 +780,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			this.gui.getLogger().setCurrentTask("Performing calculations...");
 
 			List<Analyzer.Calculation> calculationsToComplete = Arrays.asList(Analyzer.Calculation.PERCENT_MIGRATION);
-			Map<String, ResultsTable> results = imageCurrentlyROIEditing.processDistances(this.gui.getLogger(), calculationsToComplete);
+			Map<String, ResultsTable> results = imageCurrentlyROIEditing.processMigration(this.gui.getLogger(), calculationsToComplete);
 			this.gui.getLogger().setCurrentTask("Saving resources...");
 		
 			this.imageCurrentlyROIEditing.saveROIs();

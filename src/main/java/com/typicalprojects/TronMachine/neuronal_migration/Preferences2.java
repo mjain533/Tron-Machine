@@ -1137,6 +1137,7 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 	protected JCheckBox chkDrawBinLabels;
 	protected JCheckBox chkCalcBins;
 	protected JCheckBox chkExcludeOutsider;
+	private JCheckBox chkCountOutsideAsOutermost;
 	private final static SettingPage settingPage = SettingPage.BinConfiguration;
 
 	/**
@@ -1209,6 +1210,18 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		chkExcludeOutsider = new JCheckBox("Exclude points outside of bin region");
 		chkExcludeOutsider.setFocusable(false);
 		
+		chkExcludeOutsider.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				if (chkExcludeOutsider.isSelected()) {
+					chkCountOutsideAsOutermost.setEnabled(false);
+				} else {
+					chkCountOutsideAsOutermost.setEnabled(true);
+				}
+			}
+		});
+		
+		chkCountOutsideAsOutermost = new JCheckBox("Lump points outside bin region with nearest bin");
+		
 		chkDrawBinLabels = new JCheckBox("Draw bin labels");
 		chkDrawBinLabels.setFocusable(false);
 		
@@ -1256,6 +1269,7 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 							.addPreferredGap(ComponentPlacement.UNRELATED)
 							.addComponent(chkDrawWhite))
 						.addComponent(chkExcludeOutsider)
+						.addComponent(chkCountOutsideAsOutermost)
 						.addComponent(pnlBinOptions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
 						.addComponent(lblError)
 						.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
@@ -1279,6 +1293,8 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 					.addComponent(pnlBinOutput, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addComponent(chkExcludeOutsider)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(chkCountOutsideAsOutermost)
 					.addPreferredGap(ComponentPlacement.UNRELATED)
 					.addComponent(lblChanDrawBin)
 					.addPreferredGap(ComponentPlacement.UNRELATED)
@@ -1328,6 +1344,7 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		if (chkDrawWhite.isSelected())
 			selectedChans.add(Channel.WHITE);
 		settings.channelToDrawBin = selectedChans;
+		settings.includePtsNearestBin = chkCountOutsideAsOutermost.isSelected();
 		return true;
 
 		
@@ -1347,6 +1364,13 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		chkDrawWhite.setSelected(settings.channelToDrawBin.contains(Channel.WHITE));
 		spnNumBins.setValue(settings.numberOfBins);
 		chkExcludeOutsider.setSelected(settings.excludePtsOutsideBin);
+		chkCountOutsideAsOutermost.setSelected(settings.includePtsNearestBin);
+		if (chkExcludeOutsider.isSelected()) {
+			chkCountOutsideAsOutermost.setEnabled(false);
+		} else {
+			chkCountOutsideAsOutermost.setEnabled(true);
+
+		}
 	}
 
 	@Override

@@ -876,12 +876,15 @@ public class FileBrowser extends JDialog {
 			File parentFile = file.getParentFile();
 			if (parentFile == null) {
 				this.holdChanges = false;
+				System.out.println("Parent");
+
 				return;
 			}
 
 			File parentOfParentFile= parentFile.getParentFile();
 
 			if (parentOfParentFile == null) {
+				System.out.println("Parent of parent");
 				this.holdChanges = false;
 				return;
 			}

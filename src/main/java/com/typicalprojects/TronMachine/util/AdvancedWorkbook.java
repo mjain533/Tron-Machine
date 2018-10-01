@@ -93,6 +93,10 @@ public class AdvancedWorkbook {
 							[row]);
 				}
 			}
+			for (int i = 0; i < numberOfColumns; i++) {
+				sheet.autoSizeColumn(i);
+			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -143,6 +147,8 @@ public class AdvancedWorkbook {
 				}
 
 			}
+			
+
 
 
 		}
