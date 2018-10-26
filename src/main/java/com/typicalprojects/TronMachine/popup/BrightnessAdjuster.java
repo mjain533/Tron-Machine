@@ -35,6 +35,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
+import com.typicalprojects.TronMachine.util.ImageContainer;
+import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -42,6 +45,8 @@ import javax.swing.JLabel;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JSlider;
@@ -60,6 +65,9 @@ public class BrightnessAdjuster extends JFrame {
 	private JSlider sliderMin;
 	private JSlider sliderMax;
 	private boolean changing = false;
+
+	
+	private Map<OutputOption, Map<Channel, int[]>> defaultMinsMaxs = new HashMap<OutputOption, Map<Channel, int[]>>();
 	
 	private BrightnessChangeReceiver receiver;
 
@@ -128,8 +136,17 @@ public class BrightnessAdjuster extends JFrame {
 				
 				if (changing) return;
 				
-				txtMin.setText(sliderMin.getValue() + "");
-				receiver.adjustMinMax(sliderMin.getValue(), sliderMax.getValue());
+				if (sliderMin.getValue() >= sliderMax.getValue()) {
+					changing = true;
+					sliderMin.setValue(sliderMax.getValue() - 1);
+					txtMin.setText(sliderMin.getValue() + "");
+					receiver.updateImage(sliderMin.getValue(), sliderMax.getValue());
+					changing = false;
+				} else {
+					txtMin.setText(sliderMin.getValue() + "");
+					receiver.updateImage(sliderMin.getValue(), sliderMax.getValue());
+				}
+				
 			}
 		});
 		
@@ -139,9 +156,16 @@ public class BrightnessAdjuster extends JFrame {
 				
 				if (changing) return;
 				
-				txtMax.setText(sliderMax.getValue() + "");
-				receiver.adjustMinMax(sliderMin.getValue(), sliderMax.getValue());
-
+				if (sliderMax.getValue() <= sliderMin.getValue()) {
+					changing = true;
+					sliderMax.setValue(sliderMin.getValue() + 1);
+					txtMax.setText(sliderMax.getValue() + "");
+					receiver.updateImage(sliderMin.getValue(), sliderMax.getValue());
+					changing = false;
+				} else {
+					txtMax.setText(sliderMax.getValue() + "");
+					receiver.updateImage(sliderMin.getValue(), sliderMax.getValue());
+				}
 			}
 		});
 		
@@ -204,33 +228,68 @@ public class BrightnessAdjuster extends JFrame {
 	
 	public void removeDisplay() {
 		setVisible(false);
-		reset();
 	}
 	
-	public void setValues(int min, int max, int currValueMin, int currValueMax) {
+
+	public void setModifying(ImageContainer ic, OutputOption tag, Channel chan) {
+		
+		if (tag == null || ic == null || chan == null) {
+			reset(false);
+			return;
+		}
+		
+
+		int defMin = -1;
+		int defMax = -1;
+		int min = ic.getMin(tag, chan);
+		int max = ic.getMax(tag, chan);
+		if (this.defaultMinsMaxs.containsKey(tag) && this.defaultMinsMaxs.get(tag).containsKey(chan)) {
+			int[] defMinsMaxes = this.defaultMinsMaxs.get(tag).get(chan);
+			defMin = defMinsMaxes[0];
+			defMax = defMinsMaxes[1];
+		} else {
+			defMin = min;
+			defMax = max;
+			Map<Channel, int[]> map = null;
+			if (this.defaultMinsMaxs.containsKey(tag)) {
+				map = this.defaultMinsMaxs.get(tag);
+			} else {
+				map = new HashMap<Channel, int[]>();
+				this.defaultMinsMaxs.put(tag, map);
+
+			}
+			map.put(chan, new int[] {min, max});
+		}
 		changing = true;
 		this.sliderMax.setEnabled(true);
 		this.sliderMin.setEnabled(true);
-		this.txtMin.setText("" + currValueMin);
-		this.txtMax.setText("" + currValueMax);
-		this.sliderMin.setMinimum(min);
-		this.sliderMax.setMinimum(min);
-		this.sliderMin.setMaximum(max);
-		this.sliderMax.setMaximum(max);
-		this.sliderMin.setValue(currValueMin);
-		this.sliderMax.setValue(currValueMax);
+		
+
+		this.txtMin.setText("" + min);
+		this.txtMax.setText("" + max);
+		this.sliderMin.setMinimum(defMin);
+		this.sliderMin.setMaximum(defMax);
+		this.sliderMax.setMinimum(defMin);
+		this.sliderMax.setMaximum(defMax);
+		this.sliderMin.setValue(min);
+		this.sliderMax.setValue(max);
 		changing = false;
+
 	}
+	
 
 	public void display(Component parent) {
 		
-		changing = true;
-		setLocationRelativeTo(parent);
-		setVisible(true);
-		changing = false;
+		if (!this.isVisible()) {
+			changing = true;
+			setLocationRelativeTo(parent);
+			setVisible(true);
+			changing = false;
+		}
+
 	}
 	
-	public void reset() {
+	public void reset(boolean hardReset) {
 		changing = true;
 		this.sliderMin.setEnabled(false);
 		this.sliderMax.setEnabled(false);
@@ -242,12 +301,15 @@ public class BrightnessAdjuster extends JFrame {
 		this.sliderMin.setMinimum(1);
 		this.sliderMin.setMaximum(3);
 		this.sliderMin.setValue(2);
+		if (hardReset) {
+			this.defaultMinsMaxs.clear();
+		}
 		changing = false;
 	}
 	
 	public interface BrightnessChangeReceiver {
 		
-		public void adjustMinMax(int min, int max);
+		public void updateImage(int min, int max);
 		
 	}
 	

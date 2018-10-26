@@ -36,7 +36,6 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,6 +57,7 @@ import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.Analyzer;
@@ -74,8 +74,8 @@ import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
-import com.typicalprojects.TronMachine.util.ImageContainer.ImageTag;
 
+import ij.ImagePlus;
 import ij.measure.ResultsTable;
 
 public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackReceiver, BrightnessChangeReceiver {
@@ -133,7 +133,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private List<ImagePhantom> imagesForObjectAnalysis = new LinkedList<ImagePhantom>();
 	private List<ImagePhantom> imagesForObjectSelection = new LinkedList<ImagePhantom>();
 	private List<ImagePhantom> imagesForROICreation = new LinkedList<ImagePhantom>();
-	private Map<Channel, Integer[]> defMinsMaxes = new HashMap<Channel, Integer[]>();
 	private List<ImagePhantom> imagesForSliceSelection = null;
 	private int currentState = STATE_DISABLED;
 	private NeuronProcessor neuronProcessor;
@@ -342,7 +341,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 							int lower = Integer.parseInt(infoTxtLowSlice.getText());
 							int higher = Integer.parseInt(infoTxtHighSlice.getText());
 
-							if (higher > imageCurrentlyDisplayed.getOrigStackSize(GUI.settings.channelForROIDraw) || lower < 1 || lower >= higher) {
+							if (lower < 1 || lower >= higher) {
 								throw new Exception();
 							}
 							infoLblERR.setVisible(false);
@@ -566,7 +565,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						distBtnNext.setEnabled(false);
 						roiNamePopup.display(gui.getPanelDisplay().getImagePanel());
 					}else {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html>You must select at least 2 points on<br>the image before creating an ROI.</html>", "ROI Creation Error", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html>You must select at least 2 points on<br>the image before creating an ROI.<br><br>The ROI line must not overlap with existing lines.</html>", "ROI Creation Error", JOptionPane.ERROR_MESSAGE);
 						
 					}
 				}
@@ -647,7 +646,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		} else {
 
 			if (!imageCurrentlyROIEditing.convertSelectionToRoi(text)) {
-				JOptionPane.showMessageDialog(gui.getComponent(), "Error: Either this name is already taken, or you didn't select any points.", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(gui.getComponent(), "<html>Error: Either this name is already taken, you didn't select any points,<br>or the line you drew overlapped (or would overlap when extended to the image side) with an existing ROI line.</html>", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
 				distBtnAddROI.setEnabled(true);
 				distBtnDeleteROI.setEnabled(true);
 				distBtnCancelROI.setEnabled(true);
@@ -683,7 +682,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			return false;
 
 		ImagePhantom pi = this.imagesForSliceSelection.remove(0);
-		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<ImageTag>(Arrays.asList(ImageTag.Orig)));
+		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<OutputOption>(Arrays.asList(OutputOption.Channel)));
 
 		if (errors != null) {
 			JOptionPane.showMessageDialog(null, "<html>There was an error opening file " + pi.getTitle() + ":<br><br>" + errors+ "</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
@@ -692,13 +691,14 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 
 		ImageContainer ic = pi.getIC();
-		this.gui.getPanelDisplay().setSliceSlider(true, 1, ic.getOrigStackSize(GUI.settings.channelForROIDraw));
 		List<Channel> chans = GUI.settings.getChannels();
+		int stackSize = ic.getChannelOrig(chans.get(0), false).getStackSize();
+		this.gui.getPanelDisplay().setSliceSlider(true, 1, stackSize);
 		this.gui.getPanelDisplay().setChannelSlider(true, chans);
 		this.gui.getPanelDisplay().setImage(ic.getChannelSliceOrig(chans.get(0), 1, false), Zoom.ZOOM_100, -1, -1);
 		this.infoTxtDisplaying.setText(ic.getImageTitle());
 		this.infoTxtLowSlice.setText("" + 1);
-		this.infoTxtHighSlice.setText("" + ic.getOrigStackSize(GUI.settings.channelForROIDraw));
+		this.infoTxtHighSlice.setText("" + stackSize);
 		this.imageCurrentlyDisplayed = ic;
 		setDisplayState(STATE_INFO, null);
 		this.gui.getPanelDisplay().setDisplayState(true, null);
@@ -725,7 +725,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			return false;
 
 		ImagePhantom pi = this.imagesForObjectSelection.remove(0);
-		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<ImageTag>(Arrays.asList(ImageTag.MaxProjected, ImageTag.ObjCountMask, ImageTag.ObjCountOrigMaskMerge)));
+		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<OutputOption>(Arrays.asList(OutputOption.MaxedChannel, OutputOption.ProcessedObjects, OutputOption.ProcessedObjectsOriginal)));
 
 		if (errors != null) {
 			JOptionPane.showMessageDialog(null, "<html>There was an error opening file " + pi.getTitle() + ":<br><br>" + errors+ "</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
@@ -745,8 +745,10 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				chans.add(GUI.settings.channelMap.get(i));
 			}
 		}
-		if (!chans.contains(GUI.settings.channelForROIDraw)) {
-			chans.add(GUI.settings.channelForROIDraw);
+		for (Channel chan : Channel.values()) {
+			if (!chans.contains(chan)) {
+				chans.add(chan);
+			}
 		}
 
 		this.gui.getPanelDisplay().setChannelSlider(true, chans);
@@ -771,8 +773,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	}
 
 	private synchronized boolean displayNextROISelectImage() {
+		this.gui.getBrightnessAdjuster().reset(true);
 		this.gui.getBrightnessAdjuster().removeDisplay();
-		this.gui.getBrightnessAdjuster().reset();
 		setDisplayState(STATE_DISABLED, "Processing...");
 		this.gui.getPanelDisplay().setDisplayState(false, "Processing...");
 
@@ -786,7 +788,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			this.imageCurrentlyROIEditing.saveROIs();
 			this.imageCurrentlyROIEditing.createAndSaveNewImage();
 			this.imageCurrentlyROIEditing.getContainer().saveResultsTables(results, true);
-			this.imageCurrentlyROIEditing.getContainer().deleteIrrelevantDataExcept(new HashSet<ImageTag>(Arrays.asList(ImageTag.MaxProjected, ImageTag.Objects, ImageTag.Bins)));
+			this.imageCurrentlyROIEditing.getContainer().deleteIrrelevantDataExcept(GUI.settings.enabledOptions);
 			this.gui.getLogger().setCurrentTaskComplete();
 			this.imageCurrentlyROIEditing = null;
 		}
@@ -799,7 +801,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		ImagePhantom pi = this.imagesForROICreation.remove(0);
 
-		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<ImageTag>(Arrays.asList(ImageTag.MaxProjected, ImageTag.Objects)));
+		String errors = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<OutputOption>(Arrays.asList(OutputOption.MaxedChannel, OutputOption.ProcessedFull)));
 
 		if (errors != null) {
 			JOptionPane.showMessageDialog(null, "<html>There was an error opening file " + pi.getTitle() + ":<br><br>" + errors+ "</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
@@ -811,22 +813,23 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		
 		Map<String, ResultsTable> tables = ic.tryToOpenResultsTables();
+		
 
-		this.imageCurrentlyROIEditing = new ROIEditableImage(ic, GUI.settings.channelForROIDraw, tables, this.gui);
+		this.imageCurrentlyROIEditing = new ROIEditableImage(ic, GUI.settings.primaryRoiDrawChannel, tables, this.gui);
 
 		this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
 
 		List<Channel> channelsForROISelection = new ArrayList<Channel>();
-		channelsForROISelection.add(GUI.settings.channelForROIDraw);
+		channelsForROISelection.add(GUI.settings.primaryRoiDrawChannel);
 		for (Channel chan : GUI.settings.getChannels()) {
-			if (!chan.equals(GUI.settings.channelForROIDraw)) {
+			if (!chan.equals(GUI.settings.primaryRoiDrawChannel)) {
 				channelsForROISelection.add(chan);
 			}
 		}
 
 		this.gui.getPanelDisplay().setChannelSlider(true, channelsForROISelection);
 
-		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(GUI.settings.channelForROIDraw), Zoom.ZOOM_100, -1, -1);
+		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(GUI.settings.primaryRoiDrawChannel), Zoom.ZOOM_100, -1, -1);
 
 		this.distTxtCurrDisp.setText(ic.getImageTitle());
 		this.distBtnNext.setEnabled(true);
@@ -835,19 +838,10 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnDeleteROI.setEnabled(true);
 		this.distBtnHelp.setEnabled(true);
 		this.distListROI.clear();
-
-		for (Channel chan : channelsForROISelection) {
-			if (!GUI.settings.channelsToProcess.contains(chan)) {
-				this.defMinsMaxes.put(chan, new Integer[] {imageCurrentlyROIEditing.getContainer().getMin(ImageTag.MaxProjected, chan), imageCurrentlyROIEditing.getContainer().getMax(ImageTag.MaxProjected, chan)});
-
-			} else {
-				this.defMinsMaxes.put(chan, new Integer[] {imageCurrentlyROIEditing.getContainer().getMin(ImageTag.Objects, chan), imageCurrentlyROIEditing.getContainer().getMax(ImageTag.Objects, chan)});
-
-			}
+		
+		if (!GUI.settings.channelsToProcess.contains(GUI.settings.primaryRoiDrawChannel)) {
+			this.gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, GUI.settings.primaryRoiDrawChannel);
 		}
-
-		this.gui.getBrightnessAdjuster().setValues(this.defMinsMaxes.get(GUI.settings.channelForROIDraw)[0], this.defMinsMaxes.get(GUI.settings.channelForROIDraw)[1]/*(int) Math.pow(2, ip.getBitDepth())*/, this.defMinsMaxes.get(GUI.settings.channelForROIDraw)[0], 
-				this.defMinsMaxes.get(GUI.settings.channelForROIDraw)[1]);
 		setDisplayState(STATE_COUNT_DIST, null);
 
 		this.gui.getPanelDisplay().setDisplayState(true, null);
@@ -1155,17 +1149,16 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					this.objChkDots.setEnabled(false);
 					this.objChkMask.setEnabled(false);
 					this.objChkOriginal.setEnabled(false);
-					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getContainer().getImage(ImageTag.MaxProjected, chan, false), Zoom.ZOOM_100, -1, -1);
+					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getContainer().getImage(OutputOption.MaxedChannel, chan, false), Zoom.ZOOM_100, -1, -1);
 				}
 			}
 		} else if (currentState == STATE_COUNT_DIST) {
 			if (imageCurrentlyROIEditing != null) {
 				if (!GUI.settings.channelsToProcess.contains(chan)) {
-					Integer[] minMax = this.defMinsMaxes.get(chan);
-					this.gui.getBrightnessAdjuster().setValues(minMax[0], minMax[1], this.imageCurrentlyROIEditing.getContainer().getMin(ImageTag.MaxProjected, chan), this.imageCurrentlyROIEditing.getContainer().getMax(ImageTag.MaxProjected, chan));
+					this.gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, chan);
 					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 				} else {
-					this.gui.getBrightnessAdjuster().reset();
+					this.gui.getBrightnessAdjuster().setModifying(null, null, null);
 					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 				}
 			}
@@ -1219,7 +1212,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}		
 	}
 
-	public void adjustMinMax(int min, int max) {
+	public void updateImage(int min, int max) {
 		if (this.imageCurrentlyROIEditing == null) {
 			return;
 		}

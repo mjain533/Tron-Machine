@@ -29,9 +29,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer.ImageOpenException;
-import com.typicalprojects.TronMachine.util.ImageContainer.ImageTag;
 
 import ij.measure.Calibration;
 
@@ -56,7 +56,7 @@ public class ImagePhantom {
 		return this.title;
 	}
 
-	public String open(Map<Integer, Channel> validChannels, File resaveOutputDir, String timeOfRun, List<ImageTag> imagesToOpen) {
+	public String open(Map<Integer, Channel> validChannels, File resaveOutputDir, String timeOfRun, List<OutputOption> imagesToOpen) {
 		// As one CZI
 		logger.setCurrentTask("Opening " + title + "...");
 		try {

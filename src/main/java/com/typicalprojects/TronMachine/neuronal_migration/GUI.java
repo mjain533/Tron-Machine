@@ -47,6 +47,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Properties;
 import java.awt.event.ActionListener;
@@ -67,13 +68,13 @@ import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlLog;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster;
+import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.util.Logger;
 
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JSeparator;
 
-import java.awt.event.InputEvent;
 import javax.swing.JPanel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -505,6 +506,18 @@ public class GUI  {
 	        e.printStackTrace();
 	    }
 	    return false;
+	}
+	
+	public static boolean outputOptionContainsChannel(OutputOption option, Channel chan) {
+		return (GUI.settings.enabledOptions.containsKey(option) && GUI.settings.enabledOptions.get(option).includedChannels.contains(chan));
+	}
+	
+	public static boolean outputOptionsContainChannel(Collection<OutputOption> options, Channel chan) {
+		for (OutputOption option : options) {
+			if (outputOptionContainsChannel(option, chan))
+				return true;
+		}
+		return false;
 	}
 	
 

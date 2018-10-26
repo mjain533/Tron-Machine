@@ -6,7 +6,7 @@ ChannelMapping:
 ChannelsToProcess:
 - Red
 - Green
-ChannelForROIDraw: Blue
+RoiPrimaryDrawChan: Blue
 OutputLocation: None
 RecentOpens: []
 RecentAnalysisOpen: []
@@ -14,8 +14,6 @@ BinningEnabled: false
 BinningDrawLabels: true
 BinningNumber: 5
 BinningExcludeOutliers: true
-BinningChannelsToDraw:
-- Blue
 BinningIncludeNearest: true
 MinimumThreshold: 0
 UnsharpMaskRadius: 20
@@ -24,3 +22,33 @@ GaussianSigma: 0.5
 Calibrations:
 - 'Default (one pixel : 1.0 microns)'
 SelectedCalibration: 1
+OutputOptionsEnabled:
+- ROIDraw(B)
+- ROIDrawF(G,R)
+- BinDraw(B)
+- ProcessedF(G,R)
+- DotsNoNum(G,R)
+OutputOptionsDisabled:
+- Chan()
+- ChanTiff()
+- MaxedChan()
+- ROIDrawD()
+- RoiDrawBlank()
+- ROIDrawOb()
+- ROIDrawDOr()
+- ROIDrawDOb()
+- ROIDrawObOr()
+- ROIDrawDNoNum()
+- BinDrawBlank()
+- BinDrawF()
+- BinDrawD()
+- BinDrawOb()
+- BinDrawDOb()
+- BinDrawDOr()
+- BinDrawObOr()
+- BinDrawDNoNum()
+- ProcessedD()
+- ProcessedOb()
+- ProcessedDOb()
+- ProcessedDOr()
+- ProcessedObOr()

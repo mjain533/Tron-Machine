@@ -166,9 +166,11 @@ public class BinnedRegionMod {
 			for (int i = 1; i < numBins; i++) {
 				List<Point> linePoints = cleanedPoints.get(i);
 				
-				if (linePoints == null)
+				if (linePoints == null) {
 					throw new MalformedBinException();
 
+				}
+				
 				this.binLines.add(new BinLine(linePoints, dimensions, i));
 			}
 			this.binLines.add(0, new BinLine(polygon1, 0));
@@ -413,12 +415,13 @@ public class BinnedRegionMod {
 	
 
 	public void drawBinLines(ImageProcessor ip) {
-		ip.setFont(new Font("Arial", Font.BOLD, 20));
+		double size = Math.min(dimensions[0], dimensions[1] );
+
+		ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 50)));
 
 		PolygonRoi roi = firstLine.get();
 		roi.setFillColor(Color.GREEN);
 
-		double size = Math.max(dimensions[0], dimensions[1] );
 
 		roi.setStrokeWidth(size / 300.0);		
 		ip.drawOverlay(new Overlay(roi));
@@ -448,7 +451,7 @@ public class BinnedRegionMod {
 
 		}
 		ip.setColor(Color.RED);
-		ip.setFont(new Font("Arial", Font.BOLD, 13));
+		ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 70)));
 		
 		
 		if (GUI.settings.drawBinLabels) {
@@ -494,6 +497,12 @@ public class BinnedRegionMod {
 			xPts = newxs;
 			yPts = newys;
 			
+			List<int[]> newListsAfterX = makeContinuous(this.xPts, this.yPts);
+			this.xPts = newListsAfterX.get(0);
+			this.yPts = newListsAfterX.get(1);
+			List<int[]> newListsAfterY = makeContinuous(this.yPts, this.xPts);
+			this.yPts = newListsAfterY.get(0);
+			this.xPts = newListsAfterY.get(1);
 
 		}
 
@@ -565,7 +574,7 @@ public class BinnedRegionMod {
 				return bin.binNum;
 		}
 
-		return -1;
+		return -2;
 
 	}
 
@@ -579,6 +588,10 @@ public class BinnedRegionMod {
 
 		return -2;
 
+	}
+	
+	public boolean binLinesOverlap() {
+		return binLinesCollide(this.binLines);
 	}
 
 	public class Bin {
@@ -853,6 +866,30 @@ public class BinnedRegionMod {
 		output.add(newList2.stream().mapToInt(i->i).toArray());
 
 		return output;
+	}
+	
+	private static boolean binLinesCollide(List<BinLine> lines) {
+		
+		for (int i = 0; i < lines.size(); i++) {
+			
+			BinLine line = lines.get(i);
+			
+			for (int j = i + 1; j < lines.size(); j++) {
+				BinLine other = lines.get(j);
+
+				for (int ptCurr = 0; ptCurr < line.xPts.length; ptCurr++) {
+					for (int ptOther = 0; ptOther < other.xPts.length; ptOther++) {
+						if (line.xPts[ptCurr] == other.xPts[ptOther] && line.yPts[ptCurr] == other.yPts[ptOther]) {
+							return true;
+						}
+					}
+				}
+			}
+			
+		}
+		
+		return false;
+		
 	}
 
 

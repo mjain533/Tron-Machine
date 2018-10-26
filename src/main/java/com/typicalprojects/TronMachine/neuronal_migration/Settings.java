@@ -57,22 +57,23 @@ public class Settings {
 
 	public Map<Integer, ImageContainer.Channel> channelMap = new HashMap<Integer, ImageContainer.Channel>();
 	public List<Channel> channelsToProcess = null;
-	public Channel channelForROIDraw = null;
 	public File outputLocation = null;
 	public List<File> recentOpenFileLocations = null;
 	public List<File> recentOpenAnalysisOutputLocations = null;
 	public boolean calculateBins = true;
+	public Channel primaryRoiDrawChannel = null;
 	public boolean drawBinLabels = true;
 	public int numberOfBins = -1;
 	public boolean excludePtsOutsideBin = true;
 	public boolean includePtsNearestBin = false;
-	public List<Channel> channelToDrawBin = null;
 	public int processingMinThreshold = 0;
 	public int processingUnsharpMaskRadius = 20;
 	public double processingUnsharpMaskWeight = 0.8;
 	public double processingGaussianSigma = 0.5;
 	public List<String> calibrations = null;
 	public int calibrationNumber = -1;
+	public LinkedHashMap<OutputOption, OutputParams> enabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
+	public LinkedHashMap<OutputOption, OutputParams> disabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
 
 
 	public static void main(String[] args) throws FileNotFoundException, SecurityException, IOException {
@@ -96,16 +97,15 @@ public class Settings {
 	public static class SettingsLoader {
 
 		private static final String keyChanMap = "ChannelMapping";
-		private static final String keyRoiChanDraw = "ChannelForROIDraw";
 		private static final String keyOutputLocation = "OutputLocation";
 		private static final String keyChansToProcess = "ChannelsToProcess";
+		private static final String keyChanDraw = "RoiPrimaryDrawChan";
 		private static final String keyRecentOpenLocations = "RecentOpens";
 		private static final String keyRecentAnalysisOpenLocations = "RecentAnalysisOpen";
 		private static final String keyBinEnabled = "BinningEnabled";
 		private static final String keyBinDrawLabels = "BinningDrawLabels";
 		private static final String keyBinNum = "BinningNumber";
 		private static final String keyBinExclude = "BinningExcludeOutliers";
-		private static final String keyBinChannelsDraw = "BinningChannelsToDraw";
 		private static final String keyBinIncludeNear = "BinningIncludeNearest";
 		private static final String keyProcessingThreshMin = "MinimumThreshold";
 		private static final String keyProcessingUnsharpMaskRadius = "UnsharpMaskRadius";
@@ -113,6 +113,8 @@ public class Settings {
 		private static final String keyProcessingGaussianSigma = "GaussianSigma";
 		private static final String keyCalibrations = "Calibrations";
 		private static final String keySelectedCalibration = "SelectedCalibration";
+		private static final String keyOutputOptionsEnabled = "OutputOptionsEnabled";
+		private static final String keyOutputOptionsDisabled = "OutputOptionsDisabled";
 
 
 
@@ -176,8 +178,8 @@ public class Settings {
 				settings.channelsToProcess.add(Channel.parse(channelMappingString));
 			}
 			
-			// ROI draw channel
-			settings.channelForROIDraw = Channel.parse((String) dataToParse.get(keyRoiChanDraw));
+			// Roi draw
+			settings.primaryRoiDrawChannel = Channel.parse((String) dataToParse.get(keyChanDraw));
 
 			// Output location
 			String path = (String) dataToParse.get(keyOutputLocation);
@@ -224,11 +226,6 @@ public class Settings {
 			settings.drawBinLabels = (boolean) dataToParse.get(keyBinDrawLabels);
 			settings.numberOfBins = (Integer) dataToParse.get(keyBinNum);
 			settings.excludePtsOutsideBin = (boolean) dataToParse.get(keyBinExclude);
-			List<String> listChansBinDraw = (List<String>) dataToParse.get(keyBinChannelsDraw);
-			settings.channelToDrawBin = new ArrayList<Channel>();
-			for (String channelString : listChansBinDraw) {
-				settings.channelToDrawBin.add(Channel.parse(channelString));
-			}
 			settings.includePtsNearestBin = (boolean) dataToParse.get(keyBinIncludeNear);
 			
 			// Processing
@@ -240,7 +237,60 @@ public class Settings {
 			// Calibrations
 			settings.calibrations = (List<String>) dataToParse.get(keyCalibrations);
 			settings.calibrationNumber = (Integer) dataToParse.get(keySelectedCalibration);
+			
+			// OutputOptions
+			Map<OutputOption, OutputParams> enabledOptionsTemp = new HashMap<OutputOption, OutputParams>();
+			for (String outputOptionString : (List<String>) dataToParse.get(keyOutputOptionsEnabled)) {
+				OutputOption option = OutputOption.fromCondensed(outputOptionString.substring(0, outputOptionString.indexOf("(")));
+				if (option == null)
+					throw new NullPointerException("Invalid Settings Configuration");
+				OutputParams outputOption = new OutputParams(option);
+				String chanString = outputOptionString.substring(outputOptionString.indexOf("(") + 1, outputOptionString.indexOf(")"));
+				if (chanString != null && !chanString.equals("")) {
+					for (char c : chanString.toCharArray()) {
+						Channel chan = Channel.getChannelByAbbreviation(c + "");
+						if (chan == null) {
+							settings.needsUpdate = true;
+						} else {
+							outputOption.addChannel(chan);
+						}
+					}
 
+				}
+				enabledOptionsTemp.put(option, outputOption);
+			}
+			Map<OutputOption, OutputParams> disabledOptionsTemp = new HashMap<OutputOption, OutputParams>();
+			for (String outputOptionString : (List<String>) dataToParse.get(keyOutputOptionsDisabled)) {
+				OutputOption option = OutputOption.fromCondensed(outputOptionString.substring(0, outputOptionString.indexOf("(")));
+				if (option == null)
+					throw new NullPointerException("Invalid Settings Configuration");
+				OutputParams outputOption = new OutputParams(option);
+				String chanString = outputOptionString.substring(outputOptionString.indexOf("(") + 1, outputOptionString.indexOf(")"));
+				if (chanString != null && !chanString.equals("")) {
+					for (char c : chanString.toCharArray()) {
+						Channel chan = Channel.getChannelByAbbreviation(c + "");
+						if (chan == null) {
+							settings.needsUpdate = true;
+						} else {
+							outputOption.addChannel(chan);
+						}
+					}
+
+				}
+				disabledOptionsTemp.put(option, outputOption);
+			}
+			for (OutputOption option : OutputOption.values()) {
+				if (enabledOptionsTemp.containsKey(option)) {
+					settings.enabledOptions.put(option, enabledOptionsTemp.get(option));
+				} else if (disabledOptionsTemp.containsKey(option)) {
+					settings.disabledOptions.put(option, disabledOptionsTemp.get(option));
+				} else {
+					settings.disabledOptions.put(option, new OutputParams(option));
+					settings.needsUpdate = true;
+				}
+			}
+
+			
 			return settings;
 
 
@@ -253,7 +303,6 @@ public class Settings {
 				chanMapString.add(en.getKey() + ":" + en.getValue().toReadableString());
 			}
 			newSettings.put(keyChanMap, chanMapString);
-			newSettings.put(keyRoiChanDraw, settings.channelForROIDraw.toReadableString());
 			if (settings.outputLocation != null) {
 				newSettings.put(keyOutputLocation, settings.outputLocation.getPath());
 			} else {
@@ -264,7 +313,9 @@ public class Settings {
 				chansToProcess.add(chan.toReadableString());
 			}
 			newSettings.put(keyChansToProcess, chansToProcess);
-
+			
+			// Roi primary
+			newSettings.put(keyChanDraw, settings.primaryRoiDrawChannel.toReadableString());
 
 			// Recent open locations
 			List<String> listOpens = new ArrayList<String>();
@@ -285,11 +336,6 @@ public class Settings {
 			newSettings.put(keyBinDrawLabels, settings.drawBinLabels);
 			newSettings.put(keyBinNum, settings.numberOfBins);
 			newSettings.put(keyBinExclude, settings.excludePtsOutsideBin);
-			List<String> chansForBins = new ArrayList<String>();
-			for (Channel chan : settings.channelToDrawBin) {
-				chansForBins.add(chan.toReadableString());
-			}
-			newSettings.put(keyBinChannelsDraw, chansForBins);
 			newSettings.put(keyBinIncludeNear, settings.includePtsNearestBin);
 
 			// Processing
@@ -302,6 +348,32 @@ public class Settings {
 			newSettings.put(keyCalibrations, settings.calibrations);
 			newSettings.put(keySelectedCalibration, settings.calibrationNumber);
 			
+			// Settings
+			List<String> outputOptionEnabledStrings = new ArrayList<String>();
+			List<String> outputOptionDisabledStrings = new ArrayList<String>();
+			for (Entry<OutputOption, OutputParams> en : settings.enabledOptions.entrySet()) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("");
+				String delim = "";
+				for (Channel chan : en.getValue().includedChannels) {
+					sb.append(delim).append(chan.getAbbreviation());
+					delim = ",";
+				}
+				outputOptionEnabledStrings.add(en.getKey().getCondensed() + "(" + sb.toString() + ")");
+			}
+			for (Entry<OutputOption, OutputParams> en : settings.disabledOptions.entrySet()) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("");
+				String delim = "";
+				for (Channel chan : en.getValue().includedChannels) {
+					sb.append(delim).append(chan.getAbbreviation());
+					delim = ",";
+				}
+				outputOptionDisabledStrings.add(en.getKey().getCondensed() + "(" + sb.toString() + ")");
+			}
+			newSettings.put(keyOutputOptionsEnabled, outputOptionEnabledStrings);
+			newSettings.put(keyOutputOptionsDisabled, outputOptionDisabledStrings);
+
 		    DumperOptions options = new DumperOptions();
 		    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 		    Yaml yaml = new Yaml(options);

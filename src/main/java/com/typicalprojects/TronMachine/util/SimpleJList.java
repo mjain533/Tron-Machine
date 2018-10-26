@@ -127,8 +127,6 @@ public class SimpleJList<K> extends JList<K>{
 		this.listModel.clear();
 	}
 
-
-
 	public List<K> getSelectedMult() {
 		return getSelectedValuesList();
 	}

@@ -246,14 +246,23 @@ public class PnlSelectFiles implements ListDropReceiver {
 
 						List<ImagePhantom> futureImages = new LinkedList<ImagePhantom>();
 						Enumeration<FileContainer> files = listSelectedFiles.getElements();
+						long maxLength = -1;
 						while (files.hasMoreElements()  && processor != null) {
 							FileContainer container = files.nextElement();
-
+							
+							long length = container.file.length();
+							if (length > maxLength) {
+								maxLength = length;
+							}
 							int indexOf = container.file.getName().lastIndexOf('.');
 							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getLogger(), null));
 						}
 						if (processor != null) {
 							gui.getWizard().nextState(futureImages);
+						}
+						long currAvail = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
+						if (currAvail < (maxLength * 1.5)) {
+							JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You only have " + currAvail + " bytes available for processing (RAM) and this might not be enough considering your image size(s).<br>If you run out of RAM, results are unclear. The program may crash or stall.", "Potential Memory Error", JOptionPane.ERROR_MESSAGE);
 						}
 						processor = null;
 					}
@@ -364,13 +373,17 @@ public class PnlSelectFiles implements ListDropReceiver {
 
 		List<File> fileRecents = fileBrowser.getRecents();
 		if (fileRecents != null && fileRecents.size() > 0) {
-			if (settings.recentOpenFileLocations == null) {
+			if (settings.recentOpenFileLocations != null) {
+				settings.recentOpenFileLocations.clear();
+			} else {
 				settings.recentOpenFileLocations = new ArrayList<File>();
 			}
 			settings.recentOpenFileLocations.addAll(fileRecents);
-			Settings.SettingsLoader.saveSettings(settings);
+			settings.needsUpdate= true;
+			Settings.SettingsLoader.saveSettings(settings); // if doesn't save, don't notify the user. Just won't save pref.
 
 		}
+		
 
 		if (cziFiles.isEmpty()) {
 			JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);

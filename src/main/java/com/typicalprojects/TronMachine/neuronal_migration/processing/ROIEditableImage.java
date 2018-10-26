@@ -45,13 +45,13 @@ import javax.swing.JOptionPane;
 import org.apache.commons.lang.StringUtils;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
-import com.typicalprojects.TronMachine.util.ImageContainer.ImageTag;
 
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
@@ -69,8 +69,7 @@ public class ROIEditableImage {
 	private Map<String, ResultsTable> tables;
 	private Channel drawChannel;
 	private GUI gui;
-	//private List<String> roi_names = new ArrayList<String>();
-	//private List<PolygonRoi> rdoi_polygons = new ArrayList<PolygonRoi>();
+
 	private List<PolarizedPolygonROI> rois = new ArrayList<PolarizedPolygonROI>();
 	private volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
 	private boolean selectingPositive = false;
@@ -111,7 +110,7 @@ public class ROIEditableImage {
 
 	public synchronized void applyMinMax(Channel channel, int min, int max) {
 		this.cache.remove(channel);
-		ImagePlus ip = this.ic.getImage(ImageTag.MaxProjected, channel, false);
+		ImagePlus ip = this.ic.getImage(OutputOption.MaxedChannel, channel, false);
 		ip.setDisplayRange(min, max);
 		ip.updateImage();
 	}
@@ -125,22 +124,26 @@ public class ROIEditableImage {
 
 		Object[] obj = convertPointsToArray();
 		ImagePlus dup = null;
+		
 		if (GUI.settings.channelsToProcess.contains(channelToDrawROI)) {
 			dup = new ImagePlus("dup", 
 					this.
 					ic.
-					getImage(ImageTag.Objects, channelToDrawROI, /*note: changed to false*/true)
+					getImage(OutputOption.ProcessedFull, channelToDrawROI, /*note: changed to false*/true)
 					.getProcessor()
 					.convertToRGB());
 		} else {
-			dup = new ImagePlus("dup", this.ic.getImage(ImageTag.MaxProjected, channelToDrawROI, /*note: changed to false*/true).getProcessor().convertToRGB());
+			dup = new ImagePlus("dup", this.ic.getImage(OutputOption.MaxedChannel, channelToDrawROI, /*note: changed to false*/true).getProcessor().convertToRGB());
 		}
 
 		BufferedImage bi = null;
 
 		ImageProcessor ip = dup.getProcessor();
-		ip.setLineWidth(3);
-		ip.setFont(new Font("Arial", Font.BOLD, 20));
+		//ip.setLineWidth(3);
+		double imgSize = Math.min(dup.getDimensions()[0], dup.getDimensions()[1] );
+
+		ip.setFont(new Font("Arial", Font.BOLD, (int) (imgSize / 50)));
+
 
 		for (PolarizedPolygonROI roiWrapper : this.rois) {
 
@@ -149,7 +152,8 @@ public class ROIEditableImage {
 
 			roi.setFillColor(Color.GREEN);
 
-			roi.setStrokeWidth(1000 / 300.0);
+
+			roi.setStrokeWidth(imgSize / 300.0);
 			ip.drawOverlay(new Overlay(roi));
 			int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
 			middleY= Math.min(middleY, dup.getDimensions()[1] - 4);
@@ -161,10 +165,10 @@ public class ROIEditableImage {
 					int polySize = (int) (roi.getPolygon().npoints / 6.0);
 
 					Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
-					posNegLabels.put(polySize, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize, 15));
-					posNegLabels.put(polySize*2, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*2, 15));
-					posNegLabels.put(polySize*4, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*4, 15));
-					posNegLabels.put(polySize*5, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*5, 15));
+					posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, 15));
+					posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, 15));
+					posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, 15));
+					posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, 15));
 
 					for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
 
@@ -227,7 +231,7 @@ public class ROIEditableImage {
 
 
 			ip.setColor(Color.GREEN);
-			int size = (int) (Math.max(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
+			int size = (int) (Math.min(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
 			ip.fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
 			dup.updateImage();
 			bi = dup.getBufferedImage();
@@ -237,13 +241,12 @@ public class ROIEditableImage {
 			PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
 			pgr.setStrokeColor(Color.GREEN);
 			pgr.setFillColor(Color.GREEN);
-			double size = Math.max(dup.getDimensions()[0], dup.getDimensions()[1] );
+			double size = Math.min(dup.getDimensions()[0], dup.getDimensions()[1] );
 
 			pgr.setStrokeWidth(size / 300.0);
 			if (points.size() > 2) {
 				pgr.fitSplineForStraightening();;
 			}
-
 
 			ip.setColor(Color.GREEN);
 			ip.drawOverlay(new Overlay(pgr));
@@ -266,7 +269,6 @@ public class ROIEditableImage {
 	}
 
 	public boolean convertSelectionToRoi(String name) {
-		System.out.println("test");
 		if (this.points.size() < 2) {
 			return false;
 		}
@@ -276,20 +278,17 @@ public class ROIEditableImage {
 				return false;
 		}
 
-		ImagePlus drawImage = this.ic.getImage(ImageTag.MaxProjected, this.drawChannel, false);
+		ImagePlus drawImage = this.ic.getImage(OutputOption.MaxedChannel, this.drawChannel, false);
 
 
 		Point newStart = getStretchedPoint(this.points.get(0), drawImage.getDimensions());
-		System.out.println("test2");
 		if (newStart != null) {
-			System.out.println("New start: " + newStart.x + ", " + newStart.y);
 			this.points.add(0, newStart);
 		}
 
 		Point newEnd = getStretchedPoint(this.points.get(this.points.size() - 1), drawImage.getDimensions());
 
 		if (newEnd != null) {
-			System.out.println("New end: " + newEnd.x + ", " + newEnd.y);
 
 			this.points.add(newEnd);
 		}
@@ -300,11 +299,10 @@ public class ROIEditableImage {
 
 		pgr.setStrokeColor(Color.GREEN);
 		pgr.setFillColor(Color.GREEN);
-		double imgSize = Math.max(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
+		double imgSize = Math.min(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
 
 		pgr.setStrokeWidth(imgSize / 300.0);
 		pgr.fitSplineForStraightening();
-		System.out.println("test4");
 
 		if (newStart == null) {
 			newStart = this.points.get(0);
@@ -327,13 +325,16 @@ public class ROIEditableImage {
 
 
 		pgr = new PolygonRoi(newxs, newys, polygon.npoints + 2, Roi.POLYLINE);
+		
+		if (lineCollides(pgr, this.rois)) {
+			return false;
+		}
+		
 		polygon = pgr.getPolygon();
-		System.out.println("test5");
 		this.rois.add(new PolarizedPolygonROI(name, pgr, createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))));
 
 		this.points.clear();
 		this.cache.clear();
-		System.out.println("test6");
 
 		return true;
 	}
@@ -372,70 +373,110 @@ public class ROIEditableImage {
 	}
 
 	public void createAndSaveNewImage() {
+		
+		Map<ImagePlus, Object[]> ipToDrawROIS = new HashMap<ImagePlus, Object[]>();
+		if (GUI.settings.enabledOptions.containsKey(OutputOption.RoiDrawFull)) {
+			for (Channel chan : GUI.settings.enabledOptions.get(OutputOption.RoiDrawFull).includedChannels) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.MaxedChannel, chan, true), new Object[] {chan, OutputOption.RoiDrawFull});
+			}
+		}
+		for (Channel chan : GUI.settings.channelsToProcess) {
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDots, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedDots, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedDots});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsNoNum, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedDotsNoNum, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedDotsNoNum});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsObjects, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedDotsObjects, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedDotsObjects});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsOriginal, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedDotsOriginal, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedDotsOriginal});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedFull, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedFull, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedFull});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedObjects, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedObjects, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedObjects});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedObjectsOriginal, chan)) {
+				ipToDrawROIS.put(this.ic.getImage(OutputOption.ProcessedObjectsOriginal, chan, true), new Object[] {chan, OutputOption.RoiDrawProcessedObjectsOriginal});
+			}
+
+		}
+		if (GUI.settings.enabledOptions.containsKey(OutputOption.RoiDrawBlank)) {
+			System.out.println("Called");
+			int[] dim = this.ic.getDimensions();
+			ipToDrawROIS.put(new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.RoiDrawBlank});
+
+		}
+		
+		for (Entry<ImagePlus, Object[]> imgEntry : ipToDrawROIS.entrySet()) {
+			ImagePlus roiImg = imgEntry.getKey();
+			roiImg.setProcessor(roiImg.getProcessor().convertToColorProcessor());
+			ImageProcessor ip = roiImg.getProcessor();
+			
+			double size = Math.min(roiImg.getDimensions()[0], roiImg.getDimensions()[1] );
+
+			ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 50)));
+
+			for (PolarizedPolygonROI roiWrapper : this.rois) {
+				PolygonRoi roi = roiWrapper.get();
+				roi.setFillColor(Color.GREEN);
 
 
+				roi.setStrokeWidth(size / 300.0);
+				ip.drawOverlay(new Overlay(roi));
+				int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
+				middleY= Math.min(middleY, roiImg.getDimensions()[1] - 4);
+				int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+				ip.setColor(Color.RED);
+				ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
+				ip.setColor(Color.GREEN);
+				if (roi.getPolygon().npoints > 12) {
+					int polySize = (int) (roi.getPolygon().npoints / 6.0);
 
-		ImagePlus roiImg = this.ic.getImage(ImageTag.MaxProjected, GUI.settings.channelForROIDraw, true);
+					Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
+					posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, 15));
+					posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, 15));
+					posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, 15));
+					posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, 15));
 
+					for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
 
-		roiImg.setProcessor(roiImg.getProcessor().convertToColorProcessor());
-		ImageProcessor ip = roiImg.getProcessor();
-		ip.setLineWidth(3);
-		ip.setFont(new Font("Arial", Font.BOLD, 20));
+						int[] val = en.getValue();
+						if (val == null)
+							continue;
 
-		for (PolarizedPolygonROI roiWrapper : this.rois) {
-			PolygonRoi roi = roiWrapper.get();
-			roi.setFillColor(Color.GREEN);
+						try {
+							if (roiWrapper.isPositive(val[0], val[1])) {
 
-			double size = Math.max(roiImg.getDimensions()[0], roiImg.getDimensions()[1] );
+								ip.drawString("+", val[0]-6, val[1]+13);
+								ip.drawString("–", val[2]-5, val[3]+11);
+							} else {
+								ip.drawString("–", val[0]-5, val[1]+11);
+								ip.drawString("+", val[2]-6, val[3]+13);
 
-			roi.setStrokeWidth(size / 300.0);
-			ip.drawOverlay(new Overlay(roi));
-			int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
-			middleY= Math.min(middleY, roiImg.getDimensions()[1] - 4);
-			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
-			ip.setColor(Color.RED);
-			ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
-			ip.setColor(Color.GREEN);
-			if (roi.getPolygon().npoints > 12) {
-				int polySize = (int) (roi.getPolygon().npoints / 6.0);
-
-				Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
-				posNegLabels.put(polySize, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize, 15));
-				posNegLabels.put(polySize*2, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*2, 15));
-				posNegLabels.put(polySize*4, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*4, 15));
-				posNegLabels.put(polySize*5, this._getOrthogonalPointsForDrawString(roi.getPolygon(), polySize*5, 15));
-
-				for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
-
-					int[] val = en.getValue();
-					if (val == null)
-						continue;
-
-					try {
-						if (roiWrapper.isPositive(val[0], val[1])) {
-
-							ip.drawString("+", val[0]-6, val[1]+13);
-							ip.drawString("–", val[2]-5, val[3]+11);
-						} else {
-							ip.drawString("–", val[0]-5, val[1]+11);
-							ip.drawString("+", val[2]-6, val[3]+13);
-
+							}
+						} catch (Exception e) {
+							// out of bounds;
+							continue;
 						}
-					} catch (Exception e) {
-						// out of bounds;
-						continue;
 					}
+
 				}
 
 			}
 
+			roiImg.updateImage();
+			if (imgEntry.getValue()[0] == null) {
+				System.out.println("Called");
+				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg);
+			} else {
+				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg, (Channel) imgEntry.getValue()[0]);
+
+			}
 		}
-
-		roiImg.updateImage();
-
-		this.ic.saveSupplementalImage(ImageTag.Rois, roiImg, GUI.settings.channelForROIDraw);
-
 
 	}
 
@@ -479,20 +520,61 @@ public class ROIEditableImage {
 		}
 
 		logger.setCurrentTask("Copying bins onto images... ");
-		for (Channel chan : GUI.settings.channelToDrawBin) {
-			ImagePlus imgToDrawBinLines = null;
-
-			if (GUI.settings.channelsToProcess.contains(chan) && !GUI.settings.channelForROIDraw.equals(chan)) {
-				imgToDrawBinLines = this.ic.getImage(ImageTag.Objects, chan, true);
-			} else {
-				imgToDrawBinLines = this.ic.getImage(ImageTag.MaxProjected, chan, true);
+		Map<ImagePlus, Object[]> ipToDrawBINS = new HashMap<ImagePlus, Object[]>();
+		if (GUI.settings.enabledOptions.containsKey(OutputOption.BinDrawFull)) {
+			for (Channel chan : GUI.settings.enabledOptions.get(OutputOption.BinDrawFull).includedChannels) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.MaxedChannel, chan, true), new Object[] {chan, OutputOption.BinDrawFull});
 			}
+		}
+		for (Channel chan : GUI.settings.channelsToProcess) {
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDots, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedDots, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedDots});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsNoNum, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedDotsNoNum, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedDotsNoNum});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsObjects, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedDotsObjects, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedDotsObjects});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsOriginal, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedDotsOriginal, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedDotsOriginal});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedFull, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedFull, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedFull});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedObjects, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedObjects, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedObjects});
+			}
+			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedObjectsOriginal, chan)) {
+				ipToDrawBINS.put(this.ic.getImage(OutputOption.ProcessedObjectsOriginal, chan, true), new Object[] {chan, OutputOption.BinDrawProcessedObjectsOriginal});
+			}
+
+		}
+		if (GUI.settings.enabledOptions.containsKey(OutputOption.BinDrawBlank)) {
+			int[] dim = this.ic.getDimensions();
+			 ipToDrawBINS.put(new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.BinDrawBlank});
+
+		}
+		for (Entry<ImagePlus, Object[]> imgEntry : ipToDrawBINS.entrySet()) {
+			ImagePlus imgToDrawBinLines = imgEntry.getKey();
 			imgToDrawBinLines.setProcessor(imgToDrawBinLines.getProcessor().convertToColorProcessor());
 			binnedRegion.drawBinLines(imgToDrawBinLines.getProcessor());
 			imgToDrawBinLines.updateImage();
-			this.ic.saveSupplementalImage(ImageTag.Bins, imgToDrawBinLines, chan);
+			if (imgEntry.getValue()[0] == null) {
+				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], imgToDrawBinLines);
+			} else {
+				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], imgToDrawBinLines, (Channel) imgEntry.getValue()[0]);
+
+			}
+
 		}
+		
 		logger.setCurrentTaskComplete();
+		
+		if (binnedRegion.binLinesOverlap()) {
+			JOptionPane.showMessageDialog(this.gui.getComponent(), "There was an error processing bins. Bin lines overlap.", "Bin error", JOptionPane.ERROR_MESSAGE);
+			return null;
+		}
 
 		// SETUP
 		LinkedHashMap<Integer, Map<Channel, Integer>> pointsBinned = new LinkedHashMap<Integer, Map<Channel, Integer>>();
@@ -715,7 +797,7 @@ public class ROIEditableImage {
 			projector.doProjection();*/
 			progress.setCurrentTask("Recording grayscale values...");
 			/*ImageProcessor ip = projector.getProjection().getProcessor();*/
-			ImageProcessor ip = this.ic.getImage(ImageTag.MaxProjected, chan, false)
+			ImageProcessor ip = this.ic.getImage(OutputOption.MaxedChannel, chan, false)
 					.getProcessor();
 
 			for (int i = 0; i < xObjValues.length; i++) {
@@ -759,7 +841,6 @@ public class ROIEditableImage {
 
 	public static Point getStretchedPoint(Point p, int[] dimensions) {
 
-		System.out.println("Dimensions: " + dimensions[0] + "," + dimensions[1]);
 		int distTop = p.y;
 		int distBottom = dimensions[1] - p.y - 1;
 		int distLeft = p.x;
@@ -768,7 +849,6 @@ public class ROIEditableImage {
 		int min = Math.min(Math.min(distTop, distBottom), Math.min(distLeft, distRight));
 
 		if (min != 0) {
-			System.out.println("Not zero to wall");
 			if (min == distTop) {
 				return new Point(p.x, 0, false);
 			} else if (min == distBottom) {
@@ -799,7 +879,6 @@ public class ROIEditableImage {
 		xPtsAdd.addAll(Arrays.stream(xPts).boxed().collect(Collectors.toList()));
 		yPtsAdd.addAll(Arrays.stream(yPts).boxed().collect(Collectors.toList()));
 		Point stopPoint = new Point(xPts[0], yPts[0], null);
-		System.out.println("stop point: " + stopPoint.x + "," + stopPoint.y);
 		// start at end pt, find closest corner
 		// If start pt is closer, go to it and be done. Otherwise add that corner.
 		// Detect which direction we are going, and then determine which way through the list we should iterate.
@@ -821,9 +900,6 @@ public class ROIEditableImage {
 			}
 
 		}
-
-		System.out.println("reached");
-
 
 		return new PolygonRoi(_convertToPrimFloatArray(xPtsAdd), _convertToPrimFloatArray(yPtsAdd), xPtsAdd.size(), Roi.POLYLINE) ;
 
@@ -899,7 +975,7 @@ public class ROIEditableImage {
 
 
 
-	private int[] _getOrthogonalPointsForDrawString(Polygon polygon, int pos, double distance) {
+	private int[] _getOrthogonalPointsFromPolyLine(Polygon polygon, int pos, double distance) {
 
 		int minPos = Math.max(0, pos - 5);
 		int maxPos = Math.min(polygon.npoints - 1, pos + 5);
@@ -939,6 +1015,30 @@ public class ROIEditableImage {
 
 
 
+	}
+
+	
+	private static boolean lineCollides(PolygonRoi roi, List<PolarizedPolygonROI> otherRois) {
+		
+		Polygon currRoi = roi.getPolygon();
+		int[] xpts = currRoi.xpoints;
+		int[] ypts = currRoi.ypoints;
+
+		for (int i = 0; i < otherRois.size(); i++) {
+
+			Polygon other = otherRois.get(i).get().getPolygon();
+			for (int ptCurr = 0; ptCurr < currRoi.npoints; ptCurr++) {
+				for (int ptOther = 0; ptOther < other.npoints; ptOther++) {
+					if (xpts[ptCurr] == other.xpoints[ptOther] && ypts[ptCurr] == other.ypoints[ptOther]) {
+						return true;
+					}
+				}
+			}
+
+		}
+		
+		return false;
+		
 	}
 
 }

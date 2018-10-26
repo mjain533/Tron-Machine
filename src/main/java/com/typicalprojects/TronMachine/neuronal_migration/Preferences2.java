@@ -42,6 +42,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -50,14 +51,19 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JCheckBox;
 import java.awt.Font;
+import java.awt.Insets;
 
+import javax.swing.AbstractButton;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ListCellRenderer;
@@ -74,11 +80,12 @@ import javax.swing.event.ListSelectionListener;
 import com.typicalprojects.TronMachine.neuronal_migration.Preferences2.SettingPage;
 import com.typicalprojects.TronMachine.neuronal_migration.Preferences2.SettingsPanel;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsLoader;
+import com.typicalprojects.TronMachine.popup.ChannelSelectPopup;
 import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
-public class Preferences2 extends JFrame {
+public class Preferences2 extends JDialog {
 
 
 	public static void main(String[] args) {
@@ -101,26 +108,6 @@ public class Preferences2 extends JFrame {
 		});
 	}
 
-	public enum Pref implements Comparable<Pref>{
-
-		ChannelToProcess("ChProc"), ChannelForROIDraw("ChROI"), OutputLocation("O"), ChannelMapping("Chans"), LastLocation("L");
-
-		private String tag;
-
-		private Pref(String tag) {
-			this.tag = tag;
-		}
-
-		public String getTag() {
-			return this.tag;
-		}
-
-		public String toString() {
-			return this.tag;
-		}
-
-	}
-
 	private static final long serialVersionUID = 6738766494677442465L;
 	private JPanel contentPane;
 	private JPanel activePanel;
@@ -140,10 +127,10 @@ public class Preferences2 extends JFrame {
 	 * Create the frame.
 	 */
 	public Preferences2(GUI gui) {
+		super(gui.getComponent());
 
 		SINGLETON_FRAME = this;
 		this.mainGUI = gui;
-
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter(){
 			@Override
@@ -185,6 +172,7 @@ public class Preferences2 extends JFrame {
 		this.settingsPanel.add(new PnlBinOptions());
 		this.settingsPanel.add(new PnlSaveOptions());
 		this.settingsPanel.add(new PnlImageOptions());
+		this.settingsPanel.add(new PnlOutputOptions());
 		this.settingsPanel.add(new PnlReset(this));
 
 
@@ -431,7 +419,7 @@ public class Preferences2 extends JFrame {
 	}
 
 	public enum SettingPage {
-		ChannelConfiguration("Channel Setup"), ImageSettings("Image Settings"), Processing("Processing"), BinConfiguration("Bins"), Saving("Save Options"), Reset("Reset");
+		ChannelConfiguration("Channel Setup"), ImageSettings("Image Settings"), Processing("Processing"), BinConfiguration("Bins"), OutputOptions("Output Files"), Saving("Saving"), Reset("Reset");
 
 		private String friendlyName;
 
@@ -679,7 +667,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 			}
 		});
 		comBoxChanROI.setModel(new DefaultComboBoxModel<String>(values.toArray(new String[values.size()])));
-		comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
+		comBoxChanROI.setSelectedItem(settings.primaryRoiDrawChannel.toReadableString());
 
 		lblError = new JLabel("Error");
 		lblError.setFont(GUI.mediumFont);
@@ -816,7 +804,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 		this.chkSelectRed.setSelected(settings.channelsToProcess.contains(Channel.RED));
 		this.chkSelectWhite.setSelected(settings.channelsToProcess.contains(Channel.WHITE));
 		this.chkSelectBlue.setSelected(settings.channelsToProcess.contains(Channel.BLUE));
-		this.comBoxChanROI.setSelectedItem(settings.channelForROIDraw.toReadableString());
+		this.comBoxChanROI.setSelectedItem(settings.primaryRoiDrawChannel.toReadableString());
 		for (Component component : this.getComponents()) {
 			component.setEnabled(enabled);
 		}
@@ -860,7 +848,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 			return false;
 		}
 
-		settings.channelForROIDraw = Channel.parse((String) this.comBoxChanROI.getSelectedItem());
+		settings.primaryRoiDrawChannel = Channel.parse((String) this.comBoxChanROI.getSelectedItem());
 		Map<Integer, Channel> newChanMap = new HashMap<Integer, Channel>();
 		if (!this.comBoxCh0.getSelectedItem().equals("<none>")) {
 			newChanMap.put(0, Channel.parse((String) this.comBoxCh0.getSelectedItem()));
@@ -912,7 +900,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 		}
 		settings.channelMap = newChanMap;
 		settings.channelsToProcess = channelForProcess;
-		settings.channelForROIDraw = (Channel.parse((String) this.comBoxChanROI.getSelectedItem()));
+		settings.primaryRoiDrawChannel = (Channel.parse((String) this.comBoxChanROI.getSelectedItem()));
 		return true;
 	}
 
@@ -1007,6 +995,8 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 				if (fileRecents != null && fileRecents.size() > 0) {
 					if (settings.recentOpenFileLocations != null) {
 						settings.recentOpenFileLocations.clear();
+					} else {
+						settings.recentOpenFileLocations = new ArrayList<File>();
 					}
 					settings.recentOpenFileLocations.addAll(fileRecents);
 					settings.needsUpdate= true;
@@ -1129,15 +1119,8 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 
 }
 class PnlBinOptions extends JPanel implements SettingsPanel {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = -6622171153906374924L;
-	private JLabel lblError;
-	protected JCheckBox chkDrawGreen;
-	protected JCheckBox chkDrawRed;
-	protected JCheckBox chkDrawBlue;
-	protected JCheckBox chkDrawWhite;
 	protected JSpinner spnNumBins;
 	protected JCheckBox chkDrawBinLabels;
 	protected JCheckBox chkCalcBins;
@@ -1145,9 +1128,6 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 	private JCheckBox chkCountOutsideAsOutermost;
 	private final static SettingPage settingPage = SettingPage.BinConfiguration;
 
-	/**
-	 * Create the panel.
-	 */
 	public PnlBinOptions() {
 
 		JPanel pnlBinOptions = new JPanel();
@@ -1230,29 +1210,6 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		chkDrawBinLabels = new JCheckBox("Draw bin labels");
 		chkDrawBinLabels.setFocusable(false);
 
-		JLabel lblChanDrawBin = new JLabel("Channels to Draw Bins:");
-
-		chkDrawGreen = new JCheckBox("Green");
-		chkDrawGreen.setForeground(Channel.GREEN.getColor());
-		chkDrawGreen.setFocusable(false);
-
-		chkDrawRed = new JCheckBox("Red");
-		chkDrawRed.setForeground(Channel.RED.getColor());
-		chkDrawRed.setFocusable(false);
-
-		chkDrawBlue = new JCheckBox("Blue");
-		chkDrawBlue.setForeground(Channel.BLUE.getColor());
-		chkDrawBlue.setFocusable(false);
-
-		chkDrawWhite = new JCheckBox("White");
-		chkDrawWhite.setForeground(Channel.WHITE.getColor());
-		chkDrawWhite.setFocusable(false);
-
-		lblError = new JLabel("Error:");
-		lblError.setFont(GUI.mediumFont);
-		lblError.setForeground(Color.RED);
-
-
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
 				groupLayout.createParallelGroup(Alignment.LEADING)
@@ -1265,20 +1222,10 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 										.addComponent(lblNumberOfBins)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(spnNumBins, GroupLayout.PREFERRED_SIZE, 45, GroupLayout.PREFERRED_SIZE))
-								.addGroup(groupLayout.createSequentialGroup()
-										.addComponent(chkDrawGreen)
-										.addPreferredGap(ComponentPlacement.UNRELATED)
-										.addComponent(chkDrawRed)
-										.addPreferredGap(ComponentPlacement.UNRELATED)
-										.addComponent(chkDrawBlue)
-										.addPreferredGap(ComponentPlacement.UNRELATED)
-										.addComponent(chkDrawWhite))
 								.addComponent(chkExcludeOutsider)
 								.addComponent(chkCountOutsideAsOutermost)
 								.addComponent(pnlBinOptions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-								.addComponent(lblError)
-								.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
-								.addComponent(lblChanDrawBin))
+								.addComponent(pnlBinOutput, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE))
 						.addContainerGap())
 				);
 		groupLayout.setVerticalGroup(
@@ -1299,18 +1246,7 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 						.addPreferredGap(ComponentPlacement.UNRELATED)
 						.addComponent(chkExcludeOutsider)
 						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(chkCountOutsideAsOutermost)
-						.addPreferredGap(ComponentPlacement.UNRELATED)
-						.addComponent(lblChanDrawBin)
-						.addPreferredGap(ComponentPlacement.UNRELATED)
-						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(chkDrawGreen)
-								.addComponent(chkDrawRed)
-								.addComponent(chkDrawBlue)
-								.addComponent(chkDrawWhite))
-						.addPreferredGap(ComponentPlacement.RELATED, 105, Short.MAX_VALUE)
-						.addComponent(lblError)
-						.addContainerGap())
+						.addComponent(chkCountOutsideAsOutermost))
 				);
 		setLayout(groupLayout);
 
@@ -1318,46 +1254,22 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 
 	}
 
-	public void displayError(String error) {
-		this.lblError.setText(error);
-		this.lblError.setVisible(true);
-	}
+	public void displayError(String error) {}
 
-	public void removeError() {
-		this.lblError.setVisible(false);
-	}
+	public void removeError() {}
 
 	public boolean applyFields(Settings settings) {
 
-		if (!this.chkDrawRed.isSelected() && !this.chkDrawGreen.isSelected() && !this.chkDrawBlue.isSelected() && !this.chkDrawWhite.isSelected()) {
-			displayError("Bins must be drawn on at least one channel.");
-			return false;
-		} else {
-			removeError();
-		}
 		settings.calculateBins = chkCalcBins.isSelected();
 		settings.drawBinLabels = chkDrawBinLabels.isSelected();
 		settings.excludePtsOutsideBin = chkExcludeOutsider.isSelected();
 		settings.numberOfBins = (int) Math.round(((Number) spnNumBins.getValue()).doubleValue());
-		List<Channel> selectedChans = new ArrayList<Channel>();
-		if (chkDrawBlue.isSelected())
-			selectedChans.add(Channel.BLUE);
-		if (chkDrawGreen.isSelected())
-			selectedChans.add(Channel.GREEN);
-		if (chkDrawRed.isSelected())
-			selectedChans.add(Channel.RED);
-		if (chkDrawWhite.isSelected())
-			selectedChans.add(Channel.WHITE);
-		settings.channelToDrawBin = selectedChans;
 		settings.includePtsNearestBin = chkCountOutsideAsOutermost.isSelected();
 		return true;
 
-
 	}
 
-	public SettingPage getPageDesignation() {
-		return settingPage;
-	}
+	public SettingPage getPageDesignation() {return settingPage;}
 
 	public void reset(Settings settings, boolean enabled) {
 		for (Component component : this.getComponents()) {
@@ -1370,10 +1282,6 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		}
 		chkCalcBins.setSelected(settings.calculateBins);
 		chkDrawBinLabels.setSelected(settings.drawBinLabels);
-		chkDrawBlue.setSelected(settings.channelToDrawBin.contains(Channel.BLUE));
-		chkDrawGreen.setSelected(settings.channelToDrawBin.contains(Channel.GREEN));
-		chkDrawRed.setSelected(settings.channelToDrawBin.contains(Channel.RED));
-		chkDrawWhite.setSelected(settings.channelToDrawBin.contains(Channel.WHITE));
 		spnNumBins.setValue(settings.numberOfBins);
 		chkExcludeOutsider.setSelected(settings.excludePtsOutsideBin);
 		chkCountOutsideAsOutermost.setSelected(settings.includePtsNearestBin);
@@ -1385,14 +1293,10 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 
 			}
 		}
-		
-
 	}
 
 	@Override
-	public JPanel getRawComponent() {
-		return this;
-	}
+	public JPanel getRawComponent() {return this;}
 
 }
 class PnlProcessingOptions extends JPanel implements SettingsPanel {
@@ -1888,6 +1792,7 @@ class PnlReset extends JPanel implements SettingsPanel {
 						SettingsLoader.saveSettings(GUI.settings);
 
 						prefs.invokeReset(true);
+						prefs.removeDisplay();
 					} catch (Exception ex) {
 						ex.printStackTrace();
 						if (GUI.settings == null) {
@@ -1951,6 +1856,424 @@ class PnlReset extends JPanel implements SettingsPanel {
 	@Override
 	public SettingPage getPageDesignation() {
 		return SettingPage.Reset;
+	}
+
+	@Override
+	public JPanel getRawComponent() {
+		return this;
+	}
+
+}
+class PnlOutputOptions extends JPanel implements SettingsPanel {
+
+	private static final long serialVersionUID = -6622171153906374924L;
+	private SimpleJList<OutputParams> listOutputROI;
+	private SimpleJList<OutputParams> listOptionsROI;
+	private SimpleJList<OutputParams> listOutputObj;
+	private SimpleJList<OutputParams> listOptionsObj;
+
+	private JButton mvRightObj;
+	private AbstractButton mvLeftObj;
+	private JButton mvRightROI;
+	private JButton mvLeftROI;
+	private ChannelSelectPopup chanSelectPopup;
+
+	/**
+	 * Create the panel.
+	 */
+	public PnlOutputOptions() {
+		
+		this.chanSelectPopup = new ChannelSelectPopup();
+
+		JPanel pnlPixelConverstions = new JPanel();
+		pnlPixelConverstions.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlPixelConverstions.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlPixelConverstions.setBackground(new Color(211, 211, 211));
+
+		JLabel lblPixelConversions = new JLabel("Slice Selection Output");
+
+		GroupLayout gl_pnlPixelConverstions = new GroupLayout(pnlPixelConverstions);
+		gl_pnlPixelConverstions.setHorizontalGroup(
+				gl_pnlPixelConverstions.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGroup(gl_pnlPixelConverstions.createSequentialGroup()
+						.addContainerGap()
+						.addComponent(lblPixelConversions, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+						.addContainerGap())
+				);
+		gl_pnlPixelConverstions.setVerticalGroup(
+				gl_pnlPixelConverstions.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addComponent(lblPixelConversions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+				);
+		pnlPixelConverstions.setLayout(gl_pnlPixelConverstions);
+
+		
+		JPanel panel = new JPanel();
+		panel.setFont(new Font("Arial", Font.PLAIN, 13));
+		panel.setBorder(new LineBorder(new Color(0, 0, 0)));
+		panel.setBackground(new Color(211, 211, 211));
+		
+		JLabel lblObjectSelectionOutput = new JLabel("Object Selection Output");
+		GroupLayout gl_panel = new GroupLayout(panel);
+		gl_panel.setHorizontalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 492, Short.MAX_VALUE)
+				.addGroup(gl_panel.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblObjectSelectionOutput, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		gl_panel.setVerticalGroup(
+			gl_panel.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 23, Short.MAX_VALUE)
+				.addComponent(lblObjectSelectionOutput, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
+		);
+		panel.setLayout(gl_panel);
+		
+		JScrollPane scrOptionsObj = new JScrollPane();
+		
+		JLabel lblOptions2 = new JLabel("Options");
+		
+		mvRightObj = new JButton(">>");
+		mvRightObj.setMargin(new Insets(0, -30, 0, -30));
+		
+		mvLeftObj = new JButton("<<");
+		mvLeftObj.setMargin(new Insets(0, -30, 0, -30));
+		
+		JScrollPane scrOutputObj = new JScrollPane();
+		
+		JLabel lblOutput2 = new JLabel("Output");
+		
+		JPanel panel_1 = new JPanel();
+		panel_1.setFont(new Font("Arial", Font.PLAIN, 13));
+		panel_1.setBorder(new LineBorder(new Color(0, 0, 0)));
+		panel_1.setBackground(new Color(211, 211, 211));
+		
+		JLabel lblRoiLineSelection = new JLabel("ROI Line Selection Output");
+		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
+		gl_panel_1.setHorizontalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 492, Short.MAX_VALUE)
+				.addGroup(gl_panel_1.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblRoiLineSelection, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		gl_panel_1.setVerticalGroup(
+			gl_panel_1.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 23, Short.MAX_VALUE)
+				.addComponent(lblRoiLineSelection, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
+		);
+		panel_1.setLayout(gl_panel_1);
+		
+		JScrollPane scrOptionsROI = new JScrollPane();
+		
+		JLabel lblOptions3 = new JLabel("Options");
+		
+		mvRightROI = new JButton(">>");
+		mvRightROI.setMargin(new Insets(0, -30, 0, -30));
+		
+		mvLeftROI = new JButton("<<");
+		mvLeftROI.setMargin(new Insets(0, -30, 0, -30));
+		
+		JScrollPane scrOutputROI = new JScrollPane();
+		
+		JLabel lblOutput3 = new JLabel("Output");
+		
+		GroupLayout groupLayout = new GroupLayout(this);
+		groupLayout.setHorizontalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
+						.addComponent(panel, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(lblOptions2, GroupLayout.PREFERRED_SIZE, 50, GroupLayout.PREFERRED_SIZE)
+							.addGap(235)
+							.addComponent(lblOutput2, GroupLayout.PREFERRED_SIZE, 44, GroupLayout.PREFERRED_SIZE))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(scrOptionsObj, GroupLayout.PREFERRED_SIZE, 224, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(mvRightObj, GroupLayout.PREFERRED_SIZE, 33, GroupLayout.PREFERRED_SIZE)
+								.addComponent(mvLeftObj, GroupLayout.PREFERRED_SIZE, 33, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(scrOutputObj, GroupLayout.PREFERRED_SIZE, 225, GroupLayout.PREFERRED_SIZE))
+						.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(lblOptions3, GroupLayout.PREFERRED_SIZE, 50, GroupLayout.PREFERRED_SIZE)
+							.addGap(235)
+							.addComponent(lblOutput3, GroupLayout.PREFERRED_SIZE, 44, GroupLayout.PREFERRED_SIZE))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(scrOptionsROI, GroupLayout.PREFERRED_SIZE, 224, GroupLayout.PREFERRED_SIZE)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(mvRightROI, GroupLayout.PREFERRED_SIZE, 33, GroupLayout.PREFERRED_SIZE)
+								.addComponent(mvLeftROI, GroupLayout.PREFERRED_SIZE, 33, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(scrOutputROI, GroupLayout.PREFERRED_SIZE, 225, GroupLayout.PREFERRED_SIZE)))
+					.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+		);
+		groupLayout.setVerticalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(panel, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblOptions2)
+								.addComponent(lblOutput2))
+							.addGap(6)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(scrOptionsObj, GroupLayout.DEFAULT_SIZE, 120, Short.MAX_VALUE)
+								.addComponent(scrOutputObj, GroupLayout.PREFERRED_SIZE, 120, GroupLayout.PREFERRED_SIZE))
+							.addPreferredGap(ComponentPlacement.RELATED))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(mvRightObj, GroupLayout.PREFERRED_SIZE, 21, GroupLayout.PREFERRED_SIZE)
+							.addGap(6)
+							.addComponent(mvLeftObj, GroupLayout.PREFERRED_SIZE, 21, GroupLayout.PREFERRED_SIZE)
+							.addGap(44)))
+					.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(lblOptions3)
+								.addComponent(lblOutput3))
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+								.addComponent(scrOutputROI, GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE)
+								.addComponent(scrOptionsROI, GroupLayout.DEFAULT_SIZE, 122, Short.MAX_VALUE))
+							.addGap(20))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(mvRightROI, GroupLayout.PREFERRED_SIZE, 21, GroupLayout.PREFERRED_SIZE)
+							.addGap(6)
+							.addComponent(mvLeftROI, GroupLayout.PREFERRED_SIZE, 21, GroupLayout.PREFERRED_SIZE)
+							.addGap(58))))
+		);
+		OutputOptionRenderer<OutputParams> renderer = new OutputOptionRenderer<OutputParams>();
+		MouseAdapter mouseAdaptor = new MouseAdapter() {
+		    public void mouseClicked(MouseEvent evt) {
+		        @SuppressWarnings("unchecked")
+				SimpleJList<OutputParams> list = (SimpleJList<OutputParams>)evt.getSource();
+		        if (evt.getClickCount() == 2) {
+
+		            // Double-click detected
+		            int index = list.locationToIndex(evt.getPoint());
+		            if (index > -1) {
+		            		OutputParams output = list.getElementAt(index);
+		            		chanSelectPopup.prompt(output.includedChannels, Preferences2.SINGLETON_FRAME);
+		            		output.includedChannels = chanSelectPopup.getSelected();
+		            }
+		        }
+		    }
+		};
+		listOutputROI = new SimpleJList<OutputParams>();
+		listOutputROI.setCellRenderer(renderer);
+		listOutputROI.addMouseListener(mouseAdaptor);
+		scrOutputROI.setViewportView(listOutputROI);
+		listOptionsROI = new SimpleJList<OutputParams>();
+		listOptionsROI.setCellRenderer(renderer);
+		listOptionsROI.addMouseListener(mouseAdaptor);
+		scrOptionsROI.setViewportView(listOptionsROI);
+		
+		listOutputObj = new SimpleJList<OutputParams>();
+		listOutputObj.setCellRenderer(renderer);
+		listOutputObj.addMouseListener(mouseAdaptor);
+		scrOutputObj.setViewportView(listOutputObj);
+		
+		listOptionsObj = new SimpleJList<OutputParams>();
+		listOptionsObj.setCellRenderer(renderer);
+		listOptionsObj.addMouseListener(mouseAdaptor);
+		scrOptionsObj.setViewportView(listOptionsObj);
+		
+
+		setLayout(groupLayout);
+		
+		this.mvLeftObj.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				OutputParams option = listOutputObj.getSelectedValue();
+				if (option != null) {
+					listOutputObj.removeItem(option);
+					listOptionsObj.addItem(option);
+				}
+				
+			}
+		});
+		this.mvRightObj.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				OutputParams option = listOptionsObj.getSelectedValue();
+				if (option != null) {
+					listOptionsObj.removeItem(option);
+					listOutputObj.addItem(option);
+				}
+				
+			}
+		});
+		this.mvLeftROI.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				OutputParams option = listOutputROI.getSelectedValue();
+				if (option != null) {
+					listOutputROI.removeItem(option);
+					listOptionsROI.addItem(option);
+				}
+				
+			}
+		});
+		this.mvRightROI.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				OutputParams option = listOptionsROI.getSelectedValue();
+				if (option != null) {
+					listOptionsROI.removeItem(option);
+					listOutputROI.addItem(option);
+				}
+				
+			}
+		});
+		
+
+	}
+	
+	private static class OutputOptionRenderer<K> implements ListCellRenderer<K> {
+		
+		private static Font smallFont = new Font("PingFang TC", Font.BOLD, 12);
+		protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
+
+		@SuppressWarnings("rawtypes")
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+
+
+			JLabel renderer = (JLabel) defaultRenderer
+					.getListCellRendererComponent(list, value, index, isSelected,
+							cellHasFocus);
+
+			if (value instanceof OutputParams) {
+				OutputParams option = (OutputParams) value;
+				renderer.setText(option.option.getDisplay() + " < " + combineChans(option.includedChannels) + " >");
+				renderer.setFont(smallFont);
+				renderer.setBorder(new EmptyBorder(0,0,0,0));
+			} else if (value != null) {
+				renderer.setText(value.toString());
+			}
+
+			return renderer;
+
+
+		}
+		
+		private String combineChans(List<Channel> chans) {
+			String result = "";
+			String delim = "";
+			for (Channel chan : chans) {
+				result = result.concat(delim).concat(chan.getAbbreviation());
+				delim = ",";
+			}
+			return result;
+		}
+
+	}
+
+	@Override
+	public void removeError() {}
+
+	@Override
+	public void reset(Settings settings, boolean enabled) {
+		this.mvLeftObj.setEnabled(enabled);
+		this.mvRightObj.setEnabled(enabled);
+		this.mvLeftROI.setEnabled(enabled);
+		this.mvRightROI.setEnabled(enabled);
+		
+		this.listOptionsObj.setEnabled(enabled);
+		this.listOptionsROI.setEnabled(enabled);
+		this.listOutputObj.setEnabled(enabled);
+		this.listOutputROI.setEnabled(enabled);
+		this.listOptionsObj.clear();
+		this.listOptionsROI.clear();
+		this.listOutputObj.clear();
+		this.listOutputROI.clear();
+		
+		for (OutputOption option : OutputOption.values()) {
+			if (settings.enabledOptions.containsKey(option)) {
+				switch (option.getList()) {
+				case 1:
+					this.listOutputObj.addItem(settings.enabledOptions.get(option));
+					break;
+				case 2:
+					this.listOutputROI.addItem(settings.enabledOptions.get(option));
+					break;
+				}
+			} else {
+				switch (option.getList()) {
+				case 1:
+					this.listOptionsObj.addItem(settings.disabledOptions.get(option));
+					break;
+				case 2:
+					this.listOptionsROI.addItem(settings.disabledOptions.get(option));
+					break;
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public boolean applyFields(Settings settings) {
+		settings.disabledOptions.clear();
+		settings.enabledOptions.clear();
+		for (OutputParams option : this.listOptionsObj.toList()) {
+			_correctParam(option);
+			settings.disabledOptions.put(option.option, option);
+		}
+		for (OutputParams option : this.listOptionsROI.toList()) {
+			_correctParam(option);
+			settings.disabledOptions.put(option.option, option);
+		}
+		for (OutputParams option : this.listOutputObj.toList()) {
+			_correctParam(option);
+			settings.enabledOptions.put(option.option, option);
+		}
+		for (OutputParams option : this.listOutputROI.toList()) {
+			_correctParam(option);
+			settings.enabledOptions.put(option.option, option);
+		}
+		return true;
+	}
+	
+	private void _correctParam(OutputParams params) {
+		if (params.option.getRestrictedOption() == OutputOption.ONLY_PROCESSED_CHAN) {
+			Iterator<Channel> itr = params.includedChannels.iterator();
+			while (itr.hasNext()) {
+				Channel chan = itr.next();
+				if (!GUI.settings.channelsToProcess.contains(chan)) {
+					itr.remove();
+				}
+			}
+		}
+		if (params.option.getRestrictedOption() == OutputOption.NO_CHANS) {
+			params.includedChannels.clear();
+		}
+	}
+
+	@Override
+	public void displayError(String errors) {}
+
+	@Override
+	public SettingPage getPageDesignation() {
+		return SettingPage.OutputOptions;
 	}
 
 	@Override

@@ -126,6 +126,7 @@ public class ImagePanel extends JPanel{
 	}
 	
 	
+	
 	public synchronized void setImage(BufferedImage ig, int xCenter, int yCenter, Zoom zoom) {
 		this.image = ig;
 		this.pastHeight = -1;

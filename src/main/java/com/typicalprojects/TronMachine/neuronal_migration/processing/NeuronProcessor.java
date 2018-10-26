@@ -36,12 +36,12 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
-import com.typicalprojects.TronMachine.util.ImageContainer.ImageTag;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -74,7 +74,7 @@ public class NeuronProcessor {
 
 					while (!cancelled && itr.hasNext()) {
 						ImagePhantom pi = itr.next();
-						String error = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<ImageTag>(Arrays.asList(ImageTag.OrigTiff)));
+						String error = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<OutputOption>(Arrays.asList(OutputOption.ChannelTiff)));
 						if (error != null) {
 							error(error, wizard);
 							return;
@@ -94,16 +94,16 @@ public class NeuronProcessor {
 								if (cancelled)
 									return;
 
-								container.saveSupplementalImage(ImageTag.ObjCountOrigMaskMerge, (ImagePlus) chanProcessed[0], chan);
-								container.saveSupplementalImage(ImageTag.MaxProjected, (ImagePlus) chanProcessed[1], chan);
-								container.saveSupplementalImage(ImageTag.ObjCountMask, (ImagePlus) chanProcessed[2], chan);								
+								container.saveSupplementalImage(OutputOption.ProcessedObjectsOriginal, (ImagePlus) chanProcessed[0], chan);
+								container.saveSupplementalImage(OutputOption.MaxedChannel, (ImagePlus) chanProcessed[1], chan);
+								container.saveSupplementalImage(OutputOption.ProcessedObjects, (ImagePlus) chanProcessed[2], chan);								
 								
 								tables.put(chan.name(), (ResultsTable) chanProcessed[3]);
 							} else {
 								projector.setImage(container.getChannelOrig(chan, true));
 								projector.setMethod(ZProjector.MAX_METHOD);
 								projector.doProjection();
-								container.saveSupplementalImage(ImageTag.MaxProjected, projector.getProjection(), chan);
+								container.saveSupplementalImage(OutputOption.MaxedChannel, projector.getProjection(), chan);
 
 							}
 						}
