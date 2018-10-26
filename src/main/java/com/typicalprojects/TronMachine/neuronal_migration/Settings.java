@@ -119,6 +119,7 @@ public class Settings {
 
 
 		public static final String settingsFilePath = "Neuronal_Migration_Resources" + File.separator + "settings.yml";
+		public static final String settingsMainPath = "Neuronal_Migration_Resources";
 
 		// NOTE: Does not currently supporting nesting.
 		@SuppressWarnings("unchecked")
@@ -381,11 +382,16 @@ public class Settings {
 
 		    BufferedWriter writer = null;
 			try {
-				writer = new BufferedWriter(new FileWriter(new File(settingsFilePath)));
+				File file1 = new File(settingsMainPath);
+				file1.mkdir();
+				File file = new File(settingsFilePath);
+				file.createNewFile();
+				writer = new BufferedWriter(new FileWriter(file));
 				writer.write(output);
 				writer.close();
 			    
 			} catch (IOException e) {
+				e.printStackTrace();
 			    return false;
 			} finally {
 

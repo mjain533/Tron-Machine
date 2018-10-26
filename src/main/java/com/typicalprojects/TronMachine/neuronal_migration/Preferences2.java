@@ -326,7 +326,6 @@ public class Preferences2 extends JDialog {
 	}
 
 	public Object[] applyPreferences(boolean resetIfIncorrect) {
-
 		Settings settings = getSettings();
 
 

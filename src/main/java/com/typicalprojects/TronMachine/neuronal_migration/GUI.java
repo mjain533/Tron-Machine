@@ -123,7 +123,7 @@ public class GUI  {
 		try {
 			settings = SettingsLoader.loadSettings(false);
 			if (settings.needsUpdate) {
-				SettingsLoader.saveSettings(settings);
+				System.out.println(SettingsLoader.saveSettings(settings));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
