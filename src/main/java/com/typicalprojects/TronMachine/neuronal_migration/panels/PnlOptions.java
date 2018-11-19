@@ -75,7 +75,6 @@ import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
-import ij.ImagePlus;
 import ij.measure.ResultsTable;
 
 public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackReceiver, BrightnessChangeReceiver {
@@ -711,6 +710,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		if (this.imageCurrentlyObjEditing != null) {
 			this.gui.getLogger().setCurrentTask("Selecting objects...");
+			System.out.println("test1");
 			this.imageCurrentlyObjEditing.createAndSaveNewImage();
 			ImageContainer ic = this.imageCurrentlyObjEditing.getContainer();
 			ic.saveResultsTables(this.imageCurrentlyObjEditing.createNewResultsTables(), false);
@@ -1127,7 +1127,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (currentState == STATE_INFO) {
 			if(imageCurrentlyDisplayed != null)
 			{
-				//System.out.println(imageCurrentlyDisplayed.getImage(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getClass());
 				this.gui.getPanelDisplay().setImage(imageCurrentlyDisplayed.getChannelSliceOrig(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 			}
 

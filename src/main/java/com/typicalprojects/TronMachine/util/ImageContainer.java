@@ -28,7 +28,11 @@ package com.typicalprojects.TronMachine.util;
 import java.awt.Color;
 import java.awt.image.IndexColorModel;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,19 +56,20 @@ import loci.plugins.in.ImporterOptions;
 
 public class ImageContainer {
 
+
 	private static final String INTERMED_FILES = "Intermediate Files";
 
 	private Map<OutputOption, Map<Channel, ImagePlus>> images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
 
 	private String title;
-	private Calibration cal;
-	private File outputLocation;
-	private String timeOfRun;
-	private File imageFile;
+	private transient Calibration cal;
+	private transient File outputLocation;
+	private transient String timeOfRun;
+	private transient File imageFile;
 	private int[] dimensions;
 
 	public ImageContainer(String title, File imageFile, File outputLocation, String timeOfRun, List<OutputOption> imagesToOpen, Map<Integer, Channel> validChannels, Calibration cal) throws ImageOpenException {
-		
+
 		try {
 			this.cal = cal;
 			this.title = title;
@@ -75,20 +80,17 @@ public class ImageContainer {
 
 			if (imagesToOpen.size() == 0)
 				throw new IllegalArgumentException("There are no images for " + this.title + ".");
-			
+
 			for (OutputOption it : imagesToOpen) {
 				if (it.equals(OutputOption.Channel)) {
-					
+
 					ImporterOptions io = new ImporterOptions();
 					io.setId(imageFile.getPath());
 					io.setSplitChannels(true);
 					ImagePlus[]  ips= BF.openImagePlus(io);
 					this.cal = ips[0].getCalibration();
 
-					System.out.println(this.cal);
 					if (this.cal != null) {
-						System.out.println(this.cal.getUnits());
-						System.out.println(this.cal.getUnit());
 
 					}
 					if (ips.length != validChannels.size()) {
@@ -107,19 +109,18 @@ public class ImageContainer {
 							throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 						}
 					}
-					
+
 					this.images.put(OutputOption.Channel, origImages);
 				} else if (it.equals(OutputOption.ChannelTiff)) {
-					
+
 					Opener opener = new Opener();
 					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
 
 					File intermediateFilesDir = getIntermediateFilesDirectory();
-					
-					
+
+
 					for (Channel chan : validChannels.values()){
 						File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
-						System.out.println(file.getPath());
 						if (file.exists()) {
 							ImagePlus ip = opener.openImage(file.getPath());
 							ip.setCalibration(this.cal);
@@ -129,12 +130,11 @@ public class ImageContainer {
 						}
 
 					}
-					
+
 					if (origImages.size() != validChannels.size()) {
-						System.out.println(origImages.size() + " : " + validChannels.size());
 						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 					}
-					
+
 					this.images.put(OutputOption.ChannelTiff, origImages);
 				} else {
 					this.images.put(it, openSupplementalImages(it));
@@ -147,21 +147,21 @@ public class ImageContainer {
 
 				}
 			}
-			
+
 			if (this.dimensions[0] < 50 || this.dimensions[1] < 50) {
 				throw new Exception("Image size is too small (must be at least 50x50 pixels)");
 			}
-			
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new ImageOpenException(e.getMessage());
 		}
-		
-		
+
+
 
 	}
-	
+
 	public File getImageFile() {
 		return this.imageFile;
 	}
@@ -196,7 +196,7 @@ public class ImageContainer {
 	 * @throws NullPointerException if channel doesn't exist or originals aren't open.
 	 */
 	public ImagePlus getChannelOrig(Channel channel, boolean duplicate) throws NullPointerException {
-		
+
 		ImagePlus ip = getOriginals().get(channel);
 
 		if (ip == null) {
@@ -210,7 +210,7 @@ public class ImageContainer {
 			return ip;
 		}
 	}
-	
+
 	public Map<Channel, ImagePlus> getOriginals() {
 		Map<Channel, ImagePlus> ips = this.images.get(OutputOption.Channel);
 		if (ips != null)
@@ -243,16 +243,16 @@ public class ImageContainer {
 		}
 
 	}
-	
+
 	public ImagePlus getImage(OutputOption it, Channel chan, boolean duplicate) {
 		Map<Channel, ImagePlus> ips = this.images.get(it);
-		
+
 		if (ips == null)
 			throw new UnopenedException();
 		ImagePlus ip = ips.get(chan);
 		if (ip == null)
 			throw new UnopenedException();
-		
+
 		if (duplicate) {
 			ImagePlus newImg = ip.duplicate();
 			newImg.setTitle(newImg.getTitle().substring(4));
@@ -355,7 +355,7 @@ public class ImageContainer {
 		Map<Channel, ImagePlus> originals = getOriginals();
 		if (originals == null)
 			throw new NullPointerException();
-		
+
 		for (Entry<Channel, ImagePlus> en : originals.entrySet()) {
 			ImageStack is = en.getValue().getStack().duplicate();
 			for (int s = (is.getSize() - highSlice); s > 0; s--) {
@@ -381,7 +381,7 @@ public class ImageContainer {
 		}
 
 	}
-	
+
 	public void deleteIrrelevantDataExcept(Map<OutputOption, OutputParams> tags) {
 		File intDir = getIntermediateFilesDirectory();
 		if (intDir.isDirectory()) {
@@ -389,7 +389,16 @@ public class ImageContainer {
 				if (!file.isDirectory()) {
 					boolean delete = true;
 					for (Entry<OutputOption,OutputParams> en : tags.entrySet()) {
-						if (file.getName().endsWith(" " + en.getKey().getImageSuffix() + ".tiff")) {
+						if (en.getKey() == OutputOption.Channel) {
+
+							for (Channel chan : en.getValue().includedChannels) {
+								if (file.getName().endsWith("Chan-" + chan.getAbbreviation() + ".tiff")) {
+									delete = false;
+									break;
+								}
+							}
+							
+						} else if (file.getName().endsWith(" " + en.getKey().getImageSuffix() + ".tiff")) {
 							if (en.getKey().getRestrictedOption() == OutputOption.NO_CHANS) {
 								delete = false;
 								break;
@@ -401,7 +410,7 @@ public class ImageContainer {
 									}
 								}
 							}
-							
+
 						}
 					}
 					if (delete)
@@ -410,11 +419,11 @@ public class ImageContainer {
 			}
 		}
 	}
-	
+
 	public void saveOrigImageStacksAsTiffs() {
-		
+
 		for (Entry<Channel, ImagePlus> en : this.images.get(OutputOption.Channel).entrySet()) {
-			
+
 			new FileSaver(en.getValue()).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + en.getKey() + ".tiff");
 		}
 	}
@@ -443,7 +452,7 @@ public class ImageContainer {
 			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
 			return;
 		}
-		
+
 		for (Entry<String, ResultsTable> en : results.entrySet()) {
 			if (en.getValue() != null) {
 				try {
@@ -461,43 +470,40 @@ public class ImageContainer {
 
 
 	}
-	
+
 	public void saveSupplementalImage(OutputOption it, ImagePlus image) {
 		saveSupplementalImage(it, image, null);
 	}
-	
+
 	public void saveSupplementalImage(OutputOption it, ImagePlus image, Channel chan) {
 		String title = this.title.concat(chan != null ? " Chan-" + chan.abbrev : "");
 		image.setTitle(title);
 		String savePath = getIntermediateFilesDirectory().getPath() + File.separator + title.concat(" ").concat(it.getImageSuffix()).concat(".tiff");
 
 		if (image.getStackSize() > 1) {
-			boolean bool = new FileSaver(image).saveAsTiffStack(savePath);
-			System.out.println("Output Option " + it.getCondensed() + " Save path: " + savePath + " bool " + bool);
+			new FileSaver(image).saveAsTiffStack(savePath);
 
 		} else {
-			boolean bool = new FileSaver(image).saveAsTiff(savePath);
-			System.out.println("Output Option " + it.getCondensed() + " Save path: " + savePath + " bool " + bool);
+			new FileSaver(image).saveAsTiff(savePath);
 
 		}
-		System.out.println("Saved");
 		if (!this.images.containsKey(it))
 			this.images.put(it, new HashMap<Channel, ImagePlus>());
-		
+
 		this.images.get(it).put(chan, image);
 	}
 
 	public Map<String, ResultsTable> tryToOpenResultsTables() {
 
-		
+
 		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
 
 		Map<String, ResultsTable> results = new HashMap<String, ResultsTable>();
-		
+
 		if (intermediateFilesDir.isDirectory()) {
 			for (File file : intermediateFilesDir.listFiles()) {
 				if (!file.isDirectory() && file.getName().endsWith(".txt") && file.getName().contains(" results ")) {
-					
+
 					String nameNoExt = file.getName().substring(0, file.getName().indexOf(".txt"));
 					String name = nameNoExt.substring(nameNoExt.lastIndexOf(" results ") + 9);
 					results.put(name, ResultsTable.open2(file.getPath()));
@@ -514,14 +520,16 @@ public class ImageContainer {
 
 
 	public enum Channel {
-		GREEN("G", new Color(57, 137, 23)), RED("R", Color.RED), BLUE("B", Color.BLUE), WHITE("W", Color.GRAY);
+		GREEN("G", new Color(57, 137, 23), "green"), RED("R", Color.RED, "red"), BLUE("B", Color.BLUE, "blue"), WHITE("W", Color.GRAY, "gray");
 
 		private String abbrev;
 		private Color color;
+		private String htmlColor;
 
-		private Channel(String abbrev, Color color) {
+		private Channel(String abbrev, Color color, String htmlColor) {
 			this.abbrev = abbrev;
 			this.color = color;
+			this.htmlColor = htmlColor;
 		}
 
 		public String getAbbreviation() {
@@ -530,6 +538,10 @@ public class ImageContainer {
 
 		public Color getColor() {
 			return this.color;
+		}
+
+		public String getHTMLColor() {
+			return this.htmlColor;
 		}
 
 		public static Channel getChannelByAbbreviation(String abbrev) {
@@ -563,33 +575,33 @@ public class ImageContainer {
 
 
 	}
-	
+
 	public class ImageOpenException extends Exception {
 
 		private static final long serialVersionUID = 1963273665585902446L;
-			
+
 		public ImageOpenException(String message) {
 			super(message);
 		}
 	}
-	
+
 	public class UnopenedException extends RuntimeException {
 
 		private static final long serialVersionUID = 6071333983874153209L;
-		
+
 	}
 
 
 	public synchronized int getMin(OutputOption it, Channel channel) {
-		
+
 		Map<Channel, ImagePlus> itImages = this.images.get(it);
 		if (itImages == null)
 			throw new NullPointerException();
-		
+
 		if (channel == null) {
 			if (!itImages.containsKey(null))
 				throw new NullPointerException();
-			
+
 			return (int) itImages.get(null).getDisplayRangeMin();
 		} else {
 			if (!itImages.containsKey(channel))
@@ -604,11 +616,11 @@ public class ImageContainer {
 		Map<Channel, ImagePlus> itImages = this.images.get(it);
 		if (itImages == null)
 			throw new NullPointerException();
-		
+
 		if (channel == null) {
 			if (!itImages.containsKey(null))
 				throw new NullPointerException();
-			
+
 			return (int) itImages.get(null).getDisplayRangeMax();
 		} else {
 			if (!itImages.containsKey(channel))
@@ -693,7 +705,14 @@ public class ImageContainer {
 
 	}
 
+	public void printContents() {
+		for (Entry<OutputOption, Map<Channel, ImagePlus>> images : this.images.entrySet()) {
+			for (Entry<Channel, ImagePlus> imagesEn : images.getValue().entrySet()) {
+				System.out.println(images.getKey().getDisplay() + " : " + imagesEn.getKey().abbrev);
 
+			}
+		}
+	}
 
 	private void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
 		for (int i=0; i<256; i++) {
@@ -706,5 +725,65 @@ public class ImageContainer {
 		}
 		return;
 	}
+
+	public void saveCurrentState(File fileName) throws IOException {
+		FileOutputStream fileStream = new FileOutputStream(fileName); 
+		ObjectOutputStream out = new ObjectOutputStream(fileStream); 
+		out.writeObject(this); 
+		out.close(); 
+		fileStream.close();
+
+	}
+
+	public static ImageContainer loadFromPreviousState(File stateFile) throws IOException {
+		FileInputStream fileInput = new FileInputStream(stateFile); 
+		ObjectInputStream in = new ObjectInputStream(fileInput); 
+
+		ImageContainer object1 = null;
+		try {
+			object1 = (ImageContainer)in.readObject();
+		} catch (ClassNotFoundException e) {
+			in.close();
+			fileInput.close();
+			return null;
+		} 
+
+		in.close(); 
+		fileInput.close(); 
+		return object1;
+
+	}
+
+	/*private void writeObject(ObjectOutputStream stream)
+			throws IOException {
+		stream.defaultWriteObject();
+		stream.writeDouble(cal.pixelWidth);
+		stream.writeDouble(cal.pixelHeight);
+		int numImages = 0;
+		for (Map<Channel, ImagePlus> images : this.images.values()) {
+			numImages = numImages + images.size();
+		}
+		stream.writeInt(numImages);
+		for (Entry<OutputOption, Map<Channel,ImagePlus>> imagesEn : this.images.entrySet()) {
+			for (Entry<Channel, ImageP>)
+				stream.writeChars(imagesEn.getKey().getCondensed());
+					stream.writeObject(imagesEn.);
+					stream.write
+		}
+
+	}
+
+	private void readObject(ObjectInputStream stream)
+			throws IOException, ClassNotFoundException {
+		stream.defaultReadObject();
+		this.cal = new Calibration();
+		this.cal.xOrigin = 0;
+		this.cal.yOrigin = 0;
+		this.cal.pixelWidth = stream.readDouble();
+		this.cal.pixelHeight = stream.readDouble();
+		this.timeOfRun = GUI.dateString;
+		this.outputLocation = GUI.settings.outputLocation;
+		this.imageFile = null;
+	}*/
 
 }

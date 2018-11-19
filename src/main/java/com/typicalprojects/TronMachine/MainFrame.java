@@ -99,7 +99,7 @@ public class MainFrame extends JFrame {
 
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 250);
+		setBounds(100, 100, 350, 250);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		this.setResizable(false);
@@ -187,38 +187,23 @@ public class MainFrame extends JFrame {
 		btnQuantifyMigration.setFont(btnQuantifyMigration.getFont().deriveFont(btnQuantifyMigration.getFont().getStyle() | Font.BOLD));
 		btnQuantifyMigration.setFocusable(false);
 		btnQuantifyMigration.setIconTextGap(0);
-		btnQuantifyMigration.setAlignmentY(0.0f);
-
-		JButton btnQuantifyNeurites = new JButton("<html><center>Quantify Neurite Outgrowth</center></html>");
-		btnQuantifyNeurites.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(null, "Neurite processor not yet finished. Coming soon.", "Incomplete Program", JOptionPane.WARNING_MESSAGE);
-			}
-		});;
-		btnQuantifyNeurites.setIconTextGap(0);
-		btnQuantifyNeurites.setFont(btnQuantifyNeurites.getFont().deriveFont(btnQuantifyNeurites.getFont().getStyle() | Font.BOLD));
-		btnQuantifyNeurites.setFocusable(false);
-		btnQuantifyNeurites.setAlignmentY(0.0f);
+		btnQuantifyMigration.setAlignmentY(0.0f);;
 
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
-				gl_panel.createParallelGroup(Alignment.TRAILING)
+			gl_panel.createParallelGroup(Alignment.TRAILING)
 				.addGroup(gl_panel.createSequentialGroup()
-						.addGap(35)
-						.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 177, GroupLayout.PREFERRED_SIZE)
-						.addGap(31))
-				);
+					.addContainerGap(73, Short.MAX_VALUE)
+					.addComponent(btnQuantifyMigration, GroupLayout.PREFERRED_SIZE, 185, GroupLayout.PREFERRED_SIZE)
+					.addGap(68))
+		);
 		gl_panel.setVerticalGroup(
-				gl_panel.createParallelGroup(Alignment.TRAILING)
+			gl_panel.createParallelGroup(Alignment.LEADING)
 				.addGroup(gl_panel.createSequentialGroup()
-						.addGap(37)
-						.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-								.addComponent(btnQuantifyNeurites, GroupLayout.PREFERRED_SIZE, 101, GroupLayout.PREFERRED_SIZE)
-								.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 101, Short.MAX_VALUE))
-						.addGap(37))
-				);
+					.addGap(36)
+					.addComponent(btnQuantifyMigration, GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+					.addGap(38))
+		);
 		panel.setLayout(gl_panel);
 
 

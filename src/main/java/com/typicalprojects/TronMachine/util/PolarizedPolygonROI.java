@@ -26,13 +26,18 @@
 package com.typicalprojects.TronMachine.util;
 
 import java.awt.Polygon;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import ij.gui.PolygonRoi;
 
-public class PolarizedPolygonROI {
+public class PolarizedPolygonROI implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4478064214266311535L;
 	private final String name;
 	private final PolygonRoi polyROI;
 	private final PolygonRoi oneSide;
@@ -75,10 +80,6 @@ public class PolarizedPolygonROI {
 			mapping.put(p.xpoints[polygonPt], p.ypoints[polygonPt]);
 		}
 		return mapping;
-	}
-	
-	public boolean hasPositiveSideBeenSelected() {
-		return oneSideIsPositive != null;
 	}
 	
 	public boolean isPositive(int x, int y) {

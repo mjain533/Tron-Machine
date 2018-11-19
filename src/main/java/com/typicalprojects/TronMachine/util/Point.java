@@ -26,9 +26,11 @@
  */
 package com.typicalprojects.TronMachine.util;
 
+import java.io.Serializable;
 
-public class Point {
+public class Point implements Serializable{
 	
+	private static final long serialVersionUID = -3376251132566371602L;
 	public int x;
 	public int y;
 	public Boolean fromObjCounter;

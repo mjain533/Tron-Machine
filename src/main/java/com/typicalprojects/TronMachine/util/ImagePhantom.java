@@ -76,8 +76,6 @@ public class ImagePhantom {
 
 	}
 
-
-
 	public ImageContainer getIC() {
 		return this.ic;
 	}

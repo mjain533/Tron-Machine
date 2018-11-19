@@ -2162,8 +2162,8 @@ class PnlOutputOptions extends JPanel implements SettingsPanel {
 
 			if (value instanceof OutputParams) {
 				OutputParams option = (OutputParams) value;
-				renderer.setText(option.option.getDisplay() + " < " + combineChans(option.includedChannels) + " >");
 				renderer.setFont(smallFont);
+				renderer.setText("<html>"+option.option.getDisplay()+" ( "+combineChans(option.includedChannels)+" )</html>");
 				renderer.setBorder(new EmptyBorder(0,0,0,0));
 			} else if (value != null) {
 				renderer.setText(value.toString());
@@ -2178,7 +2178,7 @@ class PnlOutputOptions extends JPanel implements SettingsPanel {
 			String result = "";
 			String delim = "";
 			for (Channel chan : chans) {
-				result = result.concat(delim).concat(chan.getAbbreviation());
+				result = result.concat(delim).concat("<font color='").concat(chan.getHTMLColor()).concat("'>").concat(chan.getAbbreviation()).concat("</font>");
 				delim = ",";
 			}
 			return result;

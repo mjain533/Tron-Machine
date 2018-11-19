@@ -254,10 +254,6 @@ public class FileBrowser extends JDialog {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				/*if (cbRecents.getSelectedIndex() < 0) {
-					System.out.println("called");
-					return;
-				}*/
 				if (!holdChanges)
 					navigateStartingAt((File) cbRecents.getSelectedItem()); 
 			}
@@ -636,16 +632,13 @@ public class FileBrowser extends JDialog {
 	}
 
 	public void startBrowsing(List<File> recents, Component component) {
-		for (File file : recents) {
-			System.out.println(file);
-		}
+
 		setLocationRelativeTo(component);
 		this.holdChanges = true;
 		this.newRecents = null;
 		this.selectedFiles = null;
 		this.pack();
 		if (recents == null || recents.isEmpty()) {
-			System.out.println("Called home");
 			String home = System.getProperty("user.home");
 			if (home == null) {
 				JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
@@ -669,7 +662,6 @@ public class FileBrowser extends JDialog {
 				}
 			}
 			if (cbRecents.getModel().getSize() == 0) {
-				System.out.println("Called home");
 				String home = System.getProperty("user.home");
 				if (home == null) {
 					JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
@@ -876,7 +868,6 @@ public class FileBrowser extends JDialog {
 			File parentFile = file.getParentFile();
 			if (parentFile == null) {
 				this.holdChanges = false;
-				System.out.println("Parent");
 
 				return;
 			}
@@ -884,7 +875,6 @@ public class FileBrowser extends JDialog {
 			File parentOfParentFile= parentFile.getParentFile();
 
 			if (parentOfParentFile == null) {
-				System.out.println("Parent of parent");
 				this.holdChanges = false;
 				return;
 			}

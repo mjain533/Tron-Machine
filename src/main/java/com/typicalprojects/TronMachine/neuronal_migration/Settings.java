@@ -77,8 +77,7 @@ public class Settings {
 
 
 	public static void main(String[] args) throws FileNotFoundException, SecurityException, IOException {
-		Settings settings = SettingsLoader.loadSettings(false);
-		System.out.println(settings.numberOfBins);
+		SettingsLoader.loadSettings(false);
 		
 	}
 	
@@ -164,9 +163,7 @@ public class Settings {
 			// Channel map
 			List<String> list = (List<String>) dataToParse.get(keyChanMap);
 			for (String channelMappingString : list) {
-				System.out.println(channelMappingString);
 				String[] channelMap = channelMappingString.split(":");
-				System.out.println(channelMap.length);
 				if (!channelMap[1].equals("None")) {
 					settings.channelMap.put(Integer.valueOf(channelMap[0]), Channel.parse(channelMap[1]));
 				}

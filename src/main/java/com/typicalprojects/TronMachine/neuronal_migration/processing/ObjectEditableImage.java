@@ -29,6 +29,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Polygon;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -62,13 +68,13 @@ public class ObjectEditableImage {
 
 	private ImageContainer ic;
 	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
-	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
-	private int fontSize = Custome3DObjectCounter.opResultFontSize;
-	private Zoom zoom = Zoom.ZOOM_100;
-	private boolean creatingDeletionZone;
-	private List<Point> deletionZone = new ArrayList<Point>();
+	private transient int dotSize = Custome3DObjectCounter.opResultDotsSize;
+	private transient int fontSize = Custome3DObjectCounter.opResultFontSize;
+	private transient Zoom zoom = Zoom.ZOOM_100;
+	private transient boolean creatingDeletionZone = false;
+	private transient List<Point> deletionZone = new ArrayList<Point>();
 
-
+	
 	private boolean mask = true;
 	private boolean original = true;
 	private boolean dots = true;
@@ -110,7 +116,6 @@ public class ObjectEditableImage {
 
 		Object[] obj = convertDeletionPointsToArray(true);
 		if (obj == null) {
-			System.out.println("called null");
 			this.deletionZone.clear();
 			this.creatingDeletionZone = false;
 
@@ -485,7 +490,6 @@ public class ObjectEditableImage {
 						stack.updateImage();
 
 					} else {
-						System.out.println(Arrays.toString((float[]) obj[0]));
 						PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], this.deletionZone.size(), Roi.POLYLINE) ;
 						pgr.setStrokeColor(Color.GREEN);
 						pgr.setFillColor(Color.GREEN);
@@ -584,6 +588,43 @@ public class ObjectEditableImage {
 		this.imagePnl.setImage(this.getImgWithDots(channelToDisplayAfterUpdate).getBufferedImage(), -1, -1, zoom);
 
 		
+		
+	}
+	
+	public void saveCurrentState(File fileName) throws IOException {
+		FileOutputStream fileStream = new FileOutputStream(fileName); 
+        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
+        // Method for serialization of object 
+        out.writeObject(this); 
+        out.close(); 
+        fileStream.close();
+        
+        FileInputStream fileInput = new FileInputStream(fileName); 
+        ObjectInputStream in = new ObjectInputStream(fileInput); 
+          
+        ObjectEditableImage object1;
+		try {
+			object1 = (ObjectEditableImage)in.readObject();
+		} catch (ClassNotFoundException e) {
+			in.close();
+			fileInput.close();
+			return;
+		} 
+          
+        in.close(); 
+        fileInput.close(); 
+          
+        System.out.println("Object has been deserialized "); 
+        System.out.println("dots = " + object1.dotSize); 
+	}
+	
+	public ResultsTable currentStateToResultsTable() {
+		
+		ResultsTable rt = new ResultsTable();
+		
+		
+		
+		return rt;
 		
 	}
 

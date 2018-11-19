@@ -30,6 +30,12 @@ import java.awt.Font;
 import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,24 +69,41 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
-public class ROIEditableImage {
+public class ROIEditableImage implements Serializable {
 
-	private ImageContainer ic;
-	private Map<String, ResultsTable> tables;
-	private Channel drawChannel;
-	private GUI gui;
+	private transient ImageContainer ic;
+	private Map<String, float[][]> ptsData;
+
+	private transient Channel drawChannel;
+	private transient GUI gui = null;
 
 	private List<PolarizedPolygonROI> rois = new ArrayList<PolarizedPolygonROI>();
-	private volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
-	private boolean selectingPositive = false;
+	private transient volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
+	private transient boolean selectingPositive = false;
 
 	private List<Point> points = new ArrayList<Point>();
 
+	@SuppressWarnings("deprecation")
 	public ROIEditableImage(ImageContainer ic, Channel drawChannel, Map<String, ResultsTable> tables, GUI gui) {
 		this.gui = gui;
 		this.ic =ic;
 		this.drawChannel = drawChannel;
-		this.tables = tables;
+		this.ptsData = new HashMap<String, float[][]>();
+		for (Entry<String, ResultsTable> tableEn : tables.entrySet()) {
+			ResultsTable input = tableEn.getValue();
+			int idIndex = input.getColumnIndex("ID");
+			int xIndex = input.getColumnIndex(Column.X.getTitle());
+			int yIndex = input.getColumnIndex(Column.Y.getTitle());
+			if (idIndex == ResultsTable.COLUMN_NOT_FOUND || xIndex == ResultsTable.COLUMN_NOT_FOUND || yIndex == ResultsTable.COLUMN_NOT_FOUND) {
+				this.ptsData.put(tableEn.getKey(), new float[][]{new float[0], new float[0], new float[0]});
+			} else {
+				this.ptsData.put(tableEn.getKey(), new float[][]{input.getColumn(input.getColumnIndex("ID")),
+					input.getColumn(input.getColumnIndex(Column.X.getTitle())),
+					input.getColumn(input.getColumnIndex(Column.Y.getTitle()))});
+			}
+
+		}
+
 	}
 
 	public ImageContainer getContainer() {
@@ -160,7 +183,7 @@ public class ROIEditableImage {
 			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
 
 			ip.setColor(Color.GREEN);
-			if(roiWrapper.hasPositiveSideBeenSelected()) {
+			if(roiWrapper.positiveRegionIsSet()) {
 				if (roi.getPolygon().npoints > 12) {
 					int polySize = (int) (roi.getPolygon().npoints / 6.0);
 
@@ -332,7 +355,68 @@ public class ROIEditableImage {
 		
 		polygon = pgr.getPolygon();
 		this.rois.add(new PolarizedPolygonROI(name, pgr, createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))));
+		
+		try {
+			/*File file = new File("testFileSerialize.txt");
+			FileOutputStream fileStream = new FileOutputStream(file); 
+	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
+	        // Method for serialization of object 
+	        out.writeObject(this.rois.get(this.rois.size() - 1)); 
+	        System.out.println("positivesel: " + this.rois.get(this.rois.size() - 1).positiveRegionIsSet());
+	        out.close(); 
+	        fileStream.close();
+	        
+	        FileInputStream fileInput = new FileInputStream(file); 
+            ObjectInputStream in = new ObjectInputStream(fileInput); 
+              
+            // Method for deserialization of object 
+            PolarizedPolygonROI object1 = (PolarizedPolygonROI)in.readObject(); 
+              
+            in.close(); 
+            fileInput.close(); 
+              
+            System.out.println("Object has been deserialized "); 
+            System.out.println("Name = " + object1.getName()); 
+            StringBuilder sb = new StringBuilder();
+            for (Entry<Integer, Integer> en : object1.getPointsOnLine().entrySet()) {
+            		sb.append("(" + en.getKey() + "," + en.getValue() + ") ");
+            }
+            System.out.println("points = " + sb.toString()); 
+            sb.setLength(0);
+            for (java.awt.Point p : object1.getContainedHalfPoints()) {
+        			sb.append("(" + p.x + "," + p.y + ") ");
+            }
+            System.out.println("points2 = " + sb.toString()); 
+            System.out.println("positivesel = " + object1.positiveRegionIsSet());*/ 
+			
+			File file = new File("testFileSerialize.txt");
+			FileOutputStream fileStream = new FileOutputStream(file); 
+	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
+	        // Method for serialization of object 
+	        out.writeObject(this); 
+	        out.close(); 
+	        fileStream.close();
+	        
+	        FileInputStream fileInput = new FileInputStream(file); 
+            ObjectInputStream in = new ObjectInputStream(fileInput); 
+              
+            // Method for deserialization of object 
+            ROIEditableImage object1 = (ROIEditableImage)in.readObject(); 
+              
+            in.close(); 
+            fileInput.close(); 
+              
+            System.out.println("Object has been deserialized "); 
+            System.out.println("ROIS = " + object1.rois.size()); 
 
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		 
+          
+        System.out.println("Object has been serialized"); 
+		
 		this.points.clear();
 		this.cache.clear();
 
@@ -405,7 +489,6 @@ public class ROIEditableImage {
 
 		}
 		if (GUI.settings.enabledOptions.containsKey(OutputOption.RoiDrawBlank)) {
-			System.out.println("Called");
 			int[] dim = this.ic.getDimensions();
 			ipToDrawROIS.put(new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.RoiDrawBlank});
 
@@ -470,7 +553,6 @@ public class ROIEditableImage {
 
 			roiImg.updateImage();
 			if (imgEntry.getValue()[0] == null) {
-				System.out.println("Called");
 				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg);
 			} else {
 				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg, (Channel) imgEntry.getValue()[0]);
@@ -489,7 +571,7 @@ public class ROIEditableImage {
 	public Map<String, ResultsTable> processMigration(Logger progress, List<Analyzer.Calculation> calculations) {		
 
 		Map<String, ResultsTable> map = new HashMap<String, ResultsTable>();
-		for (Entry<String, ResultsTable> en : this.tables.entrySet()) {
+		for (Entry<String, float[][]> en : this.ptsData.entrySet()) {
 			map.put(en.getKey(), calculateDistances(en.getValue(), Channel.parse(en.getKey()), progress, calculations));
 		}
 
@@ -605,20 +687,11 @@ public class ROIEditableImage {
 		logger.setCurrentTask("Binning points... ");
 
 		for (Channel chan : GUI.settings.channelsToProcess) {
-			ResultsTable input = this.tables.get(chan.name());
-			if (input == null) {
-				continue;
-			}
-			int xIndex = input.getColumnIndex(Column.X.getTitle());
-			int yIndex = input.getColumnIndex(Column.Y.getTitle());
-			if (xIndex == ResultsTable.COLUMN_NOT_FOUND || yIndex == ResultsTable.COLUMN_NOT_FOUND) {
-				continue;
-			}
-			float[] xObjValues = input.getColumn(input.getColumnIndex(Column.X.getTitle()));
-			float[] yObjValues = input.getColumn(input.getColumnIndex(Column.Y.getTitle()));
+			float[][] input = this.ptsData.get(chan.name());
 
-			for (int i =0; i < xObjValues.length && i < yObjValues.length; i++) {
-				int bin = binnedRegion.getEnclosingBin((int) xObjValues[i], (int) yObjValues[i]);
+
+			for (int i =0; i < input[1].length && i < input[2].length; i++) {
+				int bin = binnedRegion.getEnclosingBin((int) input[1][i], (int) input[2][i]);
 				Map<Channel, Integer> channelBinPtCount;
 				if (bin < 1) {
 					if (GUI.settings.excludePtsOutsideBin) {
@@ -674,15 +747,12 @@ public class ROIEditableImage {
 
 	}
 
-
 	@SuppressWarnings("deprecation")
-	private ResultsTable calculateDistances(ResultsTable input, Channel chan, Logger progress, List<Analyzer.Calculation> calculations) {
+	private ResultsTable calculateDistances(float[][] input, Channel chan, Logger progress, List<Analyzer.Calculation> calculations) {
 
 		try {
-			int idIndex = input.getColumnIndex("ID");
-			int xIndex = input.getColumnIndex(Column.X.getTitle());
-			int yIndex = input.getColumnIndex(Column.Y.getTitle());
-			if (idIndex == ResultsTable.COLUMN_NOT_FOUND || xIndex == ResultsTable.COLUMN_NOT_FOUND || yIndex == ResultsTable.COLUMN_NOT_FOUND) {
+
+			if (input[0].length == 0 || input[1].length == 0 || input[2].length == 0) {
 				ResultsTable newTable = new ResultsTable();
 				newTable.setHeading(0, "Object Num");
 				newTable.setHeading(1, "X (pixels)");
@@ -690,9 +760,9 @@ public class ROIEditableImage {
 				return newTable;
 			}
 
-			float[] ids = input.getColumn(input.getColumnIndex("ID"));
-			float[] xObjValues = input.getColumn(input.getColumnIndex(Column.X.getTitle()));
-			float[] yObjValues = input.getColumn(input.getColumnIndex(Column.Y.getTitle()));
+			float[] ids = input[0];
+			float[] xObjValues = input[1];
+			float[] yObjValues = input[2];
 
 			progress.setCurrentTask("Cleaning Data...");
 			ResultsTable newTable = new ResultsTable();
@@ -838,6 +908,25 @@ public class ROIEditableImage {
 		return null;
 
 	}
+	
+    /*private void writeObject(ObjectOutputStream stream)
+            throws IOException {
+    		stream.defaultWriteObject();
+    		HashMap<String, String> results = new HashMap<String,String>();
+    		for (Entry<String, ResultsTable> rt : this.) {
+    			rt.getValue().add
+    		}
+        stream.writeObject(name);
+        stream.writeInt(id);
+        stream.writeObject(DOB);
+    }
+
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        name = (String) stream.readObject();
+        id = stream.readInt();
+        DOB = (String) stream.readObject();
+    }*/
 
 	public static Point getStretchedPoint(Point p, int[] dimensions) {
 
