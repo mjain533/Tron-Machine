@@ -69,7 +69,7 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
-public class ROIEditableImage implements Serializable {
+public class ROIEditableImage {
 
 	private transient ImageContainer ic;
 	private Map<String, float[][]> ptsData;
@@ -355,9 +355,9 @@ public class ROIEditableImage implements Serializable {
 		
 		polygon = pgr.getPolygon();
 		this.rois.add(new PolarizedPolygonROI(name, pgr, createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))));
-		
+		/*
 		try {
-			/*File file = new File("testFileSerialize.txt");
+			File file = new File("testFileSerialize.txt");
 			FileOutputStream fileStream = new FileOutputStream(file); 
 	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
 	        // Method for serialization of object 
@@ -387,7 +387,7 @@ public class ROIEditableImage implements Serializable {
         			sb.append("(" + p.x + "," + p.y + ") ");
             }
             System.out.println("points2 = " + sb.toString()); 
-            System.out.println("positivesel = " + object1.positiveRegionIsSet());*/ 
+            System.out.println("positivesel = " + object1.positiveRegionIsSet()); 
 			
 			File file = new File("testFileSerialize.txt");
 			FileOutputStream fileStream = new FileOutputStream(file); 
@@ -416,7 +416,7 @@ public class ROIEditableImage implements Serializable {
 		 
           
         System.out.println("Object has been serialized"); 
-		
+		*/
 		this.points.clear();
 		this.cache.clear();
 
