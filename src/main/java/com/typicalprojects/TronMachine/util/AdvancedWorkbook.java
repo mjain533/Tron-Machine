@@ -49,9 +49,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
-import ij.measure.ResultsTable;
-
-
 public class AdvancedWorkbook {
 
 	private XSSFWorkbook workbook;

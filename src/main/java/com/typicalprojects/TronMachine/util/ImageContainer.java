@@ -33,33 +33,37 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+
+import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputParams;
+import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
 
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.io.FileInfo;
 import ij.io.FileSaver;
 import ij.io.Opener;
 import ij.measure.Calibration;
-import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import loci.plugins.BF;
 import loci.plugins.in.ImporterOptions;
 
-public class ImageContainer {
+public class ImageContainer implements Serializable {
 
 
+	private static final long serialVersionUID = -6576786838224324311L; // For serialization
 	private static final String INTERMED_FILES = "Intermediate Files";
 
-	private Map<OutputOption, Map<Channel, ImagePlus>> images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
+	private transient Map<OutputOption, Map<Channel, ImagePlus>> images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
 
 	private String title;
 	private transient Calibration cal;
@@ -67,51 +71,63 @@ public class ImageContainer {
 	private transient String timeOfRun;
 	private transient File imageFile;
 	private int[] dimensions;
+	private RunConfiguration runConfig;
 
-	public ImageContainer(String title, File imageFile, File outputLocation, String timeOfRun, List<OutputOption> imagesToOpen, Map<Integer, Channel> validChannels, Calibration cal) throws ImageOpenException {
+	public ImageContainer(String title, File imageFile, File outputLocation, String timeOfRun, RunConfiguration runConfig) throws ImageOpenException {
 
 		try {
-			this.cal = cal;
+			this.runConfig = runConfig;
 			this.title = title;
 			this.outputLocation = outputLocation;
 			this.timeOfRun = timeOfRun;
 			this.imageFile = imageFile;
 			makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
 
-			if (imagesToOpen.size() == 0)
-				throw new IllegalArgumentException("There are no images for " + this.title + ".");
+			ImporterOptions io = new ImporterOptions();
+			io.setId(this.imageFile.getPath());
+			io.setSplitChannels(true);
+			ImagePlus[]  ips= BF.openImagePlus(io);
+			this.cal = ips[0].getCalibration();
 
-			for (OutputOption it : imagesToOpen) {
+			if (this.cal == null) {
+				this.cal = new Calibration();
+				this.cal.xOrigin = 0;
+				this.cal.yOrigin = 0;
+				String stringCalibration = GUI.settings.calibrations.get(GUI.settings.calibrationNumber-1);
+				String[] pieces = stringCalibration.substring(stringCalibration.indexOf("(1 pixel : ") + 11, stringCalibration.lastIndexOf(")")).split(" ");
+				this.cal.setUnit(pieces[1]);
+				this.cal.pixelHeight = Double.parseDouble(pieces[0]);
+				this.cal.pixelWidth = Double.parseDouble(pieces[0]);
+
+			}
+			if (ips.length != runConfig.channelMap.size()) {
+				throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
+			}
+			Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
+			for (Entry<Integer, Channel> chanEn : runConfig.channelMap.entrySet()) {
+				if (chanEn.getKey() < ips.length) {
+					ImagePlus ip = ips[chanEn.getKey()];
+					ip.setProcessor(ip.getProcessor().convertToShortProcessor());
+					ip.setTitle(this.title + " Chan-" + chanEn.getValue().getAbbreviation());
+					if (this.dimensions == null) this.dimensions = ip.getDimensions();
+					if (GUI.settings.enforceLUTs) {
+						applyLUT(ip, chanEn.getValue());
+					} else {
+						applyCustomLUT(ip, 255, 255, 255);
+					}
+					origImages.put(chanEn.getValue(), ip);
+				} else {
+					throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
+				}
+			}
+
+			this.images.put(OutputOption.Channel, origImages);
+
+			/*for (OutputOption it : imagesToOpen) {
 				if (it.equals(OutputOption.Channel)) {
 
-					ImporterOptions io = new ImporterOptions();
-					io.setId(imageFile.getPath());
-					io.setSplitChannels(true);
-					ImagePlus[]  ips= BF.openImagePlus(io);
-					this.cal = ips[0].getCalibration();
-
-					if (this.cal != null) {
-
-					}
-					if (ips.length != validChannels.size()) {
-						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
-					}
-					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
-					for (Entry<Integer, Channel> chanEn : validChannels.entrySet()) {
-						if (chanEn.getKey() < ips.length) {
-							ImagePlus ip = ips[chanEn.getKey()];
-							ip.setProcessor(ip.getProcessor().convertToShortProcessor());
-							ip.setTitle(this.title + " Chan-" + chanEn.getValue().getAbbreviation());
-							if (this.dimensions == null) this.dimensions = ip.getDimensions();
-							this.applyLUT(ip, chanEn.getValue());
-							origImages.put(chanEn.getValue(), ip);
-						} else {
-							throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
-						}
-					}
-
-					this.images.put(OutputOption.Channel, origImages);
-				} else if (it.equals(OutputOption.ChannelTiff)) {
+					
+				} else if (it.equals(OutputOption.cha)) {
 
 					Opener opener = new Opener();
 					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
@@ -119,7 +135,7 @@ public class ImageContainer {
 					File intermediateFilesDir = getIntermediateFilesDirectory();
 
 
-					for (Channel chan : validChannels.values()){
+					for (Channel chan : runConfig.channelMap.values()){
 						File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
 						if (file.exists()) {
 							ImagePlus ip = opener.openImage(file.getPath());
@@ -131,11 +147,11 @@ public class ImageContainer {
 
 					}
 
-					if (origImages.size() != validChannels.size()) {
+					if (origImages.size() != runConfig.channelMap.size()) {
 						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 					}
 
-					this.images.put(OutputOption.ChannelTiff, origImages);
+					this.images.put(OutputOption.ChannelOrigTiff, origImages);
 				} else {
 					this.images.put(it, openSupplementalImages(it));
 					if (this.dimensions == null) {
@@ -146,7 +162,7 @@ public class ImageContainer {
 					}
 
 				}
-			}
+			}*/
 
 			if (this.dimensions[0] < 50 || this.dimensions[1] < 50) {
 				throw new Exception("Image size is too small (must be at least 50x50 pixels)");
@@ -162,9 +178,9 @@ public class ImageContainer {
 
 	}
 
-	public File getImageFile() {
+	/*public File getImageFile() {
 		return this.imageFile;
-	}
+	}*/
 
 	public Calibration getCalibration() {
 		return this.cal;
@@ -177,25 +193,34 @@ public class ImageContainer {
 	public String getImageTitle() {
 		return this.title;
 	}
-
-	public void deleteSuppImgFiles(OutputOption it) {
-		File intDir = this.getIntermediateFilesDirectory();
-		if (intDir.isDirectory()) {
-			for (File file : intDir.listFiles()) {
-				if (!file.isDirectory() && file.getName().endsWith(".tiff") && file.getName().substring(0, file.getName().lastIndexOf(".tiff")).endsWith(it.getImageSuffix())) {
-					file.delete();
-				}
-			}
-		}
-
+	
+	/**
+	 * @return run configuration for this image (may differ from current settings in preferences if reloading data)
+	 */
+	public RunConfiguration getRunConfig() {
+		return this.runConfig;
 	}
+	
+	/**
+	 * Adds an image to this image container (does not save it)
+	 * 
+	 * @param option
+	 * @param chan
+	 * @param image
+	 */
+	public void addImage(OutputOption option, Channel chan, ImagePlus image) {
 
+		if (!this.images.containsKey(option))
+			this.images.put(option, new HashMap<Channel, ImagePlus>());
 
+		this.images.get(option).put(chan, image);
+	}
+	
 	/**
 	 * 
 	 * @throws NullPointerException if channel doesn't exist or originals aren't open.
 	 */
-	public ImagePlus getChannelOrig(Channel channel, boolean duplicate) throws NullPointerException {
+	public ImagePlus getChannelOrig(Channel channel, boolean duplicate) throws UnopenedException {
 
 		ImagePlus ip = getOriginals().get(channel);
 
@@ -210,19 +235,52 @@ public class ImageContainer {
 			return ip;
 		}
 	}
-
-	public Map<Channel, ImagePlus> getOriginals() {
+	
+	/**
+	 * Retrieves original images (split by channel)
+	 * 
+	 * @return Original image stacks (slice-modified if this step has been completed)
+	 * @throws UnopenedException if originals are not in this image container
+	 */
+	public Map<Channel, ImagePlus> getOriginals() throws UnopenedException {
 		Map<Channel, ImagePlus> ips = this.images.get(OutputOption.Channel);
-		if (ips != null)
+		if (ips == null)
+			throw new UnopenedException();
+		else 
 			return ips;
-		else {
-			ips = this.images.get(OutputOption.ChannelTiff);
-			if (ips != null)
-				return ips;
-			else
-				throw new UnopenedException();
-		}
 	}
+	
+	/**
+	 * Removes the original images from this image container, optionally saving. If originals are not part of
+	 * this IC, then do nothing.
+	 * 
+	 * @param save if should save the tiff stacks while at it.
+	 */
+	public void removeOriginal(Channel chan, boolean save) {
+		
+		Map<Channel, ImagePlus> originals = this.images.get(OutputOption.Channel);
+		if (originals == null || !originals.containsKey(chan))
+			return;
+		if (save) {
+			
+			ImagePlus orig = originals.get(chan);
+			if (orig.isStack()) {
+				new FileSaver(orig).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbreviation() + ".tiff");
+
+			} else {
+				new FileSaver(orig).saveAsTiff(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbreviation() + ".tiff");
+
+			}
+
+		}
+		originals.remove(chan);
+		if (originals.isEmpty())
+			this.images.remove(OutputOption.Channel);
+	}
+	
+	// TOOD: make sure that the logging is okay. Stopped using open() from ImagePhantom, which normally does some logging,
+	// so make sure this still is good.
+	
 
 	/**
 	 * 
@@ -263,6 +321,8 @@ public class ImageContainer {
 		}
 
 	}
+	
+	// TODO: test which methods after this one are actually relevant/necessary
 
 	public Map<Channel, ImagePlus> openSupplementalImages(OutputOption it) {
 
@@ -349,27 +409,6 @@ public class ImageContainer {
 		return null;
 	}
 
-
-	public void setSliceRegion(int lowSlice, int highSlice) {
-
-		Map<Channel, ImagePlus> originals = getOriginals();
-		if (originals == null)
-			throw new NullPointerException();
-
-		for (Entry<Channel, ImagePlus> en : originals.entrySet()) {
-			ImageStack is = en.getValue().getStack().duplicate();
-			for (int s = (is.getSize() - highSlice); s > 0; s--) {
-				is.deleteLastSlice();
-			}
-
-			for (int s = lowSlice; s > 1; s--) {
-				is.deleteSlice(1);
-			}
-			en.setValue(new ImagePlus(en.getValue().getTitle(), is));
-		}
-
-	}
-
 	private void deleteResultsTables() {
 		File intDir = getIntermediateFilesDirectory();
 		if (intDir.isDirectory()) {
@@ -397,7 +436,7 @@ public class ImageContainer {
 									break;
 								}
 							}
-							
+
 						} else if (file.getName().endsWith(" " + en.getKey().getImageSuffix() + ".tiff")) {
 							if (en.getKey().getRestrictedOption() == OutputOption.NO_CHANS) {
 								delete = false;
@@ -420,13 +459,6 @@ public class ImageContainer {
 		}
 	}
 
-	public void saveOrigImageStacksAsTiffs() {
-
-		for (Entry<Channel, ImagePlus> en : this.images.get(OutputOption.Channel).entrySet()) {
-
-			new FileSaver(en.getValue()).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + en.getKey() + ".tiff");
-		}
-	}
 
 	public void saveResultsTables(Map<String, ResultsTable> results, boolean excel) {
 
@@ -450,23 +482,27 @@ public class ImageContainer {
 			}
 
 			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
-			return;
-		}
-
-		for (Entry<String, ResultsTable> en : results.entrySet()) {
-			if (en.getValue() != null) {
-				try {
-					en.getValue().saveAs(getIntermediateFilesDirectory() + File.separator + this.title + " results " + en.getKey() + ext);
-				} catch (IllegalStateException e) {
-					// Wont happen
-					e.printStackTrace();
-				} catch (IOException e) {
-					// Wont happen
-					e.printStackTrace();
+		} else {
+			for (Entry<String, ResultsTable> en : results.entrySet()) {
+				if (en.getValue() != null) {
+					try {
+						PrintWriter pw = new PrintWriter(new File(getIntermediateFilesDirectory() + File.separator + this.title + " results " + en.getKey() + ext));
+						pw.write(en.getValue().convertToString());
+						pw.flush();
+						pw.close();
+					} catch (IllegalStateException e) {
+						// Wont happen
+						e.printStackTrace();
+					} catch (IOException e) {
+						// Wont happen
+						e.printStackTrace();
+					}
 				}
-			}
 
+			}
 		}
+
+
 
 
 	}
@@ -487,26 +523,36 @@ public class ImageContainer {
 			new FileSaver(image).saveAsTiff(savePath);
 
 		}
-		if (!this.images.containsKey(it))
-			this.images.put(it, new HashMap<Channel, ImagePlus>());
-
-		this.images.get(it).put(chan, image);
+		
 	}
 
-	public Map<String, ResultsTable> tryToOpenResultsTables() {
+	public Map<String, ResultsTable> tryToOpenResultsTablesFromTxt() {
 
-
-		File intermediateFilesDir = getIntermediateFilesDirectory(this.title, this.outputLocation, timeOfRun);
+		File intermediateFilesDir = getIntermediateFilesDirectory();
 
 		Map<String, ResultsTable> results = new HashMap<String, ResultsTable>();
 
 		if (intermediateFilesDir.isDirectory()) {
 			for (File file : intermediateFilesDir.listFiles()) {
 				if (!file.isDirectory() && file.getName().endsWith(".txt") && file.getName().contains(" results ")) {
+					
 
-					String nameNoExt = file.getName().substring(0, file.getName().indexOf(".txt"));
-					String name = nameNoExt.substring(nameNoExt.lastIndexOf(" results ") + 9);
-					results.put(name, ResultsTable.open2(file.getPath()));
+					try {
+						ResultsTable rt = new ResultsTable();
+						String nameNoExt = file.getName().substring(0, file.getName().indexOf(".txt"));
+						String name = nameNoExt.substring(nameNoExt.lastIndexOf(" results ") + 9);
+						FileInputStream fis = new FileInputStream(file);
+						byte[] data = new byte[(int) file.length()];
+						fis.read(data);
+						fis.close();
+						rt.loadFromString(new String(data, "UTF-8"));
+						results.put(name, rt);
+					} catch (UnsupportedEncodingException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+	
 
 
 				}
@@ -655,6 +701,18 @@ public class ImageContainer {
 		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun + File.separator + INTERMED_FILES);
 
 	}
+	
+	public File getSerializeDirectory()throws IllegalStateException {
+		if (this.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		File serializeDir = new File(getIntermediateFilesDirectory().getPath() + File.separator + "Serialization");
+		if (serializeDir.exists())
+			serializeDir.mkdir();
+		
+		return serializeDir;
+
+	}
 
 	public static File getSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
 
@@ -672,8 +730,31 @@ public class ImageContainer {
 		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun + File.separator + INTERMED_FILES);
 
 	}
+	
+	public static void applyCustomLUT(ImagePlus imp, int red, int green, int blue) {
+		FileInfo fi = new FileInfo();
+		fi.reds = new byte[256]; 
+		fi.greens = new byte[256]; 
+		fi.blues = new byte[256];
+		fi.lutSize = 256;
+		
+		for (int i=0; i<256; i++) {
+			fi.reds[i] = (byte)(red * (i / 255.0));
+			fi.greens[i] = (byte)(green * (i / 255.0));
+			fi.blues[i] = (byte)(blue * (i / 255.0));
+		
+		}
+		
+		fi.fileName = "CustomLUT";
+		ImageProcessor ip = imp.getChannelProcessor();
+		IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
+		ip.setColorModel(cm);
+		if (imp.getStackSize()>1)
+			imp.getStack().setColorModel(cm);
+		imp.updateImage();
+	}
 
-	public void applyLUT(ImagePlus imp, Channel chan) {
+	public static void applyLUT(ImagePlus imp, Channel chan) {
 
 
 		FileInfo fi = new FileInfo();
@@ -691,6 +772,9 @@ public class ImageContainer {
 		case BLUE:
 			primaryColor(1, fi.reds, fi.greens, fi.blues);
 			break;
+		case WHITE:
+			applyCustomLUT(imp, 255, 255, 255);
+			return;
 		default:
 			return;
 		}
@@ -705,23 +789,16 @@ public class ImageContainer {
 
 	}
 
-	public void printContents() {
-		for (Entry<OutputOption, Map<Channel, ImagePlus>> images : this.images.entrySet()) {
-			for (Entry<Channel, ImagePlus> imagesEn : images.getValue().entrySet()) {
-				System.out.println(images.getKey().getDisplay() + " : " + imagesEn.getKey().abbrev);
 
-			}
-		}
-	}
-
-	private void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
+	private static void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
 		for (int i=0; i<256; i++) {
-			if ((color&4)!=0)
+			if ((color&4)!=0) {
 				reds[i] = (byte)i;
-			if ((color&2)!=0)
+			} else if ((color&2)!=0) {
 				greens[i] = (byte)i;
-			if ((color&1)!=0)
+			} else if ((color&1)!=0) {
 				blues[i] = (byte)i;
+			}
 		}
 		return;
 	}
@@ -742,6 +819,7 @@ public class ImageContainer {
 		ImageContainer object1 = null;
 		try {
 			object1 = (ImageContainer)in.readObject();
+			object1.images.get(OutputOption.Channel).get(Channel.BLUE).show();
 		} catch (ClassNotFoundException e) {
 			in.close();
 			fileInput.close();
@@ -754,36 +832,82 @@ public class ImageContainer {
 
 	}
 
-	/*private void writeObject(ObjectOutputStream stream)
+	private void writeObject(ObjectOutputStream stream)
 			throws IOException {
+
+		// NOTE: this may need to be adjusted for future updates.
+
 		stream.defaultWriteObject();
 		stream.writeDouble(cal.pixelWidth);
 		stream.writeDouble(cal.pixelHeight);
+		stream.writeUTF(cal.getUnit());
 		int numImages = 0;
 		for (Map<Channel, ImagePlus> images : this.images.values()) {
 			numImages = numImages + images.size();
 		}
 		stream.writeInt(numImages);
 		for (Entry<OutputOption, Map<Channel,ImagePlus>> imagesEn : this.images.entrySet()) {
-			for (Entry<Channel, ImageP>)
-				stream.writeChars(imagesEn.getKey().getCondensed());
-					stream.writeObject(imagesEn.);
-					stream.write
+			for (Entry<Channel, ImagePlus> imageEn : imagesEn.getValue().entrySet()) {
+				stream.writeUTF(imagesEn.getKey().getCondensed());
+				stream.writeUTF(imageEn.getKey().toReadableString());
+				stream.flush();
+				byte[] bytes = new FileSaver(imageEn.getValue()).serialize();
+				stream.writeInt(bytes.length);
+				/*ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+				if (imageEn.getKey().equals(Channel.GREEN)) {
+					imageEn.getValue().show();
+				}
+				;
+		        ImageIO.write(new FileSaver(imageEn.getValue()).serialize(), "tiff", buffer);*/
+		        stream.write(bytes);
+		        /*stream.writeInt(buffer.size()); // Prepend image with byte count
+		        buffer.writeTo(stream);   */ 
+				stream.flush();
+			}
 		}
+
 
 	}
 
 	private void readObject(ObjectInputStream stream)
 			throws IOException, ClassNotFoundException {
+
+		// NOTE: this may need to be adjusted for future updates.
+
+		// initialize transient vars
+		this.images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
+		this.imageFile = null;
+
+		// read serialized object
 		stream.defaultReadObject();
 		this.cal = new Calibration();
 		this.cal.xOrigin = 0;
 		this.cal.yOrigin = 0;
 		this.cal.pixelWidth = stream.readDouble();
 		this.cal.pixelHeight = stream.readDouble();
+		this.cal.setUnit(stream.readUTF());
 		this.timeOfRun = GUI.dateString;
 		this.outputLocation = GUI.settings.outputLocation;
-		this.imageFile = null;
-	}*/
+		int numImages = stream.readInt();
+		Opener opener = new Opener();
+		for (int i = 0; i < numImages; i++) {
+			OutputOption outputOption = OutputOption.fromCondensed((String) stream.readUTF());
+			String chanString = (String) stream.readUTF();
+			Channel chan = Channel.parse(chanString); // May need to update
+			
+			int size = stream.readInt(); // Read byte count
+
+	        byte[] buffer = new byte[size];
+	        stream.readFully(buffer); // Make sure you read all bytes of the image
+
+			ImagePlus image = opener.deserialize(buffer);
+			Map<Channel,ImagePlus> optionImages = this.images.get(outputOption);
+			if (optionImages == null) {
+				optionImages = new HashMap<Channel,ImagePlus>();
+				this.images.put(outputOption, optionImages);
+			}
+			optionImages.put(chan, image);
+		}
+	}
 
 }

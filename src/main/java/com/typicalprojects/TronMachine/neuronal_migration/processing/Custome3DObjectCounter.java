@@ -26,9 +26,9 @@
 package com.typicalprojects.TronMachine.neuronal_migration.processing;
 
 import com.typicalprojects.TronMachine.util.Logger;
+import com.typicalprojects.TronMachine.util.ResultsTable;
 
 import ij.ImagePlus;
-import ij.measure.ResultsTable;
 
 public class Custome3DObjectCounter {
 

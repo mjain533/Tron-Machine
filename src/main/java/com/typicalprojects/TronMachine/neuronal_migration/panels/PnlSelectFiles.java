@@ -255,7 +255,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 								maxLength = length;
 							}
 							int indexOf = container.file.getName().lastIndexOf('.');
-							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getLogger(), null));
+							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getLogger(), GUI.settings.createChannelSnapshot()));
 						}
 						if (processor != null) {
 							gui.getWizard().nextState(futureImages);

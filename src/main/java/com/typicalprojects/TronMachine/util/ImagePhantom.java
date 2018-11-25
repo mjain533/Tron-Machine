@@ -26,27 +26,23 @@
 package com.typicalprojects.TronMachine.util;
 
 import java.io.File;
-import java.util.List;
-import java.util.Map;
 
-import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
+import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
 import com.typicalprojects.TronMachine.util.ImageContainer.ImageOpenException;
 
-import ij.measure.Calibration;
 
 public class ImagePhantom {
 	private ImageContainer ic;
 	private File imageFile;
 	private Logger logger;
 	private String title;
-	private Calibration cal;
+	private RunConfiguration runConfig;
 
-	public ImagePhantom(File imageFile, String titleNoExtension, Logger logger, Calibration cal) {
+	public ImagePhantom(File imageFile, String titleNoExtension, Logger logger, RunConfiguration runConfig) {
 		this.title = titleNoExtension;
 		this.imageFile = imageFile;
 		this.logger = logger;
-		this.cal = cal;
+		this.runConfig = runConfig;
 	}
 
 	public File getImageFile() {
@@ -56,11 +52,11 @@ public class ImagePhantom {
 		return this.title;
 	}
 
-	public String open(Map<Integer, Channel> validChannels, File resaveOutputDir, String timeOfRun, List<OutputOption> imagesToOpen) {
+	public String openOriginal(File resaveOutputDir, String timeOfRun) {
 		// As one CZI
 		logger.setCurrentTask("Opening " + title + "...");
 		try {
-			ic = new ImageContainer(title, this.imageFile, resaveOutputDir, timeOfRun, imagesToOpen, validChannels, this.cal);
+			ic = new ImageContainer(title, this.imageFile, resaveOutputDir, timeOfRun, this.runConfig);
 			logger.setCurrentTaskComplete();
 			return null;
 

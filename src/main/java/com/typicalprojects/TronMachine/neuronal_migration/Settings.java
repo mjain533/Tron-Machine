@@ -58,6 +58,7 @@ public class Settings {
 	public Map<Integer, ImageContainer.Channel> channelMap = new HashMap<Integer, ImageContainer.Channel>();
 	public List<Channel> channelsToProcess = null;
 	public File outputLocation = null;
+	public boolean saveIntermediates = false;
 	public List<File> recentOpenFileLocations = null;
 	public List<File> recentOpenAnalysisOutputLocations = null;
 	public boolean calculateBins = true;
@@ -72,6 +73,7 @@ public class Settings {
 	public double processingGaussianSigma = 0.5;
 	public List<String> calibrations = null;
 	public int calibrationNumber = -1;
+	public boolean enforceLUTs = true;
 	public LinkedHashMap<OutputOption, OutputParams> enabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
 	public LinkedHashMap<OutputOption, OutputParams> disabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
 
@@ -93,9 +95,14 @@ public class Settings {
 
 	protected Settings() {} // restrict access
 	
+	public RunConfiguration createChannelSnapshot() {
+		return new RunConfiguration(this);
+	}
+	
 	public static class SettingsLoader {
 
 		private static final String keyChanMap = "ChannelMapping";
+		private static final String keySaveInt = "SaveIntermediates";
 		private static final String keyOutputLocation = "OutputLocation";
 		private static final String keyChansToProcess = "ChannelsToProcess";
 		private static final String keyChanDraw = "RoiPrimaryDrawChan";
@@ -112,6 +119,7 @@ public class Settings {
 		private static final String keyProcessingGaussianSigma = "GaussianSigma";
 		private static final String keyCalibrations = "Calibrations";
 		private static final String keySelectedCalibration = "SelectedCalibration";
+		private static final String keyEnforceLUTs = "EnforceLUTs";
 		private static final String keyOutputOptionsEnabled = "OutputOptionsEnabled";
 		private static final String keyOutputOptionsDisabled = "OutputOptionsDisabled";
 
@@ -179,6 +187,9 @@ public class Settings {
 			// Roi draw
 			settings.primaryRoiDrawChannel = Channel.parse((String) dataToParse.get(keyChanDraw));
 
+			// Save intermediates
+			settings.saveIntermediates = (boolean) dataToParse.get(keySaveInt);
+			
 			// Output location
 			String path = (String) dataToParse.get(keyOutputLocation);
 			if (path.equals("None")) {
@@ -235,6 +246,7 @@ public class Settings {
 			// Calibrations
 			settings.calibrations = (List<String>) dataToParse.get(keyCalibrations);
 			settings.calibrationNumber = (Integer) dataToParse.get(keySelectedCalibration);
+			settings.enforceLUTs = (boolean) dataToParse.get(keyEnforceLUTs);
 			
 			// OutputOptions
 			Map<OutputOption, OutputParams> enabledOptionsTemp = new HashMap<OutputOption, OutputParams>();
@@ -259,9 +271,13 @@ public class Settings {
 			}
 			Map<OutputOption, OutputParams> disabledOptionsTemp = new HashMap<OutputOption, OutputParams>();
 			for (String outputOptionString : (List<String>) dataToParse.get(keyOutputOptionsDisabled)) {
+				
 				OutputOption option = OutputOption.fromCondensed(outputOptionString.substring(0, outputOptionString.indexOf("(")));
-				if (option == null)
-					throw new NullPointerException("Invalid Settings Configuration");
+				if (option == null) {
+					settings.needsUpdate = true;
+					continue;
+				}
+				
 				OutputParams outputOption = new OutputParams(option);
 				String chanString = outputOptionString.substring(outputOptionString.indexOf("(") + 1, outputOptionString.indexOf(")"));
 				if (chanString != null && !chanString.equals("")) {
@@ -315,6 +331,9 @@ public class Settings {
 			// Roi primary
 			newSettings.put(keyChanDraw, settings.primaryRoiDrawChannel.toReadableString());
 
+			// Save int
+			newSettings.put(keySaveInt, settings.saveIntermediates);
+			
 			// Recent open locations
 			List<String> listOpens = new ArrayList<String>();
 			for (File recentLocation : settings.recentOpenFileLocations) {
@@ -345,6 +364,7 @@ public class Settings {
 			// Calibration
 			newSettings.put(keyCalibrations, settings.calibrations);
 			newSettings.put(keySelectedCalibration, settings.calibrationNumber);
+			newSettings.put(keyEnforceLUTs, settings.enforceLUTs);
 			
 			// Settings
 			List<String> outputOptionEnabledStrings = new ArrayList<String>();

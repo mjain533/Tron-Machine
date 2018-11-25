@@ -7,6 +7,7 @@ ChannelsToProcess:
 - Red
 - Green
 RoiPrimaryDrawChan: Blue
+SaveIntermediates: true
 OutputLocation: None
 RecentOpens: []
 RecentAnalysisOpen: []
@@ -22,6 +23,7 @@ GaussianSigma: 0.5
 Calibrations:
 - 'Default (one pixel : 1.0 microns)'
 SelectedCalibration: 1
+EnforceLUTs: true
 OutputOptionsEnabled:
 - ROIDraw(B)
 - ROIDrawF(G,R)
@@ -30,7 +32,6 @@ OutputOptionsEnabled:
 - DotsNoNum(G,R)
 OutputOptionsDisabled:
 - Chan()
-- ChanTiff()
 - MaxedChan()
 - ROIDrawD()
 - RoiDrawBlank()

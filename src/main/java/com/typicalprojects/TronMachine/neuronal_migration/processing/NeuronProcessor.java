@@ -25,8 +25,7 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration.processing;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -39,13 +38,12 @@ import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard;
 import com.typicalprojects.TronMachine.util.ImageContainer;
-import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.Logger;
+import com.typicalprojects.TronMachine.util.ResultsTable;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 import ij.IJ;
 import ij.ImagePlus;
-import ij.measure.ResultsTable;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.ZProjector;
 
@@ -54,79 +52,92 @@ public class NeuronProcessor {
 	public static final String SUPP_LBL_MASK = "mask";
 	public static final String SUPP_LBL_ORIGINAL = "original";
 
-	private final List<ImagePhantom> imagesDoneProcessing;
-	private final List<ImagePhantom> imagesToProcess;
-	private final List<Channel> channelsToProcess;
+	private final List<File> imagesToProcess;
 	private Thread threadProcessor;
 	private volatile boolean cancelled = false;
 
-	public NeuronProcessor(List<ImagePhantom> images, final Logger progressReporter, final Wizard wizard, List<Channel> chansToProcess) {
+	public NeuronProcessor(List<File> serializedLocations, final Logger progressReporter, final Wizard wizard) {
 
-		this.imagesToProcess = images;
-		this.imagesDoneProcessing = new LinkedList<ImagePhantom>();
-		this.channelsToProcess = chansToProcess;
+		this.imagesToProcess = serializedLocations;
 
 		threadProcessor = new Thread(new Runnable() {
 			public void run(){
+				LinkedList<File> imagesDoneProcessing = new LinkedList<File>();
+
 				try {
 
-					Iterator<ImagePhantom> itr = imagesToProcess.iterator();
+					Iterator<File> itr = imagesToProcess.iterator();
 
 					while (!cancelled && itr.hasNext()) {
-						ImagePhantom pi = itr.next();
-						String error = pi.open(GUI.settings.channelMap, GUI.settings.outputLocation, GUI.dateString, new ArrayList<OutputOption>(Arrays.asList(OutputOption.ChannelTiff)));
-						if (error != null) {
-							error(error, wizard);
+						
+						log(progressReporter, "Opening image....");
+
+						PreprocessedEditableImage preProcessedImage = PreprocessedEditableImage.loadPreprocessedImage(itr.next());
+						logDone(progressReporter);
+						
+						if (preProcessedImage == null) {
+							error("Could not reload saved preprocess state for image.", wizard);
 							return;
 						}
-						ImageContainer container = pi.getIC();
-						log(progressReporter, "Processing image: " + pi.getTitle() + "");
-
-
+						ImageContainer ic = preProcessedImage.getContainer();
+						log(progressReporter, "Processing image: " + ic.getImageTitle() + "");
 
 						Map<String, ResultsTable> tables = new HashMap<String, ResultsTable>();
 						ZProjector projector = new ZProjector();
-						Map<Channel, ImagePlus> chanMap = container.getOriginals();
-						for (Channel chan : GUI.settings.getChannels()) {
-							if (channelsToProcess.contains(chan)) {
-								log(progressReporter, "Processing " + chan.name() + " channel...");
-								Object[] chanProcessed = processChannel(chanMap.get(chan), progressReporter);
+						Map<Channel, ImagePlus> chanMap = ic.getOriginals();
+						for (Channel chan : ic.getRunConfig().channelMap.values()) {
+							if (ic.getRunConfig().channelsToProcess.contains(chan)) {
+								log(progressReporter, "Processing Channel: " + chan.name());
+
+								Object[] chanProcessed = processChannel(chanMap.get(chan), progressReporter, chan);
 								if (cancelled)
 									return;
-
-								container.saveSupplementalImage(OutputOption.ProcessedObjectsOriginal, (ImagePlus) chanProcessed[0], chan);
-								container.saveSupplementalImage(OutputOption.MaxedChannel, (ImagePlus) chanProcessed[1], chan);
-								container.saveSupplementalImage(OutputOption.ProcessedObjects, (ImagePlus) chanProcessed[2], chan);								
+								
+								ic.addImage(OutputOption.ProcessedObjectsOriginal, chan, (ImagePlus) chanProcessed[0]);
+								ic.addImage(OutputOption.MaxedChannel, chan, (ImagePlus) chanProcessed[1]);
+								ic.addImage(OutputOption.ProcessedObjects, chan, (ImagePlus) chanProcessed[2]);
 								
 								tables.put(chan.name(), (ResultsTable) chanProcessed[3]);
+								
 							} else {
-								projector.setImage(container.getChannelOrig(chan, true));
+								projector.setImage(ic.getChannelOrig(chan, true));
 								projector.setMethod(ZProjector.MAX_METHOD);
 								projector.doProjection();
-								container.saveSupplementalImage(OutputOption.MaxedChannel, projector.getProjection(), chan);
+								ic.addImage(OutputOption.MaxedChannel, chan, projector.getProjection());
 
 							}
+							
+							ic.removeOriginal(chan, GUI.outputOptionContainsChannel(OutputOption.Channel, chan));
+
 						}
 						
-
-						log(progressReporter, "Saving " + pi.getTitle() + "...");
-						container.saveResultsTables(tables, false);
-						imagesDoneProcessing.add(new ImagePhantom(pi.getImageFile(), container.getImageTitle(), progressReporter, container.getCalibration()));
+						
+						log(progressReporter, "Saving " + ic.getImageTitle() + "...");
+						ObjectEditableImage oei = preProcessedImage.convertToObjectEditableImage(tables);
+						
+						tables = null;
+						preProcessedImage.deleteSerializedVersion(ic.getSerializeDirectory());
+						ic = null;
+						preProcessedImage = null;
+						
+						ObjectEditableImage.saveObjEditableImage(oei, oei.getContainer().getSerializeDirectory());
+						imagesDoneProcessing.add(oei.getContainer().getSerializeDirectory());
 						logDone(progressReporter);
 						
-						container = null;
-						pi = null;
-
+						oei = null;
 						itr.remove();
 						System.gc();
+						
+					
 
 					}
+					
+					System.gc();
+					progressReporter.setCurrentTask("Processing complete.");
 
 					if (!cancelled) {
 						wizard.nextState(imagesDoneProcessing);
 					}
-					System.gc();
-					progressReporter.setCurrentTask("Processing complete.");
 				} catch (OutOfMemoryError error) {
 					JOptionPane.showMessageDialog(null, "Java run out of memory!", "Out of Memory", JOptionPane.ERROR_MESSAGE);
 					wizard.cancel();
@@ -154,8 +165,8 @@ public class NeuronProcessor {
 		this.threadProcessor.start();
 	}
 
-	private Object[] processChannel(ImagePlus originalImg, Logger progressReporter) {
-
+	private Object[] processChannel(ImagePlus originalImg, Logger progressReporter, Channel chan) {
+		System.out.println(originalImg.getStackSize());
 		ImagePlus duplicate = originalImg.duplicate();
 		duplicate.setTitle(duplicate.getTitle().substring(4));
 		
@@ -193,7 +204,7 @@ public class NeuronProcessor {
 		counter.run(progressReporter, this);
 		if (this.cancelled)
 			return null;
-		log(progressReporter, "Objects founds.");
+		log(progressReporter, "Objects found.");
 
 		counter.getStats();
 		log(progressReporter, "Processing maps...");
@@ -221,7 +232,9 @@ public class NeuronProcessor {
 		impFinal = projector.getProjection();
 		logDone(progressReporter);
 		System.gc();
-		return new Object[] {impFinal, maxProject(originalImg), maxProject(counter.getObjectMap()), counter.getStats()};
+		ImagePlus maxedOriginal = maxProject(originalImg);
+		ImageContainer.applyLUT(maxedOriginal, chan);
+		return new Object[] {impFinal, maxedOriginal, maxProject(counter.getObjectMap()), counter.getStats()};
 	}
 
 	private void log(Logger progressReporter, String info) {

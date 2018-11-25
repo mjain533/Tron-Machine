@@ -928,6 +928,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel {
 }
 class PnlSaveOptions extends JPanel implements SettingsPanel {
 
+
 	private static final long serialVersionUID = -1576497004345094528L;
 	protected JTextField fullPathName;
 	protected JTextField folderName;
@@ -936,6 +937,9 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 	protected FileBrowser fileBrowser;
 	private JPanel thisObject = this;
 	private static final SettingPage setttingPage = SettingPage.Saving;
+	private JPanel pnlSaveIntermediates;
+	private JLabel lblSaveInt;
+	private JCheckBox chkSaveInts;
 
 	/**
 	 * Create the panel.
@@ -1026,43 +1030,80 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumFont);
 		lblError.setForeground(Color.RED);
+		
+		pnlSaveIntermediates = new JPanel();
+		pnlSaveIntermediates.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlSaveIntermediates.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlSaveIntermediates.setBackground(new Color(211, 211, 211));
+		
+		lblSaveInt = new JLabel("Intermediate States");
+		GroupLayout gl_pnlSaveIntermediates = new GroupLayout(pnlSaveIntermediates);
+		gl_pnlSaveIntermediates.setHorizontalGroup(
+			gl_pnlSaveIntermediates.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 426, Short.MAX_VALUE)
+				.addGap(0, 424, Short.MAX_VALUE)
+				.addGroup(gl_pnlSaveIntermediates.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblSaveInt, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		gl_pnlSaveIntermediates.setVerticalGroup(
+			gl_pnlSaveIntermediates.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 23, Short.MAX_VALUE)
+				.addComponent(lblSaveInt, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
+		);
+		pnlSaveIntermediates.setLayout(gl_pnlSaveIntermediates);
+		
+		JLabel lblIntInstructions = new JLabel("<html>By checking the box below, the state of processing will be saved after object selection (including manual adjustments) and after ROI selection. You can then begin processing at one of these intermediate states at a later point. This may be useful, for instance, if you want to change the number of Bins for Binning Output but do not want to redo processing, object selection, and ROI selection.</html>");
+		
+		chkSaveInts = new JCheckBox("Save Intermediate States");
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-				groupLayout.createParallelGroup(Alignment.LEADING)
+			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-						.addContainerGap()
-						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(fullPathName, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-								.addComponent(pnlOutputLocation, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-								.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
-										.addComponent(lblFolderName)
-										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(folderName, GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
-										.addPreferredGap(ComponentPlacement.UNRELATED)
-										.addComponent(btnBrowseFolders))
-								.addComponent(lblFullPath)
-								.addComponent(lblError))
-						.addContainerGap())
-				);
-		groupLayout.setVerticalGroup(
-				groupLayout.createParallelGroup(Alignment.LEADING)
-				.addGroup(groupLayout.createSequentialGroup()
-						.addContainerGap()
-						.addComponent(pnlOutputLocation, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-						.addPreferredGap(ComponentPlacement.UNRELATED)
-						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(btnBrowseFolders)
-								.addComponent(lblFolderName)
-								.addComponent(folderName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE))
-						.addPreferredGap(ComponentPlacement.RELATED)
+					.addContainerGap()
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addComponent(chkSaveInts)
+						.addComponent(fullPathName, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+						.addComponent(pnlOutputLocation, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+						.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
+							.addComponent(lblFolderName)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(folderName, GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
+							.addPreferredGap(ComponentPlacement.UNRELATED)
+							.addComponent(btnBrowseFolders))
+						.addComponent(lblIntInstructions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+						.addComponent(pnlSaveIntermediates, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
 						.addComponent(lblFullPath)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(fullPathName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE)
-						.addPreferredGap(ComponentPlacement.RELATED, 234, Short.MAX_VALUE)
-						.addComponent(lblError)
-						.addContainerGap())
-				);
+						.addComponent(lblError, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE))
+					.addContainerGap())
+		);
+		groupLayout.setVerticalGroup(
+			groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(pnlOutputLocation, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnBrowseFolders)
+						.addComponent(lblFolderName)
+						.addComponent(folderName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE))
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(lblFullPath)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(fullPathName, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(pnlSaveIntermediates, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(lblIntInstructions)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(chkSaveInts)
+					.addPreferredGap(ComponentPlacement.RELATED, 110, Short.MAX_VALUE)
+					.addComponent(lblError)
+					.addContainerGap())
+		);
 		setLayout(groupLayout);
 
 	}
@@ -1084,6 +1125,12 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 			folderName.setText(settings.outputLocation.getName());
 			fullPathName.setText(settings.outputLocation.getPath());
 		}
+		
+		this.chkSaveInts.setSelected(settings.saveIntermediates);
+		
+		for (Component component : this.getComponents()) {
+			component.setEnabled(enabled);
+		}
 		this.btnBrowseFolders.setEnabled(enabled);
 
 	}
@@ -1104,6 +1151,7 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		} else {
 			settings.outputLocation = null;
 		}
+		settings.saveIntermediates = this.chkSaveInts.isSelected();
 		return true;
 	}
 
@@ -1111,7 +1159,6 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		return setttingPage;
 	}
 
-	@Override
 	public JPanel getRawComponent() {
 		return this;
 	}
@@ -1545,6 +1592,7 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 	private SimpleJList<String> calibrationList;
 	private JPanel jpanel;
 	private boolean dontadjust = false;
+	private JCheckBox chkEnforceLUTs;
 
 	/**
 	 * Create the panel.
@@ -1660,42 +1708,81 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 
 			}
 		});
+		
+		JPanel pnlColoring = new JPanel();
+		pnlColoring.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlColoring.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlColoring.setBackground(new Color(211, 211, 211));
+		
+		JLabel lblColoring = new JLabel("Coloring");
+		GroupLayout gl_pnlColoring = new GroupLayout(pnlColoring);
+		gl_pnlColoring.setHorizontalGroup(
+			gl_pnlColoring.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 492, Short.MAX_VALUE)
+				.addGroup(gl_pnlColoring.createSequentialGroup()
+					.addContainerGap()
+					.addComponent(lblColoring, GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+					.addContainerGap())
+		);
+		gl_pnlColoring.setVerticalGroup(
+			gl_pnlColoring.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 23, Short.MAX_VALUE)
+				.addComponent(lblColoring, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 23, Short.MAX_VALUE)
+		);
+		pnlColoring.setLayout(gl_pnlColoring);
+		
+		chkEnforceLUTs = new JCheckBox("Enforce LUTs (false coloring)");
 
 		GroupLayout groupLayout = new GroupLayout(this);
 		groupLayout.setHorizontalGroup(
-				groupLayout.createParallelGroup(Alignment.LEADING)
+			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-						.addContainerGap()
-						.addGroup(groupLayout.createParallelGroup(Alignment.TRAILING)
-								.addGroup(groupLayout.createSequentialGroup()
-										.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-												.addComponent(pnlPixelConverstions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-												.addComponent(lblError, Alignment.TRAILING)
-												.addComponent(lblCalibration)
-												.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 506, Short.MAX_VALUE))
-										.addContainerGap())
-								.addGroup(groupLayout.createSequentialGroup()
-										.addComponent(btnRemove)
-										.addPreferredGap(ComponentPlacement.RELATED, 275, Short.MAX_VALUE)
-										.addComponent(btnNewCalibration))))
-				);
+					.addContainerGap()
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(chkEnforceLUTs)
+							.addContainerGap())
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+							.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
+								.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+									.addComponent(pnlPixelConverstions, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+									.addComponent(lblCalibration)
+									.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE))
+								.addContainerGap())
+							.addGroup(Alignment.TRAILING, groupLayout.createSequentialGroup()
+								.addComponent(btnRemove)
+								.addPreferredGap(ComponentPlacement.RELATED, 290, Short.MAX_VALUE)
+								.addComponent(btnNewCalibration))
+							.addGroup(groupLayout.createSequentialGroup()
+								.addComponent(pnlColoring, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+								.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+						.addGroup(groupLayout.createSequentialGroup()
+							.addComponent(lblError)
+							.addContainerGap(474, Short.MAX_VALUE))))
+		);
 		groupLayout.setVerticalGroup(
-				groupLayout.createParallelGroup(Alignment.LEADING)
+			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-						.addContainerGap()
-						.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(lblCalibration)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
-								.addComponent(btnNewCalibration)
-								.addComponent(btnRemove))
-						.addPreferredGap(ComponentPlacement.RELATED, 161, Short.MAX_VALUE)
-						.addComponent(lblError)
-						.addContainerGap())
-				);
+					.addContainerGap()
+					.addComponent(pnlPixelConverstions, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(lblCalibration)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addComponent(scrollPane, GroupLayout.PREFERRED_SIZE, 103, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.RELATED)
+					.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
+						.addComponent(btnNewCalibration)
+						.addComponent(btnRemove))
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(pnlColoring, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+					.addPreferredGap(ComponentPlacement.UNRELATED)
+					.addComponent(chkEnforceLUTs)
+					.addPreferredGap(ComponentPlacement.RELATED, 86, Short.MAX_VALUE)
+					.addComponent(lblError)
+					.addContainerGap())
+		);
 
 		scrollPane.setViewportView(calibrationList);
 		setLayout(groupLayout);
@@ -1703,35 +1790,29 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 
 	}
 
-	@Override
 	public void reset(Settings settings, boolean enabled) {
 
 		this.calibrationList.setItems(settings.calibrations);
 		this.calibrationList.setSelectedIndex(settings.calibrationNumber - 1);
+		this.chkEnforceLUTs.setSelected(settings.enforceLUTs);
 		for (Component component : this.getComponents()) {
 			component.setEnabled(enabled);
 		}
 		this.calibrationList.setEnabled(enabled);
 	}
 
-
-
-	@Override
 	public SettingPage getPageDesignation() {
 		return this.settingsPage;
 	}
 
-
-
-	@Override
 	public JPanel getRawComponent() {
 		return this;
 	}
 
-	@Override
 	public boolean applyFields(Settings settings) {
 		settings.calibrations = this.calibrationList.toList();
 		settings.calibrationNumber = this.calibrationList.getSelectedIndex() + 1;
+		settings.enforceLUTs = this.chkEnforceLUTs.isSelected();
 		return true;
 	}
 

@@ -80,8 +80,9 @@ public class PnlInstructions {
 		SAVING_INTERMEDIATES("Saving intermediate files. Please wait...", false),
 		PROCESSING_OBJECTS("Processing images. Please wait...", false),
 		SELECT_OBJECTS("Please wait for images to open at right. Then, select objects of interest and hit Next.", true),
-		SELECT_ROI("Please wait for images to open at right. Then, select ROIs and hit Next.", true);
-;
+		SELECT_ROI("Please wait for images to open at right. Then, select ROIs and hit Next.", true),
+		PROCESSING_ROI("Processing ROIs. Please wait...", false);
+
 		
 		private String message;
 		private boolean isActive;

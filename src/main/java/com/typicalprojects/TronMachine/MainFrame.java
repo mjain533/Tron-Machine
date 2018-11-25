@@ -1,4 +1,5 @@
 /*
+
  * (C) Copyright 2018 Justin Carrington.
  *
  *  This file is part of TronMachine.
@@ -53,7 +54,6 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.awt.event.ActionEvent;
-import javax.swing.LayoutStyle.ComponentPlacement;
 
 public class MainFrame extends JFrame {
 

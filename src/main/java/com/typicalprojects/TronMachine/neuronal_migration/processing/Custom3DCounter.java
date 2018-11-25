@@ -29,7 +29,6 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.NewImage;
 import ij.measure.Calibration;
-import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
 import java.awt.Font;
@@ -37,6 +36,7 @@ import java.util.Arrays;
 import java.util.Vector;
 
 import com.typicalprojects.TronMachine.util.Logger;
+import com.typicalprojects.TronMachine.util.ResultsTable;
 
 
 

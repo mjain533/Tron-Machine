@@ -25,6 +25,7 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -96,6 +97,12 @@ public class Wizard {
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
 			gui.getPanelOptions().startImageROISelecting();
 			break;
+		case PROCESSING_ROI:
+			gui.getInstructionPanel().setInstruction(Instruction.PROCESSING_OBJECTS);
+			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Processing ROIs...");
+			gui.getPanelDisplay().setDisplayState(false, "Processing ROIs...");
+			gui.getPanelOptions().startAnalyzingROIs();
+			break;
 		}
 	}
 	
@@ -131,13 +138,17 @@ public class Wizard {
 			System.gc();
 			break;
 		case PROCESSING_OBJECTS:
-			gui.getPanelOptions().setImagesForObjSelection((List<ImagePhantom>) input[0]);
+			gui.getPanelOptions().setImagesForObjSelection((List<File>) input[0]);
 			setStatus(Status.SELECT_OB);
 			break;
 		case SELECT_OB:
 			setStatus(Status.SELECT_ROI);
 			break;
 		case SELECT_ROI:
+			System.gc();
+			setStatus(Status.PROCESSING_ROI);
+			break;
+		case PROCESSING_ROI:
 			JOptionPane.showMessageDialog(this.gui.getComponent(), "Processing Complete.", "Done", JOptionPane.INFORMATION_MESSAGE);
 			setStatus(Status.SELECT_FILES);
 			break;
@@ -155,7 +166,8 @@ public class Wizard {
 		SELECT_SLICES,
 		PROCESSING_OBJECTS,
 		SELECT_OB,
-		SELECT_ROI;
+		SELECT_ROI,
+		PROCESSING_ROI;
 		
 	}
 	

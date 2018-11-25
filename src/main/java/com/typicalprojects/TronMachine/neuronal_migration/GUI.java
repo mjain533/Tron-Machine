@@ -41,10 +41,15 @@ import javax.swing.WindowConstants;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -59,6 +64,9 @@ import java.awt.Desktop;
 
 import javax.swing.JLabel;
 import javax.swing.border.EmptyBorder;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.typicalprojects.TronMachine.MainFrame;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsLoader;
@@ -110,15 +118,20 @@ public class GUI  {
 	private Preferences2 prefs;
 	private BrightnessAdjuster brightnessAdjuster;
 	private StatsGUI statsGUI;
-
+	private volatile JLabel lblAttributes = null;
+	public static GUI SINGLETON = null;
 
 	/**
 	 * Create the application.
 	 * @throws IOException 
 	 * @throws FormatException 
 	 */
-	public GUI(MainFrame parent) throws IOException {		
+	public GUI(MainFrame parent) throws IOException {
 		
+
+
+
+		SINGLETON = this;
 		settings = null;
 		try {
 			settings = SettingsLoader.loadSettings(false);
@@ -139,8 +152,8 @@ public class GUI  {
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();
 		dateString = dateFormat.format(date);
-		
-		
+
+
 		initialize();
 
 
@@ -194,7 +207,7 @@ public class GUI  {
 				}
 			}
 		});
-		
+
 		mntmPreferences = new JMenuItem("Preferences");
 		prefs = new Preferences2(this);
 		mntmPreferences.addActionListener(new ActionListener() {
@@ -243,7 +256,7 @@ public class GUI  {
 		});
 		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 		mnOptions.add(mntmBrightnessAdj);
-		
+
 		JMenu mnProcess = new JMenu("Process");
 		mnProcess.setFont(smallFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnProcess);
@@ -293,8 +306,8 @@ public class GUI  {
 			}
 		});
 		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		
-		
+
+
 		final Properties properties = new Properties();
 		try {
 			properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
@@ -302,18 +315,19 @@ public class GUI  {
 			// shouldn't happen
 			e1.printStackTrace();
 		}
-		JLabel lblAttributes = new JLabel("Developed by Justin Carrington, Russ Taylor, Kendra Taylor, and Erik Dent. Copyright 2018. Version "+ properties.getProperty("version")+".");
+		final String currentVersion = properties.getProperty("version");
+		lblAttributes = new JLabel("Developed by J. Carrington, R. Taylor, K. Taylor, and E. Dent. Copyright 2018. Version "+ currentVersion+".");
 		lblAttributes.setFont(new Font("PingFang TC", Font.BOLD, 13));
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
 		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
-		
+
 		JMenu mnHelp = new JMenu("Help");
 		mnHelp.setFont(smallFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnHelp);
-		
+
 		JMenuItem mntmQuickStart = new JMenuItem("Quick Start Quide");
 		mnHelp.add(mntmQuickStart);
-		
+
 		mntmQuickStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -322,17 +336,17 @@ public class GUI  {
 						try {
 							openWebpage(new URL("https://bitbucket.org/JustinCarr/tronmachine/wiki/Quick%20Start"));
 						}catch (Exception e) {
-							
+
 						}
 					}
 				});
 
 			}
 		});
-		
+
 		JMenuItem mntmDocuments = new JMenuItem("Documentation");
 		mnHelp.add(mntmDocuments);
-		
+
 		mntmDocuments.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -341,14 +355,14 @@ public class GUI  {
 						try {
 							openWebpage(new URL("https://bitbucket.org/JustinCarr/tronmachine/wiki/Documentation"));
 						}catch (Exception e) {
-							
+
 						}
 					}
 				});
 
 			}
 		});
-		
+
 
 		// main content area
 		JPanel pnlCONTENT = new JPanel();
@@ -410,6 +424,48 @@ public class GUI  {
 		pnlCONTENT.setLayout(gl_pnlCONTENT);
 
 		setUIFont(smallFont);
+		Thread updateRetrieveThread = new Thread(new Runnable() {
+			public void run(){
+				try {
+					String url = "https://api.bitbucket.org/2.0/repositories/JustinCarr/tronmachine/downloads/";
+
+					JSONObject objjson = readJsonFromUrl(url);
+					String recentName = objjson.getJSONArray("values").getJSONObject(0).getString("name");
+					recentName = recentName.substring(recentName.lastIndexOf("-") + 1, recentName.lastIndexOf("."));
+
+					String[] latestVersionTags = recentName.split("\\.");
+					String[] currentVersionTags = currentVersion.split("\\.");
+					boolean update = false;
+					for (int k = 0; k < latestVersionTags.length; k++){
+						if (k >= currentVersionTags.length) {
+							update = true;
+							break;
+						} else {
+							int latestvers = Integer.parseInt(latestVersionTags[k]);
+							int currentvers = Integer.parseInt(currentVersionTags[k]);
+							if (latestvers < currentvers) {
+								break;
+							} else if (latestvers > currentvers) {
+								update = true;
+								break;
+							}
+
+						}
+						
+					}
+					
+					if (update) {
+						lblAttributes.setText("<html>" + lblAttributes.getText() + " <font color='RED'>(Updates Available)</font></html>");
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+			}
+		});
+		updateRetrieveThread.setDaemon(true);
+		updateRetrieveThread.start();
+		
 
 	}
 
@@ -460,7 +516,7 @@ public class GUI  {
 	public Logger getLogger() {
 		return this.pnlLog;
 	}
-	
+
 	public PnlLog getLogPanel() {
 		return this.pnlLog;
 	}
@@ -485,33 +541,33 @@ public class GUI  {
 		this.statsGUI.resetFields();
 		this.prefs.resetPreferences(enabled);
 	}
-	
+
 	private static boolean openWebpage(URI uri) {
-	    Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
-	    if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
-	        try {
-	            desktop.browse(uri);
-	            return true;
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	    }
-	    return false;
+		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+			try {
+				desktop.browse(uri);
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
 	}
 
 	public static boolean openWebpage(URL url) {
-	    try {
-	        return openWebpage(url.toURI());
-	    } catch (URISyntaxException e) {
-	        e.printStackTrace();
-	    }
-	    return false;
+		try {
+			return openWebpage(url.toURI());
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+		return false;
 	}
-	
+
 	public static boolean outputOptionContainsChannel(OutputOption option, Channel chan) {
 		return (GUI.settings.enabledOptions.containsKey(option) && GUI.settings.enabledOptions.get(option).includedChannels.contains(chan));
 	}
-	
+
 	public static boolean outputOptionsContainChannel(Collection<OutputOption> options, Channel chan) {
 		for (OutputOption option : options) {
 			if (outputOptionContainsChannel(option, chan))
@@ -519,6 +575,27 @@ public class GUI  {
 		}
 		return false;
 	}
-	
+
+	private static String readAll(Reader rd) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		int cp;
+		while ((cp = rd.read()) != -1) {
+			sb.append((char) cp);
+		}
+		return sb.toString();
+	}
+
+	public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+		InputStream is = new URL(url).openStream();
+		try {
+			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+			String jsonText = readAll(rd);
+			JSONObject json = new JSONObject(jsonText);
+			return json;
+		} finally {
+			is.close();
+		}
+	}
+
 
 }

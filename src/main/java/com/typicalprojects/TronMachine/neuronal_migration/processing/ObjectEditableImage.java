@@ -35,9 +35,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,6 +51,7 @@ import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Zoom;
+import com.typicalprojects.TronMachine.util.ResultsTable;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.neuronal_migration.*;
 
@@ -61,39 +63,37 @@ import ij.gui.ImageRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
-import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 
-public class ObjectEditableImage {
+public class ObjectEditableImage implements Serializable{
 
+	private static final long serialVersionUID = -5899135921935041272L; // for serialization
 	private ImageContainer ic;
-	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
-	private transient int dotSize = Custome3DObjectCounter.opResultDotsSize;
-	private transient int fontSize = Custome3DObjectCounter.opResultFontSize;
+	private transient Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
+	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
+	private int fontSize = Custome3DObjectCounter.opResultFontSize;
 	private transient Zoom zoom = Zoom.ZOOM_100;
 	private transient boolean creatingDeletionZone = false;
 	private transient List<Point> deletionZone = new ArrayList<Point>();
-
+	private transient OBJSelectMeta selectionStateData = null;
 	
-	private boolean mask = true;
-	private boolean original = true;
-	private boolean dots = true;
+	private transient boolean mask = true;
+	private transient boolean original = true;
+	private transient boolean dots = true;
 
+	private transient ImagePanel imagePnl;
+	private transient GUI gui;
 
-	private ImagePanel imagePnl;
-
-	public ObjectEditableImage(ImagePanel ip, ImageContainer ic, List<Channel> images, Map<String, ResultsTable> results) {
-		this.imagePnl=ip;
+	public ObjectEditableImage(GUI gui, ImageContainer ic, Map<String, ResultsTable> results) {
+		this.gui = gui;
+		this.imagePnl = gui.getPanelDisplay().getImagePanel();
 		this.ic = ic;
-		for (Channel chan : images) {
+		this.selectionStateData = new OBJSelectMeta();
+		for (Channel chan : ic.getRunConfig().channelsToProcess) {
 			this.points.put(chan, new LinkedList<Point>());
+			this.selectionStateData.addChannelToLookAt(chan);
 		}
 		
-
-
-
-
-
 		for (Entry<String, ResultsTable> en : results.entrySet()) {
 			ResultsTable rt = en.getValue();
 			Channel chan = Channel.parse(en.getKey());
@@ -109,6 +109,7 @@ public class ObjectEditableImage {
 			}
 			
 		}
+		
 
 	}
 
@@ -249,73 +250,76 @@ public class ObjectEditableImage {
 	public ImageContainer getContainer() {
 		return this.ic;
 	}
+	
+	public RunConfiguration getRunConfig() {
+		return this.ic.getRunConfig();
+	}
+	
+	public OBJSelectMeta getSelectionStateMeta() {
+		return this.selectionStateData;
+	}
 
-	public void createAndSaveNewImage() {
+	public void createAndAddNewImagesToIC() {
 
-		for (Channel chan : Channel.values()) {
+		for (Channel chan : this.ic.getRunConfig().channelMap.values()) {
 			if (this.points.containsKey(chan)) {
 				this.dots = true;
 				this.mask = true;
 				this.original = true;
-				this.ic.saveSupplementalImage(OutputOption.ProcessedFull, getImgWithDots(chan, false, true), chan);
-				// Need for ROI selection. Will delete these irrelevant files at end.
-
-
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.MaxedChannel, 
-						OutputOption.RoiDrawFull, OutputOption.BinDrawFull), chan)) {
-					this.dots = false;
-					this.mask = false;
-					this.original = true;
-					this.ic.saveSupplementalImage(OutputOption.MaxedChannel, getImgWithDots(chan, false, true), chan);
+				
+				ImagePlus processedFull = getImgWithDots(chan, false, true);
+				this.ic.addImage(OutputOption.ProcessedFull, chan, processedFull);
+				// Needed this added for display during ROI selection, regardless of saving.
+				
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedFull, chan)) {
+					this.ic.saveSupplementalImage(OutputOption.ProcessedFull, processedFull, chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedDots, 
-						OutputOption.BinDrawProcessedDots, OutputOption.RoiDrawProcessedDots), chan)) {
+								
+				// Shouldn't need this if just implement the getImgWithDots method in ROIEditableImage.
+				
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDots, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDots, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedDotsNoNum, 
-						OutputOption.BinDrawProcessedDotsNoNum, OutputOption.RoiDrawProcessedDotsNoNum), chan)) {
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsNoNum, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDotsNoNum, getImgWithDots(chan, false, false), chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedDotsObjects, 
-						OutputOption.BinDrawProcessedDotsObjects, OutputOption.RoiDrawProcessedDotsObjects), chan)) {
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsObjects, chan)) {
 					this.dots = true;
 					this.mask = true;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDotsObjects, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedObjects, 
-						OutputOption.BinDrawProcessedObjects, OutputOption.RoiDrawProcessedObjects), chan)) {
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedObjects, chan)) {
 					this.dots = false;
 					this.mask = true;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedObjects, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedObjectsOriginal, 
-						OutputOption.BinDrawProcessedObjectsOriginal, OutputOption.RoiDrawProcessedObjectsOriginal), chan)) {
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedObjectsOriginal, chan)) {
 					this.dots = false;
 					this.mask = true;
 					this.original = true;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedObjectsOriginal, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionsContainChannel(Arrays.asList(OutputOption.ProcessedDotsOriginal, 
-						OutputOption.BinDrawProcessedDotsOriginal, OutputOption.RoiDrawProcessedDotsOriginal), chan)) {
+				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsOriginal, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = true;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDotsOriginal, getImgWithDots(chan, false, true), chan);
 				}
-			} else {
+			}
+			
+			if (GUI.outputOptionContainsChannel(OutputOption.MaxedChannel, chan)) {
 				this.dots = false;
 				this.mask = false;
 				this.original = true;
 				this.ic.saveSupplementalImage(OutputOption.MaxedChannel, getImgWithDots(chan, false, true), chan);
-				// Need for ROI selection. Will delete these irrelevant files at end.
 
 			}
 			
@@ -324,10 +328,17 @@ public class ObjectEditableImage {
 		this.mask = true;
 		this.original = true;
 	}
+	
+	public ROIEditableImage convertToROIEditableImage() {
+		Map<String, List<Point>> ptsString = new HashMap<String, List<Point>>();
+		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
+			ptsString.put(en.getKey().toReadableString(), en.getValue());
+		}
+		return new ROIEditableImage(this.gui, this.getContainer(), ptsString);
+	}
 
-	@SuppressWarnings("deprecation")
-	public Map<String, ResultsTable> createNewResultsTables() {
-		Map<String, ResultsTable> tables = new HashMap<String, ResultsTable>();
+	/*@SuppressWarnings("deprecation")
+	public void updateResultsTables() {
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
 			ResultsTable rt = new ResultsTable();
 			rt.setHeading(0, "ID");
@@ -344,33 +355,9 @@ public class ObjectEditableImage {
 
 				counter++;
 			}
-			tables.put(en.getKey().name(), rt);
+			this.results.put(en.getKey().name(), rt);
 		}
-		return tables;
-	}
-
-	@SuppressWarnings("deprecation")
-	public ResultsTable createNewResultsTable(Channel chan) {
-
-		ResultsTable rt = new ResultsTable();
-		rt.setHeading(0, "ID");
-		for (Column col : Column.values()) {
-			rt.setHeading(col.getColumnNum() + 1, col.getTitle());
-		}
-
-		int counter = 0;
-		for (Point p : this.points.get(chan)) {
-			rt.incrementCounter();
-			rt.setValue("ID", counter, counter + 1);
-			rt.setValue(Column.X.getTitle(), counter, p.x);
-			rt.setValue(Column.Y.getTitle(), counter, p.y);
-
-			counter++;
-		}
-
-		return rt;
-
-	}
+	}*/
 
 	public ImagePlus getImgWithDots(Channel chan) {
 		return getImgWithDots(chan, true, true);
@@ -397,25 +384,27 @@ public class ObjectEditableImage {
 		if (mask) {
 			if (original) {
 				stack = 	this.ic.getImage(OutputOption.ProcessedObjectsOriginal, chan, true);
+				// Will have Color processor
 			} else {
-				stack = this.ic.getImage(OutputOption.ProcessedObjects, chan, false);
+				stack = new ImagePlus("temp", this.ic.getImage(OutputOption.ProcessedObjects, chan, false).getProcessor().convertToRGB());
+				// Convert from byte to color processor
 			}
 		} else if (original) {
-			stack = 	this.ic.getImage(OutputOption.MaxedChannel, chan, false);
+			if (dots) {
+				stack = new ImagePlus("temp", this.ic.getImage(OutputOption.MaxedChannel, chan, false).getProcessor().convertToRGB());
+				// Convert from short to color processor
+			} else {
+				stack = 	this.ic.getImage(OutputOption.MaxedChannel, chan, true);
+				// Will have short processor
+			}
 		} else {
-			/*ImagePlus dupDummy = this.ic.getImageChannel(chan, true);
-			ImageRoi roi = new ImageRoi(0, 0, dupDummy.getProcessor());
-			roi.setZeroTransparent(false);
-			roi.setOpacity(1.0);
-			dupDummy.getProcessor().drawOverlay(new Overlay(roi));
-			dupDummy.updateImage();*/
+
 			int[] dim = this.ic.getDimensions();
 			stack = new ImagePlus("test", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB));
+			// Color processor
 		}
 
-
 		List<Point> chanPoints = this.points.get(chan);
-		stack = new ImagePlus("temp", stack.getProcessor().convertToRGB()); // NOTE: changed teh stack to RGB, rather than just turning the copy of stack's processor for dot creation to RGB
 
 		if (chanPoints != null) {
 
@@ -435,19 +424,6 @@ public class ObjectEditableImage {
 						ip.setColor(Color.BLUE);
 					}
 				}
-				/*for (int y=0; y<stack.getHeight(); y++){
-					for (int x=0; x<stack.getWidth(); x++){
-
-						if (ip.getPixelValue(x, y) < 0.5) {
-							ip.setValue(0);
-							ip.setColor(Color.BLACK);
-							ip.drawPixel(x, y);
-
-						}				
-
-					}
-				}
-				img.updateImage();*/
 
 				if (includeTextOnDots) {
 					ip.setColor(Color.LIGHT_GRAY);
@@ -466,9 +442,6 @@ public class ObjectEditableImage {
 					}
 				}
 				
-				//img.setDisplayRange(1, Integer.MAX_VALUE);
-				//img.updateImage();
-
 				ImageRoi roi = new ImageRoi(0, 0, ip);
 				roi.setZeroTransparent(true);
 				roi.setOpacity(1.0);
@@ -591,41 +564,116 @@ public class ObjectEditableImage {
 		
 	}
 	
-	public void saveCurrentState(File fileName) throws IOException {
-		FileOutputStream fileStream = new FileOutputStream(fileName); 
-        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
-        // Method for serialization of object 
-        out.writeObject(this); 
-        out.close(); 
-        fileStream.close();
-        
-        FileInputStream fileInput = new FileInputStream(fileName); 
-        ObjectInputStream in = new ObjectInputStream(fileInput); 
-          
-        ObjectEditableImage object1;
-		try {
-			object1 = (ObjectEditableImage)in.readObject();
-		} catch (ClassNotFoundException e) {
-			in.close();
-			fileInput.close();
-			return;
-		} 
-          
-        in.close(); 
-        fileInput.close(); 
-          
-        System.out.println("Object has been deserialized "); 
-        System.out.println("dots = " + object1.dotSize); 
+	private void writeObject(ObjectOutputStream stream)
+			throws IOException {
+		stream.defaultWriteObject();
+		Map<String, List<Point>> ptsString = new HashMap<String, List<Point>>();
+		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
+			ptsString.put(en.getKey().toReadableString(), en.getValue());
+		}
+		stream.writeObject(ptsString);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void readObject(ObjectInputStream stream)
+			throws IOException, ClassNotFoundException {
+		
+		// initialize transient vars
+		this.zoom = Zoom.ZOOM_100;
+		this.creatingDeletionZone = false;
+		this.deletionZone = new ArrayList<Point>();
+		
+		this.mask = true;
+		this.original = true;
+		this.dots = true;
+		
+		this.selectionStateData = new OBJSelectMeta();
+		
+		// Read objects
+		stream.defaultReadObject();
+		Map<String, List<Point>> ptsString = (Map<String, List<Point>>) stream.readObject();
+		this.points = new HashMap<Channel, List<Point>>();
+		for (Entry<String, List<Point>> en : ptsString.entrySet()) {
+			Channel chan = Channel.parse(en.getKey());
+			this.points.put(chan, en.getValue());
+			this.selectionStateData.addChannelToLookAt(chan);
+		}
+		this.gui = GUI.SINGLETON;
+		this.imagePnl = this.gui.getPanelDisplay().getImagePanel();
+
 	}
 	
-	public ResultsTable currentStateToResultsTable() {
+	public void deleteSerializedVersion(File serializeDir) {
+		File serializeFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
+		serializeFile.delete();
+	}
+	
+	public static boolean saveObjEditableImage(ObjectEditableImage image, File serializeDir) {
+		try {
+			if (!serializeDir.isDirectory()) {
+				serializeDir.mkdir();
+			}
+			File serializeFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
+			FileOutputStream fileStream = new FileOutputStream(serializeFile); 
+	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
+	        out.writeObject(image); 
+	        out.close(); 
+	        fileStream.close();
+	        return true;
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
 		
-		ResultsTable rt = new ResultsTable();
+		return false;
+	}
+	
+	public static ObjectEditableImage loadObjEditableImage(File serializeDir) {
+		try {
+			if (!serializeDir.isDirectory())
+				return null;
+			File serializedFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
+			if (!serializedFile.exists())
+				return null;
+
+	        FileInputStream fileInput = new FileInputStream(serializedFile); 
+            ObjectInputStream in = new ObjectInputStream(fileInput); 
+
+            ObjectEditableImage loadedROIImage = (ObjectEditableImage) in.readObject(); 
+            //this.gui.getPanelDisplay().setImage(object1.get, zoom, clickX, clickY);
+            in.close(); 
+            fileInput.close(); 
+            
+            return loadedROIImage;
+
+		}catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public class OBJSelectMeta {
 		
+		private Set<Channel> channelsToLookAt = new HashSet<Channel>();
 		
+		public OBJSelectMeta() {
+		}
 		
-		return rt;
+		public void addChannelToLookAt(Channel channelToExplore) {
+			this.channelsToLookAt.add(channelToExplore);
+		}
+		
+		public void lookAt(Channel chan) {
+			this.channelsToLookAt.remove(chan);
+		}
+		
+		public Channel getChannelNotLookedAt() {
+			if (this.channelsToLookAt.isEmpty())
+				return null;
+			
+			return this.channelsToLookAt.iterator().next();
+		}
 		
 	}
 
 }
+

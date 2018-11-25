@@ -1,9 +1,33 @@
+/*
+ * (C) Copyright 2018 Justin Carrington.
+ *
+ *  This file is part of TronMachine.
+
+ *  TronMachine is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  TronMachine is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with TronMachine.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Contributors:
+ *     Justin Carrington
+ *     Russell Taylor
+ *     Kendra Taylor
+ *     Erik Dent
+ *     
+ */
 package com.typicalprojects.TronMachine.neuronal_migration;
 
 public enum OutputOption {
 	
 	Channel("Channel (Raw)", "Chan", 1, "", 1),
-	ChannelTiff("Channel (Tiff)", "ChanTiff", 1, "", 1),
 	MaxedChannel("Max Projected Channel", "MaxedChan", 1, "MAXED", 1),
 	ProcessedFull("Processed Chan-Full", "ProcessedF", 1, "OBJ, DOTS, ORIG", 2),
 	ProcessedDots("Processed Chan-Dots", "ProcessedD", 1, "DOTS", 2),

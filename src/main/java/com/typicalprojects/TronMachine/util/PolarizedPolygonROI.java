@@ -26,11 +26,16 @@
 package com.typicalprojects.TronMachine.util;
 
 import java.awt.Polygon;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 import ij.gui.PolygonRoi;
+import ij.io.RoiDecoder;
+import ij.io.RoiEncoder;
 
 public class PolarizedPolygonROI implements Serializable {
 	
@@ -39,8 +44,8 @@ public class PolarizedPolygonROI implements Serializable {
 	 */
 	private static final long serialVersionUID = 4478064214266311535L;
 	private final String name;
-	private final PolygonRoi polyROI;
-	private final PolygonRoi oneSide;
+	private transient PolygonRoi polyROI;
+	private transient PolygonRoi oneSide;
 	private Boolean oneSideIsPositive = null;
 	
 	public PolarizedPolygonROI(String name, PolygonRoi polyROI, PolygonRoi oneSide) {
@@ -87,5 +92,42 @@ public class PolarizedPolygonROI implements Serializable {
 		return oneSideIsPositive == this.oneSide.contains(x, y);
 		
 	}
+	
+	private void readObject(ObjectInputStream stream)
+			throws IOException, ClassNotFoundException {
+		
+		stream.defaultReadObject();
+		int sizePolyROI = stream.readInt(); // Read byte count
+
+        byte[] bufferPolyROI = new byte[sizePolyROI];
+        stream.readFully(bufferPolyROI);
+        this.polyROI = (PolygonRoi) RoiDecoder.openFromByteArray(bufferPolyROI);
+        
+		int sizeOneSide = stream.readInt(); // Read byte count
+
+        byte[] bufferOneSide = new byte[sizeOneSide];
+        stream.readFully(bufferOneSide);
+        this.oneSide = (PolygonRoi) RoiDecoder.openFromByteArray(bufferOneSide);
+
+	}
+	
+	private void writeObject(ObjectOutputStream stream)
+			throws IOException {
+		
+		stream.defaultWriteObject();
+		stream.flush();
+		byte[] byteRepresentationPolyROI = RoiEncoder.saveAsByteArray(polyROI);
+		stream.writeInt(byteRepresentationPolyROI.length);
+		stream.write(byteRepresentationPolyROI);
+		stream.flush();
+		
+		
+		byte[] byteRepresentationOneSide = RoiEncoder.saveAsByteArray(oneSide);
+		stream.writeInt(byteRepresentationOneSide.length);
+		stream.write(byteRepresentationOneSide);
+		stream.flush();
+		
+	}
+
 	
 }

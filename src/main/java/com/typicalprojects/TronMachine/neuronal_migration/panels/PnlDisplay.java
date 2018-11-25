@@ -223,7 +223,7 @@ public class PnlDisplay  {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei == null)
 									break;
-								if (!GUI.settings.channelsToProcess.contains(getSliderSelectedChannel()))
+								if (!oei.getRunConfig().channelsToProcess.contains(getSliderSelectedChannel()))
 									break;
 
 								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
@@ -251,7 +251,7 @@ public class PnlDisplay  {
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
-									if (!GUI.settings.channelsToProcess.contains(getSliderSelectedChannel()))
+									if (!oei.getRunConfig().channelsToProcess.contains(getSliderSelectedChannel()))
 										break;
 									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
@@ -331,7 +331,6 @@ public class PnlDisplay  {
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				// TODO Auto-generated method stub
 				
 			}
 
@@ -368,7 +367,7 @@ public class PnlDisplay  {
 						
 						if (oei != null) {
 							Channel chan = getSliderSelectedChannel();
-							if (GUI.settings.channelsToProcess.contains(chan)) {
+							if (oei.getRunConfig().channelsToProcess.contains(chan)) {
 								Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
 								Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
 								if (closest != null) {

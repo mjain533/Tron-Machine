@@ -248,6 +248,8 @@ public class BrightnessAdjuster extends JFrame {
 			defMin = defMinsMaxes[0];
 			defMax = defMinsMaxes[1];
 		} else {
+			System.out.println(ic.getImage(tag, chan, false).getBitDepth() + " : " + min + " : " + max);
+
 			defMin = min;
 			defMax = max;
 			Map<Channel, int[]> map = null;
