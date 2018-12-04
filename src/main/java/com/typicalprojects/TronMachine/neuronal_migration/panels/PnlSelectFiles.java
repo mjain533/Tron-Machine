@@ -268,7 +268,6 @@ public class PnlSelectFiles implements ListDropReceiver {
 					}
 				});
 				processor.setDaemon(true);
-				gui.getLogPanel().setDisplayState(true);
 				processor.start();
 
 
@@ -367,7 +366,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have a valid extension.", "File Selection Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
-				cziFiles.add(new FileContainer(file));
+				cziFiles.add(new FileContainer(file, false));
 			}
 		}
 
@@ -397,15 +396,20 @@ public class PnlSelectFiles implements ListDropReceiver {
 				return;
 			}
 		}
-
-		for (FileContainer fileToAdd : cziFiles) {
-			listSelectedFiles.addItem(fileToAdd);
-		}
+		
+		setFileList(cziFiles);
+		
 		if (listSelectedFiles.getSelectedValue() == null) {
 			listSelectedFiles.setSelectedIndex(0);;
 		}
 		if (currDisplayState == PnlSelectFiles.STATE_NO_FILE_ADDED) {
 			setDisplayState(STATE_FILE_ADDED);
+		}
+	}
+	
+	public void setFileList(List<FileContainer> files) {
+		for (FileContainer fileToAdd : files) {
+			listSelectedFiles.addItem(fileToAdd);
 		}
 	}
 

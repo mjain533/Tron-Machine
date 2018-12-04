@@ -63,7 +63,6 @@ public class ImagePhantom {
 
 		} catch (ImageOpenException e) {
 			logger.setCurrentTask("Failed to open.");
-			System.out.println(e);
 			e.printStackTrace();
 			return (e.getMessage() == null ? "Unknown reason." : e.getMessage());
 

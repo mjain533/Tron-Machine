@@ -77,15 +77,15 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.typicalprojects.TronMachine.neuronal_migration.Preferences2.SettingPage;
-import com.typicalprojects.TronMachine.neuronal_migration.Preferences2.SettingsPanel;
+import com.typicalprojects.TronMachine.neuronal_migration.Preferences.SettingPage;
+import com.typicalprojects.TronMachine.neuronal_migration.Preferences.SettingsPanel;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsLoader;
 import com.typicalprojects.TronMachine.popup.ChannelSelectPopup;
 import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
-public class Preferences2 extends JDialog {
+public class Preferences extends JDialog {
 
 
 	public static void main(String[] args) {
@@ -99,7 +99,7 @@ public class Preferences2 extends JDialog {
 						e1.printStackTrace();
 					}
 
-					Preferences2 frame = new Preferences2(null);
+					Preferences frame = new Preferences(null);
 					frame.display(null, true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -121,12 +121,12 @@ public class Preferences2 extends JDialog {
 	private SimpleJList<SettingPage> menuList;
 	private List<SettingsPanel> settingsPanel = new ArrayList<SettingsPanel>();
 	private boolean listSelectionChanging = false;
-	public static Preferences2 SINGLETON_FRAME = null;
+	public static Preferences SINGLETON_FRAME = null;
 
 	/**
 	 * Create the frame.
 	 */
-	public Preferences2(GUI gui) {
+	public Preferences(GUI gui) {
 		super(gui.getComponent());
 
 		SINGLETON_FRAME = this;
@@ -1829,9 +1829,9 @@ class PnlReset extends JPanel implements SettingsPanel {
 
 	private static final long serialVersionUID = 2016027296304991330L;
 	private JPanel self;
-	public final Preferences2 prefs;
+	public final Preferences prefs;
 
-	public PnlReset(Preferences2 prefs) {
+	public PnlReset(Preferences prefs) {
 		this.self = this;
 		this.prefs = prefs;
 		JPanel pnlPixelConverstions = new JPanel();
@@ -2151,7 +2151,7 @@ class PnlOutputOptions extends JPanel implements SettingsPanel {
 		            int index = list.locationToIndex(evt.getPoint());
 		            if (index > -1) {
 		            		OutputParams output = list.getElementAt(index);
-		            		chanSelectPopup.prompt(output.includedChannels, Preferences2.SINGLETON_FRAME);
+		            		chanSelectPopup.prompt(output.includedChannels, Preferences.SINGLETON_FRAME);
 		            		output.includedChannels = chanSelectPopup.getSelected();
 		            }
 		        }

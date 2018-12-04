@@ -39,6 +39,7 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.TooManyListenersException;
@@ -47,14 +48,12 @@ import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
+
 import java.awt.Point;
 
 
 public class SimpleJList<K> extends JList<K>{
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8945321883556091433L;
 	private final DefaultListModel<K> listModel;
 	private DropTarget dropTarget;
@@ -83,13 +82,19 @@ public class SimpleJList<K> extends JList<K>{
 
 
 	}
-	
+
 	public SimpleJList(ListDropReceiver listener, ListCellRenderer<K> renderer) {
 		this(listener);
 		setCellRenderer(renderer);
 
 	}
 	
+	public SimpleJList(ListCellRenderer<K> renderer) {
+		this();
+		setCellRenderer(renderer);
+
+	}
+
 	public void setSelectedIndexScroll(int index) {
 		if (index < 0)
 			return;
@@ -97,7 +102,7 @@ public class SimpleJList<K> extends JList<K>{
 			setSelectedValue(this.listModel.get(index), true);
 		}
 	}
-	
+
 	public K getElementAt(int index) {
 		return this.listModel.getElementAt(index);
 	}
@@ -112,7 +117,8 @@ public class SimpleJList<K> extends JList<K>{
 	public Enumeration<K> getElements() {
 		return this.listModel.elements();
 	}
-	
+
+
 	public List<K> toList() {
 		List<K> list = new ArrayList<K>();
 		Enumeration<K> elements = getElements();
@@ -121,7 +127,7 @@ public class SimpleJList<K> extends JList<K>{
 		}
 		return list;
 	}
-	
+
 	public void clear() {
 		clearSelection();
 		this.listModel.clear();
@@ -153,12 +159,18 @@ public class SimpleJList<K> extends JList<K>{
 		}
 	}
 
+	public void removeItems(Collection<K> items) {
+		for (K item : items) {
+			removeItem(item);
+		}
+	}
+
 	public void addItems(K[] items) {
 		for (K item : items) {
 			addItem(item);
 		}
 	}
-	
+
 	public void setItems(List<K> items) {
 
 		clear();
@@ -180,15 +192,15 @@ public class SimpleJList<K> extends JList<K>{
 
 		}
 	}
-	
+
 	public void setLastSelected() {
 		if (!this.listModel.isEmpty()) {
 			setSelectedIndexScroll(this.listModel.getSize() - 1);
 		}
 	}
 
-	
-	
+
+
 	protected DropTarget getMyDropTarget() {
 		if (dropTarget == null) {
 			dropTarget = new DropTarget(this, DnDConstants.ACTION_COPY_OR_MOVE, null);
@@ -205,10 +217,10 @@ public class SimpleJList<K> extends JList<K>{
 
 	@Override
 	public void addNotify() {
-		
-		
+
+
 		super.addNotify();
-		
+
 		if (dragDropEnabled) {
 			try {
 				getMyDropTarget().addDropTargetListener(getDropTargetHandler());
@@ -216,7 +228,7 @@ public class SimpleJList<K> extends JList<K>{
 				ex.printStackTrace();
 			}
 		}
-		
+
 	}
 
 	@Override
@@ -337,13 +349,20 @@ public class SimpleJList<K> extends JList<K>{
 			}
 		}
 	}
-	
+
 	public interface ListDropReceiver {
-		
+
 		public void dropped(List<Object> dropped);
-		
+
 	}
 	
-}
+	public interface ReorderListener {
+		
+		public boolean reorderAllowed();
+		
+		public void handleSwap(int index, int newIndex);
+		
+	}
 
+}
 

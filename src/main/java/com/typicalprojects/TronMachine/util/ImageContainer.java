@@ -62,6 +62,12 @@ public class ImageContainer implements Serializable {
 
 	private static final long serialVersionUID = -6576786838224324311L; // For serialization
 	private static final String INTERMED_FILES = "Intermediate Files";
+	
+	public static final String STATE_ROI = "postroistate.ser";
+	public static final String STATE_OBJ = "postobjstate.ser";
+	public static final String STATE_SLC = "postslicestate.ser";
+
+
 
 	private transient Map<OutputOption, Map<Channel, ImagePlus>> images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
 
@@ -691,14 +697,25 @@ public class ImageContainer implements Serializable {
 		if (this.outputLocation == null) {
 			throw new IllegalStateException();
 		}
-		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun);
+		
+		File file = new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun);
+		if (!file.isDirectory())
+			file.mkdir();
+				
+		return file;
 	}
 
 	public File getIntermediateFilesDirectory()throws IllegalStateException {
 		if (this.outputLocation == null) {
 			throw new IllegalStateException();
 		}
-		return new File(this.outputLocation.getPath() + File.separator + this.title + " " + this.timeOfRun + File.separator + INTERMED_FILES);
+		
+
+		File file = new File(getSaveDirectory().getPath() + File.separator + INTERMED_FILES);;
+		if (!file.isDirectory())
+			file.mkdir();
+
+		return file;
 
 	}
 	
@@ -707,28 +724,38 @@ public class ImageContainer implements Serializable {
 			throw new IllegalStateException();
 		}
 		File serializeDir = new File(getIntermediateFilesDirectory().getPath() + File.separator + "Serialization");
-		if (serializeDir.exists())
-			serializeDir.mkdir();
+		if (!serializeDir.exists())
+			serializeDir.mkdir();		
 		
 		return serializeDir;
 
 	}
-
-	public static File getSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
-
-		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
-		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
+	
+	public File getSerializeFile(String state)throws IllegalStateException {
+		if (this.outputLocation == null) {
+			throw new IllegalStateException();
+		}
+		File file = new File(getSerializeDirectory().getPath() + File.separator + state);
+		
+		return file;
 
 	}
-
-
+	
+	public static File getSaveDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
+		
+		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
+		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun);
+		
+	}
+	
+	
 	public static File getIntermediateFilesDirectory(String imageTitle, File outputLocation, String timeOfRun) throws IllegalStateException {
 		if (outputLocation == null) {
 			throw new IllegalStateException();
 		}
 		makeSaveDirectory(imageTitle, outputLocation, timeOfRun);
 		return new File(outputLocation.getPath() + File.separator + imageTitle + " " + timeOfRun + File.separator + INTERMED_FILES);
-
+		
 	}
 	
 	public static void applyCustomLUT(ImagePlus imp, int red, int green, int blue) {

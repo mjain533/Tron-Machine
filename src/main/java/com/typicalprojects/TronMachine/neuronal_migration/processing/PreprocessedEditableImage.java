@@ -70,17 +70,13 @@ public class PreprocessedEditableImage implements Serializable {
 		return new ObjectEditableImage(this.gui, this.ic, objectResultMaps);
 	}
 	
-	public void deleteSerializedVersion(File serializeDir) {
-		File serializeFile = new File(serializeDir.getPath() + File.separator + "postslicestate.ser");
+	public void deleteSerializedVersion(File serializeFile) {
 		serializeFile.delete();
 	}
 	
-	public static boolean savePreprocessedImage(PreprocessedEditableImage image, File serializeDir) {
+	public static boolean savePreprocessedImage(PreprocessedEditableImage image, File serializeFile) {
 		try {
-			if (!serializeDir.isDirectory()) {
-				serializeDir.mkdir();
-			}
-			File serializeFile = new File(serializeDir.getPath() + File.separator + "postslicestate.ser");
+
 			FileOutputStream fileStream = new FileOutputStream(serializeFile); 
 	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
 	        out.writeObject(image); 
@@ -94,15 +90,10 @@ public class PreprocessedEditableImage implements Serializable {
 		return false;
 	}
 	
-	public static PreprocessedEditableImage loadPreprocessedImage(File serializeDir) {
+	public static PreprocessedEditableImage loadPreprocessedImage(File serializeFile) {
 		try {
-			if (!serializeDir.isDirectory())
-				return null;
-			File serializedFile = new File(serializeDir.getPath() + File.separator + "postslicestate.ser");
-			if (!serializedFile.exists())
-				return null;
 
-	        FileInputStream fileInput = new FileInputStream(serializedFile); 
+	        FileInputStream fileInput = new FileInputStream(serializeFile); 
             ObjectInputStream in = new ObjectInputStream(fileInput); 
 
             PreprocessedEditableImage loadedROIImage = (PreprocessedEditableImage) in.readObject(); 

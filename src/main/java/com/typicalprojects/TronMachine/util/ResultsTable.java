@@ -882,8 +882,7 @@ public class ResultsTable implements Serializable {
 		String s = getRowAsString(counter-1);
 		if (textPanel!=null)
 			textPanel.appendWithoutUpdate(s);
-		else
-			System.out.println(s);
+
 	}
 
 	/** Updates the Results window. */

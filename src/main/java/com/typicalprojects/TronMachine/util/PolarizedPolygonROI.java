@@ -58,6 +58,8 @@ public class PolarizedPolygonROI implements Serializable {
 		return this.name;
 	}
 	
+	
+	
 	public java.awt.Point[] getContainedHalfPoints() {
 		return this.oneSide.getContainedPoints();
 	}
@@ -76,6 +78,22 @@ public class PolarizedPolygonROI implements Serializable {
 		} else {
 			oneSideIsPositive = false;
 		}
+	}
+	
+	public String toString() {
+		
+		return this.name;
+	}
+	
+	public int hashCode() {
+		return this.name.hashCode();
+	}
+	
+	public boolean equals(Object other) {
+		if (!(other instanceof PolarizedPolygonROI))
+			return false;
+		
+		return this.name.equals(((PolarizedPolygonROI) other).name);
 	}
 	
 	public Map<Integer, Integer> getPointsOnLine() {

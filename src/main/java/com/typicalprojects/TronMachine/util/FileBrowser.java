@@ -606,18 +606,26 @@ public class FileBrowser extends JDialog {
 							SimpleJList<File> listToMod = focusedList == 1 ? listFiles1 : (focusedList == 2 ? listFiles2 : listFiles3);
 							listToMod.setAutoscrolls(true);
 							if (listToMod.isSelectionEmpty()) {
-								listToMod.setSelectedIndexScroll(0);
+								int index = getFirstValidIndex(listToMod, 0, true);
+								if (index >= 0)
+									listToMod.setSelectedIndexScroll(index);
 							} else {
-								listToMod.setSelectedIndexScroll(listToMod.getSelectedIndex() + 1);
+								int index = getFirstValidIndex(listToMod, listToMod.getSelectedIndex() + 1, true);
+								if (index >= 0)
+									listToMod.setSelectedIndexScroll(index);
 							}
 						} else if (e.getKeyCode() == KeyEvent.VK_KP_UP || e.getKeyCode() == KeyEvent.VK_UP) {
 							e.consume();
 							SimpleJList<File> listToMod = focusedList == 1 ? listFiles1 : (focusedList == 2 ? listFiles2 : listFiles3);
 							listToMod.setAutoscrolls(true);
 							if (listToMod.isSelectionEmpty()) {
-								listToMod.setLastSelected();
+								int index = getFirstValidIndex(listToMod, listToMod.getListSize() - 1, false);
+								if (index >= 0)
+									listToMod.setSelectedIndexScroll(index);
 							} else {
-								listToMod.setSelectedIndexScroll(listToMod.getSelectedIndex() - 1);
+								int index = getFirstValidIndex(listToMod, listToMod.getSelectedIndex() - 1, false);
+								if (index >= 0)
+									listToMod.setSelectedIndexScroll(index);
 							}
 
 						}
@@ -632,7 +640,8 @@ public class FileBrowser extends JDialog {
 	}
 
 	public void startBrowsing(List<File> recents, Component component) {
-
+		
+		getRootPane().setDefaultButton(btnSelect); // Needed on any subsequent browses after the first one.
 		setLocationRelativeTo(component);
 		this.holdChanges = true;
 		this.newRecents = null;
@@ -687,15 +696,15 @@ public class FileBrowser extends JDialog {
 		this.holdChanges = false;
 		setVisible(true);
 	}
-	
+
 	public List<File> getSelectedFiles() {
 		return this.selectedFiles;
 	}
-	
+
 	public List<File> getRecents() {
 		return this.newRecents;
 	}
-	
+
 	private void _reNavigateDueToNonExistentFile() {
 		List<File> filesToRemove = new ArrayList<File>();
 		for (int i = 0; i < cbRecents.getModel().getSize(); i++) {
@@ -712,7 +721,7 @@ public class FileBrowser extends JDialog {
 			}
 		}
 	}
-	
+
 	private boolean checkFileExists(File file) {
 		if (!file.exists()) {
 			JOptionPane.showMessageDialog(contentPane, "A file no longer exists.", "File error.", JOptionPane.ERROR_MESSAGE);
@@ -722,10 +731,10 @@ public class FileBrowser extends JDialog {
 			return true;
 		}
 	}
-	
+
 	private boolean checkFilesInListsExist() {
 		Enumeration<File> filesEnumeration = this.listFiles1.getElements();
-		
+
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
 			if (!file.exists()) {
@@ -735,7 +744,7 @@ public class FileBrowser extends JDialog {
 			}
 		}
 		filesEnumeration = this.listFiles2.getElements();
-		
+
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
 			if (!file.exists()) {
@@ -745,7 +754,7 @@ public class FileBrowser extends JDialog {
 			}
 		}
 		filesEnumeration = this.listFiles3.getElements();
-		
+
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
 			if (!file.exists()) {
@@ -760,8 +769,8 @@ public class FileBrowser extends JDialog {
 	private void navigateInto(int listNum, File selectedValue) {
 		if (selectedValue == null)
 			return;
-		
-		
+
+
 		this.holdChanges = true;
 		if (!checkFileExists(selectedValue)) {
 			this.holdChanges = false;
@@ -814,17 +823,97 @@ public class FileBrowser extends JDialog {
 	private void moveIntoCurrent() {
 		if (this.focusedList == 2) {
 			if (this.listFiles2.isSelectionEmpty()) {
-				this.listFiles2.setSelectedIndex(0);
+				int index = getFirstValidIndex(listFiles2, 0, true);
+				if (index > -1) {
+					this.listFiles2.setSelectedIndex(index);
+				}
 			} else if (!this.listFiles3.isEmpty()){
-				this.listFiles3.setSelectedIndex(0);
+				int index = getFirstValidIndex(listFiles3, 0, true);
+				if (index > -1) {
+					this.listFiles3.setSelectedIndex(index);
+				}
 			}
 		} else if (this.focusedList == 1) {
 			if (this.listFiles1.isSelectionEmpty()) {
-				this.listFiles1.setSelectedIndex(0);
+				int index = getFirstValidIndex(listFiles1, 0, true);
+				if (index > -1) {
+					this.listFiles1.setSelectedIndex(index);
+				}
 			} else if (!this.listFiles2.isEmpty()){
-				this.listFiles2.setSelectedIndex(0);
+				int index = getFirstValidIndex(listFiles2, 0, true);
+				if (index > -1) {
+					this.listFiles2.setSelectedIndex(index);
+				}
 			}
 		}
+	}
+
+	private int getFirstValidIndex(SimpleJList<File> list, int index, boolean forward) {
+
+		if (index < 0 || index >= list.getListSize())
+			return -1;
+
+
+		if (this.mode == MODE_DIRECTORIES) {
+			for (int i = index; i >= 0 && i < list.getListSize();  ) {
+				File f = list.getElementAt(i);
+				if (f.isDirectory()) {
+					return i;
+				}
+				
+				if (forward)
+					i++;
+				else
+					i--;
+			}
+
+		} else if (this.mode == MODE_BOTH) {
+			for (int i = index; i >= 0 && i < list.getListSize();  ) {
+				File f = list.getElementAt(i);
+				
+				if (f.isDirectory()) {
+					return i;
+				} else if (this.requiredExtensions != null) {
+					String name = f.getName();
+					int lastIndex = name.lastIndexOf('.');
+					if (this.requiredExtensions.contains(name.substring(lastIndex + 1))) {
+						return i;
+					}
+				} else {
+					return i;
+				}
+				
+				if (forward)
+					i++;
+				else
+					i--;
+			}
+
+		} else {
+			
+			for (int i = index; i >= 0 && i < list.getListSize();  ) {
+				File f = list.getElementAt(i);
+				
+				if (this.requiredExtensions != null) {
+					String name = f.getName();
+					int lastIndex = name.lastIndexOf('.');
+					if (this.requiredExtensions.contains(name.substring(lastIndex + 1))) {
+						return i;
+					}
+				} else {
+					return i;
+				}
+				
+				if (forward)
+					i++;
+				else
+					i--;
+			}
+			
+		}
+		
+		return -1;
+
 	}
 
 	private void navigateStartingAt(File file) {
@@ -863,7 +952,7 @@ public class FileBrowser extends JDialog {
 				this.holdChanges = false;
 				return;
 			}
-
+			
 
 			File parentFile = file.getParentFile();
 			if (parentFile == null) {
@@ -871,19 +960,30 @@ public class FileBrowser extends JDialog {
 
 				return;
 			}
-
+			
+			List<File> itemsToSet = null;
 			File parentOfParentFile= parentFile.getParentFile();
 
 			if (parentOfParentFile == null) {
-				this.holdChanges = false;
-				return;
+				File[] files = File.listRoots();
+				if (files.length < 2) {
+					this.holdChanges = false;
+					return;
+				}
+				itemsToSet = Arrays.asList(files);
+				if (!itemsToSet.contains(parentFile) ) {
+					this.holdChanges = false;
+					return;
+				}
+			} else {
+				itemsToSet = _l(parentOfParentFile);
 			}
 
 			this.listFiles3.clearSelection();
 
 			this.listFiles2.copyTo(this.listFiles3, false);
 			this.listFiles1.copyTo(this.listFiles2, true);
-			this.listFiles1.setItems(_l(parentOfParentFile));
+			this.listFiles1.setItems(itemsToSet);
 			this.listFiles1.setSelectedValue(parentFile, true);
 			setFocusedList(2);
 
@@ -907,22 +1007,41 @@ public class FileBrowser extends JDialog {
 					this.holdChanges = false;
 					return;
 				}
+				//JOptionPane.showMessageDialog(null, 1);
 				File parentFile = this.listFiles1.getElements().nextElement().getParentFile();
 
 				if (parentFile == null) {
 					this.holdChanges = false;
 					return;
 				}
+				//JOptionPane.showMessageDialog(null, 2);
+
 				File parentOfParentFile= parentFile.getParentFile();
 
+				List<File> itemsToSet = null;
 				if (parentOfParentFile == null) {
-					this.holdChanges = false;
-					return;
+					//JOptionPane.showMessageDialog(null, 3);
+					File[] files = File.listRoots();
+					if (files.length == 0) {
+						this.holdChanges = false;
+						return;
+					}
+					//JOptionPane.showMessageDialog(null, 4);
+					itemsToSet = Arrays.asList(files);
+					if (!itemsToSet.contains(parentFile) ) {
+						this.holdChanges = false;
+						return;
+					}
+					//JOptionPane.showMessageDialog(null, 5);
+				} else {
+					itemsToSet = _l(parentOfParentFile);
+					//JOptionPane.showMessageDialog(null, 6);
 				}
+				//JOptionPane.showMessageDialog(null, 7);
 
 				this.listFiles3.clear();
 				this.listFiles1.copyTo(this.listFiles2, false);
-				this.listFiles1.setItems(_l(parentOfParentFile));
+				this.listFiles1.setItems(itemsToSet);
 				this.listFiles1.setSelectedValue(parentFile, true);
 				setFocusedList(1);
 			}
@@ -973,7 +1092,7 @@ public class FileBrowser extends JDialog {
 			public boolean accept(File directory, String fileName) {
 				if (directory == null || fileName == null)
 					return false;
-				
+
 				File file = new File(directory.getPath() + File.separator + fileName);
 				if (!file.isDirectory() && !fileName.contains("."))
 					return false;
@@ -1121,9 +1240,12 @@ class FileViewRenderer<K> implements ListCellRenderer<K> {
 				}
 			}
 
-
-
-			theText = file.getName();
+			
+			if (file.getName().length()==0) {
+				theText = file.getPath();
+			} else {
+				theText = file.getName();
+			}
 
 		} else {
 			color = normalColor;
@@ -1156,7 +1278,6 @@ class SimpleFileRenderer<K> implements ListCellRenderer<K> {
 						cellHasFocus);
 
 		if (value instanceof File) {
-
 			renderer.setText(((File) value).getName());
 		} else if (value != null) {
 			renderer.setText(value.toString());

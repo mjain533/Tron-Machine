@@ -121,7 +121,7 @@ public class PnlLog implements Logger {
 				if (task == null) {
 					return;
 				}
-				if (textLog.getLineCount() > 300) {
+				if (textLog.getLineCount() > 400) {
 					try {
 						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 					} catch (BadLocationException e) {

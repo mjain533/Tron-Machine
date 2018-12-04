@@ -27,12 +27,15 @@ package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,19 +44,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.BevelBorder;
+import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
@@ -72,6 +79,7 @@ import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChange
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.Point;
+import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
 import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
@@ -145,7 +153,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private JCheckBox objChkOriginal;
 	private JCheckBox objChkDots;
 	private JScrollPane distSP;
-	private SimpleJList<String> distListROI;
+	private SimpleJList<PolarizedPolygonROI> distListROI;
 	private JLabel distLblInstruction;
 	private JLabel distLblCurrDisp;
 
@@ -240,9 +248,27 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 
 
-		distListROI = new SimpleJList<String>();
+		distListROI = new SimpleJList<PolarizedPolygonROI>(new PolygonROIRenderer<PolarizedPolygonROI>(this));
 		distSP.setViewportView(distListROI);
 		distListROI.setFocusable(false);
+		MouseAdapter mouseAdaptor = new MouseAdapter() {
+		    public void mouseClicked(MouseEvent evt) {
+		        @SuppressWarnings("unchecked")
+				SimpleJList<PolarizedPolygonROI> list = (SimpleJList<PolarizedPolygonROI>)evt.getSource();
+		        if (evt.getClickCount() == 2) {
+
+		            // Double-click detected
+		            int index = list.locationToIndex(evt.getPoint());
+		            if (index > -1 && imageCurrentlyROIEditing != null) {
+		            		PolarizedPolygonROI output = list.getElementAt(index);
+		            		imageCurrentlyROIEditing.promptUserForTag(output);
+		            		list.updateUI();
+
+		            }
+		        }
+		    }
+		};
+		distListROI.addMouseListener(mouseAdaptor);
 
 		// Objects
 
@@ -572,9 +598,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.distBtnDeleteROI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				List<String> selectedRois = distListROI.getSelectedMult();
+				List<PolarizedPolygonROI> selectedRois = distListROI.getSelectedMult();
 				if (selectedRois != null && !selectedRois.isEmpty() && imageCurrentlyROIEditing != null) {
-					for (String roi : selectedRois) {
+					for (PolarizedPolygonROI roi : selectedRois) {
 						imageCurrentlyROIEditing.removeROI(roi);
 						distListROI.removeItem(roi);
 					}
@@ -597,33 +623,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				currThread = new Thread(new Runnable() {
-					public void run(){
-
-						try {
-							if (currThread != null && !imageCurrentlyROIEditing.hasROIs()) {
-								JOptionPane.showMessageDialog(gui.getComponent(), "Error: You must create at least one ROI first.", "Processing Error", JOptionPane.ERROR_MESSAGE);
-								return;
-							}
-							distBtnAddROI.setEnabled(false);
-							distBtnDeleteROI.setEnabled(false);
-							distBtnCancelROI.setEnabled(false);
-							distBtnNext.setEnabled(false);
-
-							if (currThread != null && !displayNextROISelectImage()) {
-
-								gui.getWizard().nextState();
-
-							}
-
-							distBtnNext.setEnabled(true);
-						} catch (Exception ex) {
-							distBtnNext.setEnabled(true);
-						}
-					}
-				});
-				currThread.setDaemon(true);
-				currThread.start();
+				pressROINextImage();
 
 			}
 		});
@@ -661,6 +661,52 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		
 
 	}
+	
+	private synchronized void pressROINextImage() { 
+		
+		currThread = new Thread(new Runnable() {
+			public void run(){
+
+				try {
+					
+					if (currThread == null)
+						return;
+					
+					if (imageCurrentlyROIEditing != null) {
+						if (!imageCurrentlyROIEditing.hasROIs()) {
+							JOptionPane.showMessageDialog(gui.getComponent(), "Error: You must create at least one ROI first.", "Processing Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						
+						String errorsInTagValidation = imageCurrentlyROIEditing.validateTags();
+						
+						if (errorsInTagValidation != null) {
+							JOptionPane.showMessageDialog(gui.getComponent(), "<html>Error: You must apply appropriate tags. Message:<br><br>"+errorsInTagValidation+"</html>", "Processing Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+					}
+
+					distBtnAddROI.setEnabled(false);
+					distBtnDeleteROI.setEnabled(false);
+					distBtnCancelROI.setEnabled(false);
+					distBtnNext.setEnabled(false);
+
+					if (currThread != null && !displayNextROISelectImage()) {
+
+						gui.getWizard().nextState();
+
+					}
+
+					distBtnNext.setEnabled(true);
+				} catch (Exception ex) {
+					distBtnNext.setEnabled(true);
+				}
+			}
+		});
+		currThread.setDaemon(true);
+		currThread.start();
+		
+	}
 
 	private synchronized boolean displayNextPreprocessedImage(int lastLowSliceSelection, int lastHighSliceSelection) {
 
@@ -672,9 +718,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 			this.imageCurrentlyPreprocessing.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
 			
-			File serializeDir = this.imageCurrentlyPreprocessing.getContainer().getSerializeDirectory();
-			PreprocessedEditableImage.savePreprocessedImage(this.imageCurrentlyPreprocessing, serializeDir);
-			this.imagesForObjectAnalysis.add(serializeDir);
+			File serializeFile = this.imageCurrentlyPreprocessing.getContainer().getSerializeFile(ImageContainer.STATE_SLC);
+			PreprocessedEditableImage.savePreprocessedImage(this.imageCurrentlyPreprocessing, serializeFile);
+			this.imagesForObjectAnalysis.add(serializeFile);
 			
 			this.gui.getLogger().setCurrentTaskComplete();
 			this.imageCurrentlyPreprocessing = null;
@@ -732,13 +778,16 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			// convert
 			ROIEditableImage roiei = this.imageCurrentlyObjEditing.convertToROIEditableImage();
 			// delete obj if not serve ints
-			if (!GUI.settings.saveIntermediates) {
-				imageCurrentlyObjEditing.deleteSerializedVersion(imageCurrentlyObjEditing.getContainer().getSerializeDirectory());
+			imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
+			imageCurrentlyObjEditing.deleteSerializedVersion();
+			if (GUI.settings.saveIntermediates) {
+				ObjectEditableImage.saveObjEditableImage(this.imageCurrentlyObjEditing, this.imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ));
 			}
+
 			// save roi
-			File serializeDir = roiei.getContainer().getSerializeDirectory();
-			ROIEditableImage.saveROIEditableImage(roiei, serializeDir);
-			this.imagesForROICreation.add(serializeDir);
+			File serializeFile = roiei.getContainer().getSerializeFile(ImageContainer.STATE_ROI);
+			ROIEditableImage.saveROIEditableImage(roiei, serializeFile);
+			this.imagesForROICreation.add(serializeFile);
 			this.gui.getLogger().setCurrentTaskComplete();
 
 			this.imageCurrentlyObjEditing = null;
@@ -753,6 +802,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.imageCurrentlyObjEditing = ObjectEditableImage.loadObjEditableImage(this.imagesForObjectSelection.remove(0));
 		
 		if (imageCurrentlyObjEditing == null) {
+			
 			JOptionPane.showMessageDialog(null, "<html>There was an error opening saved object state.</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
 			this.gui.getSelectFilesPanel().cancel();
 			return true;
@@ -807,10 +857,12 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			
 			this.gui.getLogger().setCurrentTask("Saving state...");
 
-			ROIEditableImage.saveROIEditableImage(imageCurrentlyROIEditing, imageCurrentlyROIEditing.getContainer().getSerializeDirectory());
+			imageCurrentlyROIEditing.deleteSerializedVersion();
+
+			ROIEditableImage.saveROIEditableImage(imageCurrentlyROIEditing, imageCurrentlyROIEditing.getContainer().getSerializeFile(ImageContainer.STATE_ROI));
 
 			this.gui.getLogger().setCurrentTaskComplete();
-			this.imagesForROIAnalysis.add(imageCurrentlyROIEditing.getContainer().getSerializeDirectory());
+			this.imagesForROIAnalysis.add(imageCurrentlyROIEditing.getContainer().getSerializeFile(ImageContainer.STATE_ROI));
 			
 			this.imageCurrentlyROIEditing = null;
 		}
@@ -856,6 +908,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnDeleteROI.setEnabled(true);
 		this.distBtnHelp.setEnabled(true);
 		this.distListROI.clear();
+		if (this.imageCurrentlyROIEditing.hasROIs()) {
+			for (PolarizedPolygonROI roi : this.imageCurrentlyROIEditing.getROIs()) {
+				this.distListROI.addItem(roi);
+			}
+		}
 		
 		RunConfiguration runConfig = ic.getRunConfig();
 		if (!runConfig.channelsToProcess.contains(runConfig.primaryRoiDrawChannel)) {
@@ -877,6 +934,13 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.imagesForObjectAnalysis.clear();
 			this.imagesForObjectSelection = images;
+		}
+	}
+	
+	public synchronized void setImagesForROISelection(List<File> images) {
+
+		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
+			this.imagesForROICreation = images;
 		}
 	}
 
@@ -911,9 +975,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 	public synchronized void startImageROISelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			displayNextROISelectImage();
+			pressROINextImage();
 		}
-
+		
 	}
 
 	public int getState() {
@@ -1269,6 +1333,48 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	public boolean objDeleteTextFieldHasFocus() {
 		return this.objTxtRemove.isFocusOwner();
 	}
+	
+	private static class PolygonROIRenderer<K> implements ListCellRenderer<K> {
+		
+		private static Font smallFont = new Font("PingFang TC", Font.BOLD, 12);
+		protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
+		private PnlOptions pnlOp;
+		
+		private PolygonROIRenderer(PnlOptions op) {
+			this.pnlOp = op;
+		}
 
+		@SuppressWarnings("rawtypes")
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+
+
+			JLabel renderer = (JLabel) defaultRenderer
+					.getListCellRendererComponent(list, value, index, isSelected,
+							cellHasFocus);
+			if (value instanceof PolarizedPolygonROI) {
+				PolarizedPolygonROI roi = (PolarizedPolygonROI) value;
+				if (this.pnlOp.imageCurrentlyROIEditing != null) {
+					renderer.setFont(smallFont);
+					String tags = this.pnlOp.imageCurrentlyROIEditing.getTags(roi, true);
+					if (tags != null) {
+						renderer.setText("<html>"+roi.getName()+" ("+tags+")</html>");
+					} else {
+						renderer.setText("<html>"+roi.getName()+"</html>");
+
+					}
+					renderer.setBorder(new EmptyBorder(0,0,0,0));
+				} else {
+					renderer.setText(value.toString());
+				}
+			} else if (value != null) {
+			}
+
+			return renderer;
+
+
+		}
+		
+	}
 
 }

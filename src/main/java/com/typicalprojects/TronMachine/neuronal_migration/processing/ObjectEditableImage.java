@@ -80,7 +80,7 @@ public class ObjectEditableImage implements Serializable{
 	private transient boolean mask = true;
 	private transient boolean original = true;
 	private transient boolean dots = true;
-
+	
 	private transient ImagePanel imagePnl;
 	private transient GUI gui;
 
@@ -332,7 +332,7 @@ public class ObjectEditableImage implements Serializable{
 	public ROIEditableImage convertToROIEditableImage() {
 		Map<String, List<Point>> ptsString = new HashMap<String, List<Point>>();
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
-			ptsString.put(en.getKey().toReadableString(), en.getValue());
+			ptsString.put(en.getKey().name(), en.getValue());
 		}
 		return new ROIEditableImage(this.gui, this.getContainer(), ptsString);
 	}
@@ -603,17 +603,13 @@ public class ObjectEditableImage implements Serializable{
 
 	}
 	
-	public void deleteSerializedVersion(File serializeDir) {
-		File serializeFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
-		serializeFile.delete();
+	public void deleteSerializedVersion() {
+		this.ic.getSerializeFile(ImageContainer.STATE_OBJ).delete();
 	}
 	
-	public static boolean saveObjEditableImage(ObjectEditableImage image, File serializeDir) {
+	public static boolean saveObjEditableImage(ObjectEditableImage image, File serializeFile) {
 		try {
-			if (!serializeDir.isDirectory()) {
-				serializeDir.mkdir();
-			}
-			File serializeFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
+
 			FileOutputStream fileStream = new FileOutputStream(serializeFile); 
 	        ObjectOutputStream out = new ObjectOutputStream(fileStream); 
 	        out.writeObject(image); 
@@ -627,22 +623,20 @@ public class ObjectEditableImage implements Serializable{
 		return false;
 	}
 	
-	public static ObjectEditableImage loadObjEditableImage(File serializeDir) {
+	public static ObjectEditableImage loadObjEditableImage(File serializeFile) {
 		try {
-			if (!serializeDir.isDirectory())
+			if (serializeFile.isDirectory())
 				return null;
-			File serializedFile = new File(serializeDir.getPath() + File.separator + "postobjstate.ser");
-			if (!serializedFile.exists())
+			if (!serializeFile.exists())
 				return null;
 
-	        FileInputStream fileInput = new FileInputStream(serializedFile); 
+	        FileInputStream fileInput = new FileInputStream(serializeFile); 
             ObjectInputStream in = new ObjectInputStream(fileInput); 
 
             ObjectEditableImage loadedROIImage = (ObjectEditableImage) in.readObject(); 
             //this.gui.getPanelDisplay().setImage(object1.get, zoom, clickX, clickY);
             in.close(); 
             fileInput.close(); 
-            
             return loadedROIImage;
 
 		}catch (Exception e) {

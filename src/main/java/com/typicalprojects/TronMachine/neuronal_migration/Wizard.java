@@ -28,6 +28,7 @@ package com.typicalprojects.TronMachine.neuronal_migration;
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -36,6 +37,7 @@ import javax.swing.JOptionPane;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlInstructions.Instruction;
+import com.typicalprojects.TronMachine.util.FileContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 
 public class Wizard {
@@ -130,6 +132,7 @@ public class Wizard {
 			break;
 		case SELECT_FILES:
 			this.gui.getPanelOptions().setImagesForSliceSelection((List<ImagePhantom>) input[0]);
+			gui.getLogPanel().setDisplayState(true);
 			setStatus(Status.SELECT_SLICES);
 			break;
 		case SELECT_SLICES:
@@ -153,6 +156,48 @@ public class Wizard {
 			setStatus(Status.SELECT_FILES);
 			break;
 		}
+		
+	}
+	
+	public void startFromObjState(List<FileContainer> fcs) {
+		this.status = Status.SELECT_OB;
+		List<File> files = new ArrayList<File>();
+		for (FileContainer fc : fcs) {
+			files.add(fc.file);
+		}
+		gui.getPanelOptions().setImagesForObjSelection(files);
+		gui.getSelectFilesPanel().setFileList(fcs);
+		gui.setMenuItemsEnabledDuringRun(false);
+		gui.getInstructionPanel().setInstruction(Instruction.SELECT_OBJECTS);
+		gui.getSelectFilesPanel().setDisplayState(PnlSelectFiles.STATE_FILES_RUNNING);
+		gui.getLogPanel().setDisplayState(true);
+		DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH-mm-ss");
+		Date date = new Date();
+		GUI.dateString = dateFormat.format(date);
+		gui.getPanelDisplay().setDisplayState(false, "Image opening...");
+		gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
+		gui.getPanelOptions().startImageObjectSelecting();
+		
+	}
+	
+	public void startFromRoiState(List<FileContainer> fcs) {
+		this.status = Status.SELECT_OB;
+		List<File> files = new ArrayList<File>();
+		for (FileContainer fc : fcs) {
+			files.add(fc.file);
+		}
+		gui.getPanelOptions().setImagesForROISelection(files);
+		gui.getSelectFilesPanel().setFileList(fcs);
+		gui.setMenuItemsEnabledDuringRun(false);
+		gui.getInstructionPanel().setInstruction(Instruction.SELECT_ROI);
+		gui.getSelectFilesPanel().setDisplayState(PnlSelectFiles.STATE_FILES_RUNNING);
+		gui.getLogPanel().setDisplayState(true);
+		DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy HH-mm-ss");
+		Date date = new Date();
+		GUI.dateString = dateFormat.format(date);
+		gui.getPanelDisplay().setDisplayState(false, "Image opening...");
+		gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
+		gui.getPanelOptions().startImageROISelecting();
 		
 	}
 	

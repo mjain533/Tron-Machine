@@ -70,6 +70,7 @@ import org.json.JSONObject;
 
 import com.typicalprojects.TronMachine.MainFrame;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsLoader;
+import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlInstructions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlLog;
@@ -115,10 +116,12 @@ public class GUI  {
 	private JMenuItem mntmBrightnessAdj;
 	private JMenuItem mntmSummaryStats;
 
-	private Preferences2 prefs;
+	private Preferences prefs;
+	private IntermediateProcessingGUI itmdProcessingGUI;
 	private BrightnessAdjuster brightnessAdjuster;
 	private StatsGUI statsGUI;
 	private volatile JLabel lblAttributes = null;
+	private JMenuItem mntmItmdProcessingGUI;
 	public static GUI SINGLETON = null;
 
 	/**
@@ -159,7 +162,7 @@ public class GUI  {
 
 	}
 
-	public void show() throws IOException {
+	public void show() {
 
 		this.quantFrame.setVisible(true);
 		this.quantFrame.repaint();
@@ -180,8 +183,12 @@ public class GUI  {
 		quantFrame.addWindowListener(new WindowAdapter(){
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
-				if (JOptionPane.showConfirmDialog(quantFrame, "Do you really want to quit?", "Confirm Quit", 
-						JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
+				if (wizard.getStatus() != Status.SELECT_FILES) {
+					if (JOptionPane.showConfirmDialog(quantFrame, "Do you really want to quit?", "Confirm Quit", 
+							JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
+						doExit();
+					}
+				} else {
 					doExit();
 				}
 			}
@@ -209,7 +216,7 @@ public class GUI  {
 		});
 
 		mntmPreferences = new JMenuItem("Preferences");
-		prefs = new Preferences2(this);
+		prefs = new Preferences(this);
 		mntmPreferences.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -280,7 +287,30 @@ public class GUI  {
 			}
 		});
 		mntmSummaryStats.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		
+		this.itmdProcessingGUI = new IntermediateProcessingGUI(this);
+		this.mntmItmdProcessingGUI = new JMenuItem("Process from Intermediates");
+		mnProcess.add(this.mntmItmdProcessingGUI);
+		this.mntmItmdProcessingGUI.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 
+				EventQueue.invokeLater(new Runnable() {
+					public void run() {
+						try {
+							getWizard().cancel();
+							itmdProcessingGUI.display(quantFrame);
+							quantFrame.setVisible(false);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+
+			}
+		});
+		mntmItmdProcessingGUI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+
+		
 		JMenu mnNavigation = new JMenu("Navigation");
 		mnNavigation.setFont(smallFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnNavigation);
@@ -535,11 +565,11 @@ public class GUI  {
 	}
 
 	public void setMenuItemsEnabledDuringRun(boolean enabled) {
-		//this.mntmPreferences.setEnabled(enabled);
 		this.prefs.setEnabled(enabled);
+		this.prefs.resetPreferences(enabled);
 		this.statsGUI.removeDisplay();
 		this.statsGUI.resetFields();
-		this.prefs.resetPreferences(enabled);
+		this.mntmItmdProcessingGUI.setEnabled(enabled);
 	}
 
 	private static boolean openWebpage(URI uri) {
@@ -596,6 +626,7 @@ public class GUI  {
 			is.close();
 		}
 	}
+	
 
 
 }

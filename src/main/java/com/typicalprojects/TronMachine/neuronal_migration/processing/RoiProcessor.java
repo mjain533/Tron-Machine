@@ -18,10 +18,12 @@ public class RoiProcessor {
 
 	private final List<File> imagesToProcess;
 	private Thread threadProcessor;
+	private volatile Logger progressReporter;
 	private volatile boolean cancelled = false;
 
-	public RoiProcessor(List<File> serializedLocations, final Logger progressReporter, final Wizard wizard) {
-
+	public RoiProcessor(List<File> serializedLocations, final Logger progress, final Wizard wizard) {
+		
+		this.progressReporter = progress;
 		this.imagesToProcess = serializedLocations;
 
 		threadProcessor = new Thread(new Runnable() {
@@ -30,24 +32,26 @@ public class RoiProcessor {
 				try {
 					
 					for (File file : imagesToProcess) {
-						progressReporter.setCurrentTask("Loading state...");
+						log("Loading state...");
 						ROIEditableImage roiImg = ROIEditableImage.loadROIEditableImage(file);
-						progressReporter.setCurrentTaskComplete();						
+						logDone();					
 						
-						progressReporter.setCurrentTask("Performing calculations...");
-						// TODO: allow user to re-order the ROIS in the ROI list to determine binning or calculations.
+						log("Performing calculations...");
+
 						List<Analyzer.Calculation> calculationsToComplete = Arrays.asList(Analyzer.Calculation.PERCENT_MIGRATION);
 						Map<String, ResultsTable> results = roiImg.processMigration(progressReporter, calculationsToComplete);
-						progressReporter.setCurrentTask("Saving resources...");
+						log("Saving resources...");
 						
+
+						// save
 						if (!GUI.settings.saveIntermediates) {
-							roiImg.deleteSerializedVersion(roiImg.getContainer().getSerializeDirectory());
+							roiImg.deleteSerializedVersion();
 						}
 						roiImg.saveROIs();
 						roiImg.createAndSaveNewImages();
 						roiImg.getContainer().saveResultsTables(results, true);
 						
-						progressReporter.setCurrentTaskComplete();
+						logDone();
 						
 						if (cancelled)
 							return;
@@ -67,10 +71,10 @@ public class RoiProcessor {
 
 	}
 
-
 	public void cancelProcessing() {
 		this.cancelled = true;
 		this.threadProcessor = null;
+		this.progressReporter = null;
 	}
 
 	public void run() {
@@ -79,6 +83,21 @@ public class RoiProcessor {
 
 	public boolean isCancelled() {
 		return this.cancelled;
+	}
+	
+	private synchronized void log(String info) {
+		if (this.cancelled)
+			return;
+
+		progressReporter.setCurrentTask(info);
+
+	}
+	
+	public synchronized void logDone() {
+		if (this.cancelled)
+			return;
+		
+		progressReporter.setCurrentTaskComplete();
 	}
 
 }

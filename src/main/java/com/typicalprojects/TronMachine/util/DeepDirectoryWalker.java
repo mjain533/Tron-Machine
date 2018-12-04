@@ -53,7 +53,7 @@ public class DeepDirectoryWalker extends DirectoryWalker{
 		walk(dir, results);
 		List<FileContainer> containedResults = new ArrayList<FileContainer>();
 		for (File result : results) {
-			containedResults.add(new FileContainer(result));
+			containedResults.add(new FileContainer(result, false));
 		}
 		return containedResults;
 	}

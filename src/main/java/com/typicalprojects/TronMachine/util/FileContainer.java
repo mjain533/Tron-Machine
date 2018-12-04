@@ -30,20 +30,29 @@ import java.io.File;
 public class FileContainer {
 
 	public File file;
+	public boolean printFullPath;
 
-	public FileContainer(File file) {
+	public FileContainer(File file, boolean printFullPath) {
 		this.file = file;
+		this.printFullPath = printFullPath;
 	}
 
 	public String toString() {
-		return file.getName();
+		if (this.printFullPath)
+			return file.getPath();
+		else
+			return file.getName();
 	}
 	
 	public boolean equals(Object other) {
 		if (other == null || !(other instanceof FileContainer))
 			return false;
 		
-		return file.getName().equals(((FileContainer) other).file.getName());
+		if (printFullPath) {
+			return file.getPath().equals(((FileContainer) other).file.getPath());
+		} else {
+			return file.getName().equals(((FileContainer) other).file.getName());
+		}
 	}
 
 }

@@ -54,11 +54,13 @@ public class NeuronProcessor {
 
 	private final List<File> imagesToProcess;
 	private Thread threadProcessor;
+	private volatile Logger progressReporter;
 	private volatile boolean cancelled = false;
 
-	public NeuronProcessor(List<File> serializedLocations, final Logger progressReporter, final Wizard wizard) {
+	public NeuronProcessor(List<File> serializedLocations, final Logger progress, final Wizard wizard) {
 
 		this.imagesToProcess = serializedLocations;
+		this.progressReporter = progress;
 
 		threadProcessor = new Thread(new Runnable() {
 			public void run(){
@@ -70,24 +72,24 @@ public class NeuronProcessor {
 
 					while (!cancelled && itr.hasNext()) {
 						
-						log(progressReporter, "Opening image....");
+						log("Opening image....");
 
 						PreprocessedEditableImage preProcessedImage = PreprocessedEditableImage.loadPreprocessedImage(itr.next());
-						logDone(progressReporter);
+						logDone();
 						
 						if (preProcessedImage == null) {
 							error("Could not reload saved preprocess state for image.", wizard);
 							return;
 						}
 						ImageContainer ic = preProcessedImage.getContainer();
-						log(progressReporter, "Processing image: " + ic.getImageTitle() + "");
+						log("Processing image: " + ic.getImageTitle() + "");
 
 						Map<String, ResultsTable> tables = new HashMap<String, ResultsTable>();
 						ZProjector projector = new ZProjector();
 						Map<Channel, ImagePlus> chanMap = ic.getOriginals();
 						for (Channel chan : ic.getRunConfig().channelMap.values()) {
 							if (ic.getRunConfig().channelsToProcess.contains(chan)) {
-								log(progressReporter, "Processing Channel: " + chan.name());
+								log("Processing Channel: " + chan.name());
 
 								Object[] chanProcessed = processChannel(chanMap.get(chan), progressReporter, chan);
 								if (cancelled)
@@ -112,17 +114,18 @@ public class NeuronProcessor {
 						}
 						
 						
-						log(progressReporter, "Saving " + ic.getImageTitle() + "...");
+						log("Saving " + ic.getImageTitle() + "...");
 						ObjectEditableImage oei = preProcessedImage.convertToObjectEditableImage(tables);
 						
 						tables = null;
-						preProcessedImage.deleteSerializedVersion(ic.getSerializeDirectory());
+						preProcessedImage.deleteSerializedVersion(ic.getSerializeFile(ImageContainer.STATE_SLC));
 						ic = null;
 						preProcessedImage = null;
 						
-						ObjectEditableImage.saveObjEditableImage(oei, oei.getContainer().getSerializeDirectory());
-						imagesDoneProcessing.add(oei.getContainer().getSerializeDirectory());
-						logDone(progressReporter);
+						File serializeFile = oei.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
+						ObjectEditableImage.saveObjEditableImage(oei, serializeFile);
+						imagesDoneProcessing.add(serializeFile);
+						logDone();
 						
 						oei = null;
 						itr.remove();
@@ -149,8 +152,9 @@ public class NeuronProcessor {
 	}
 
 
-	public void cancelProcessing() {
+	public synchronized void cancelProcessing() {
 		this.cancelled = true;
+		this.progressReporter = null;
 		this.threadProcessor = null;
 	}
 
@@ -166,48 +170,47 @@ public class NeuronProcessor {
 	}
 
 	private Object[] processChannel(ImagePlus originalImg, Logger progressReporter, Channel chan) {
-		System.out.println(originalImg.getStackSize());
 		ImagePlus duplicate = originalImg.duplicate();
 		duplicate.setTitle(duplicate.getTitle().substring(4));
 		
-		log(progressReporter, "Applying unsharp mask...");
+		log("Applying unsharp mask...");
 		IJ.run(duplicate, "Unsharp Mask...", "radius=" + GUI.settings.processingUnsharpMaskRadius + " mask=" + GUI.settings.processingUnsharpMaskWeight + " stack");
-		logDone(progressReporter);
+		logDone();
 
-		log(progressReporter, "Applying Gaussian Blur...");
+		log("Applying Gaussian Blur...");
 		IJ.run(duplicate, "Gaussian Blur...", "sigma=" + GUI.settings.processingGaussianSigma + " stack");
-		logDone(progressReporter);
+		logDone();
 		
-		log(progressReporter, "Converting to 8-bit...");
+		log("Converting to 8-bit...");
 		IJ.run(duplicate, "8-bit", "stack");
-		logDone(progressReporter);
+		logDone();
 	
-		log(progressReporter, "Thresholding...");
+		log("Thresholding...");
 		new Thresholder(duplicate).threshold(GUI.settings.processingMinThreshold);
-		logDone(progressReporter);
+		logDone();
 		
-		log(progressReporter, "Setting binary options...");
+		log("Setting binary options...");
 		IJ.run("Options...", "iterations=1 count=1 black");
-		logDone(progressReporter);
+		logDone();
 	
-		log(progressReporter, "Eroding...");
+		log("Eroding...");
 		IJ.run(duplicate, "Erode", "stack");
-		logDone(progressReporter);
+		logDone();
 		
-		log(progressReporter, "Segmenting (watershed)...");
+		log("Segmenting (watershed)...");
 		IJ.run(duplicate, "Watershed", "stack");
-		logDone(progressReporter);
+		logDone();
 
-		log(progressReporter, "Counting 3D objects...");
+		log("Counting 3D objects...");
 		Custome3DObjectCounter counter =new Custome3DObjectCounter(duplicate);
 
 		counter.run(progressReporter, this);
 		if (this.cancelled)
 			return null;
-		log(progressReporter, "Objects found.");
+		log("Objects found.");
 
 		counter.getStats();
-		log(progressReporter, "Processing maps...");
+		log("Processing maps...");
 		IJ.setRawThreshold(counter.getObjectMap(), 1, 65535, null);
 		IJ.run(counter.getObjectMap(), "Convert to Mask", "method=Default background=Default black");
 
@@ -218,8 +221,8 @@ public class NeuronProcessor {
 
 		IJ.run(originalImage8bit, "8-bit", "stack");
 		
-		logDone(progressReporter);
-		log(progressReporter, "Merging, finalizing, and saving...");
+		logDone();
+		log("Merging, finalizing, and saving...");
 		//counter.getObjectMap();  JUST REMOVED August 28th
 		ImagePlus impFinal = new ImagePlus(duplicate.getTitle(),RGBStackMerge.mergeStacks(counter.getObjectMap().getImageStack(), originalImage8bit.getImageStack(), null, true));
 		originalImage8bit = null;
@@ -230,14 +233,14 @@ public class NeuronProcessor {
 		projector.setMethod(ZProjector.MAX_METHOD);
 		projector.doProjection();
 		impFinal = projector.getProjection();
-		logDone(progressReporter);
+		logDone();
 		System.gc();
 		ImagePlus maxedOriginal = maxProject(originalImg);
 		ImageContainer.applyLUT(maxedOriginal, chan);
 		return new Object[] {impFinal, maxedOriginal, maxProject(counter.getObjectMap()), counter.getStats()};
 	}
 
-	private void log(Logger progressReporter, String info) {
+	private synchronized void log(String info) {
 		if (this.cancelled)
 			return;
 
@@ -245,7 +248,10 @@ public class NeuronProcessor {
 
 	}
 	
-	public void logDone(Logger progressReporter) {
+	public synchronized void logDone() {
+		if (this.cancelled)
+			return;
+		
 		progressReporter.setCurrentTaskComplete();
 	}
 

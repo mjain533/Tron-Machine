@@ -173,7 +173,7 @@ public class StatsGUI extends JFrame {
 						});
 						
 						if (analysisFile.length > 0) {
-							FileContainer newInputDir = new FileContainer(analysisFile[0]);
+							FileContainer newInputDir = new FileContainer(analysisFile[0], false);
 							if (inputFiles.contains(newInputDir)) {
 								JOptionPane.showMessageDialog(contentPane, "You cannot add duplicate files.", "Error Selecting Files.", JOptionPane.ERROR_MESSAGE);
 								return;
@@ -255,7 +255,7 @@ public class StatsGUI extends JFrame {
 				List<File> file = fileBrowserSingular.getSelectedFiles();
 				if (file != null && file.size() != 0) {
 						
-					storeDir = new FileContainer(file.get(0));
+					storeDir = new FileContainer(file.get(0), false);
 					txtOutputLocation.setText(storeDir.file.getPath());
 					
 				}

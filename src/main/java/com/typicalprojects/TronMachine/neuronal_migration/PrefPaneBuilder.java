@@ -43,7 +43,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.typicalprojects.TronMachine.neuronal_migration.Preferences2.SettingPage;
+import com.typicalprojects.TronMachine.neuronal_migration.Preferences.SettingPage;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 
 import java.awt.Font;
