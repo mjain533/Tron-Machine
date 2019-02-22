@@ -27,7 +27,6 @@ package com.typicalprojects.TronMachine;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -38,29 +37,17 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.border.LineBorder;
 import java.awt.Color;
 
+/**
+ * Temporary frame displayed while waiting for a program to open (main frame has disappeared)
+ * 
+ * @author Justin Carrington
+ */
 public class WaitingFrame extends JFrame {
 
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = -3324734901445002689L;
 	private JPanel contentPane;
 
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					WaitingFrame frame = new WaitingFrame();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
 
 	/**
 	 * Create the frame.
@@ -99,11 +86,19 @@ public class WaitingFrame extends JFrame {
 		panel.setLayout(gl_panel);
 	}
 	
+	/**
+	 * Displays the waiting frame on screen.
+	 * 
+	 * @param parent A swing component, on top of which this frame will be positioned (centered)
+	 */
 	public void show(Component parent) {
 		setLocationRelativeTo(parent);
 		setVisible(true);
 	}
 	
+	/**
+	 * Removes this frame from view but does not dispose of it.
+	 */
 	public void disappear() {
 		setVisible(false);
 	}

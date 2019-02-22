@@ -55,7 +55,7 @@ import java.awt.Point;
 public class SimpleJList<K> extends JList<K>{
 
 	private static final long serialVersionUID = -8945321883556091433L;
-	private final DefaultListModel<K> listModel;
+	private final MyListModel<K> listModel;
 	private DropTarget dropTarget;
 	private DropTargetHandler dropTargetHandler;
 	private Point dragPoint;
@@ -67,9 +67,20 @@ public class SimpleJList<K> extends JList<K>{
 
 	public SimpleJList() {
 		super();
-		this.listModel = new DefaultListModel<K>();
+		this.listModel = new MyListModel<K>();
 		setModel(this.listModel);
 
+
+	}
+	
+	class MyListModel<T> extends DefaultListModel<T>
+	{
+
+		private static final long serialVersionUID = -80559302127736463L;
+
+		public void update() {
+	        fireContentsChanged(this, 0, this.size() - 1);
+	    }
 
 	}
 
@@ -101,6 +112,10 @@ public class SimpleJList<K> extends JList<K>{
 		if (index < this.listModel.size()) {
 			setSelectedValue(this.listModel.get(index), true);
 		}
+	}
+	
+	public void refresh() {
+		this.listModel.update();
 	}
 
 	public K getElementAt(int index) {

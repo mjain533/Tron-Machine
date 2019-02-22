@@ -25,6 +25,7 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration;
 
+import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,9 +45,8 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import com.typicalprojects.TronMachine.util.ImageContainer;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
-
+import com.google.common.io.Files;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
 public class Settings {
 
@@ -54,15 +54,13 @@ public class Settings {
 	 * This will only be true if we did NOT force load defaults, and the custom did not exist or did not match defaults.
 	 */
 	public boolean needsUpdate = false;
-
-	public Map<Integer, ImageContainer.Channel> channelMap = new HashMap<Integer, ImageContainer.Channel>();
-	public List<Channel> channelsToProcess = null;
+	
+	public ChannelManager channelMan = null;
 	public File outputLocation = null;
 	public boolean saveIntermediates = false;
 	public List<File> recentOpenFileLocations = null;
 	public List<File> recentOpenAnalysisOutputLocations = null;
 	public boolean calculateBins = true;
-	public Channel primaryRoiDrawChannel = null;
 	public boolean drawBinLabels = true;
 	public int numberOfBins = -1;
 	public boolean excludePtsOutsideBin = true;
@@ -74,24 +72,7 @@ public class Settings {
 	public List<String> calibrations = null;
 	public int calibrationNumber = -1;
 	public boolean enforceLUTs = true;
-	public LinkedHashMap<OutputOption, OutputParams> enabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
-	public LinkedHashMap<OutputOption, OutputParams> disabledOptions = new LinkedHashMap<OutputOption, OutputParams>();
 
-
-	public static void main(String[] args) throws FileNotFoundException, SecurityException, IOException {
-		SettingsLoader.loadSettings(false);
-		
-	}
-	
-	public List<Channel> getChannels() {
-		List<Integer> chanNums = new ArrayList<Integer>(channelMap.keySet());
-		chanNums.sort(null);
-		List<Channel> list = new ArrayList<Channel>();
-		for (Integer i : chanNums) {
-			list.add(channelMap.get(i));
-		}
-		return list;
-	}
 
 	protected Settings() {} // restrict access
 	
@@ -99,9 +80,10 @@ public class Settings {
 		return new RunConfiguration(this);
 	}
 	
-	public static class SettingsLoader {
-
-		private static final String keyChanMap = "ChannelMapping";
+	public static class SettingsManager {
+		
+		private static final String keyVersion = "Version";
+		private static final String keyChanMap = "Channels";
 		private static final String keySaveInt = "SaveIntermediates";
 		private static final String keyOutputLocation = "OutputLocation";
 		private static final String keyChansToProcess = "ChannelsToProcess";
@@ -125,8 +107,10 @@ public class Settings {
 
 
 
-		public static final String settingsFilePath = "Neuronal_Migration_Resources" + File.separator + "settings.yml";
+		public static final String settingsFileName = "settings-v2.yml";
 		public static final String settingsMainPath = "Neuronal_Migration_Resources";
+		
+		private static final String currentVersion = "v2";
 
 		// NOTE: Does not currently supporting nesting.
 		@SuppressWarnings("unchecked")
@@ -141,8 +125,9 @@ public class Settings {
 			LinkedHashMap<String, Object> customData = null;
 			boolean changed = false;
 			if (!forceLoadDefault) {
-				if (new File(settingsFilePath).exists()) {
-					InputStream customDataSource = new FileInputStream(settingsFilePath);
+				String fullSettingsPath = settingsMainPath + File.separator + settingsFileName;
+				if (new File(fullSettingsPath).exists()) {
+					InputStream customDataSource = new FileInputStream(fullSettingsPath);
 					customData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor())).load(customDataSource);
 
 				} else {
@@ -167,26 +152,51 @@ public class Settings {
 
 			Settings settings = new Settings();
 			settings.needsUpdate = changed;
-
-			// Channel map
-			List<String> list = (List<String>) dataToParse.get(keyChanMap);
-			for (String channelMappingString : list) {
-				String[] channelMap = channelMappingString.split(":");
-				if (!channelMap[1].equals("None")) {
-					settings.channelMap.put(Integer.valueOf(channelMap[0]), Channel.parse(channelMap[1]));
-				}
+			
+			String version = ((String) dataToParse.get(keyVersion));
+			if (!version.equals(currentVersion)) {
+				updateSettings(dataToParse, version);
+				settings.needsUpdate = true;
 			}
 			
-			// Channel select
+			// Channels
+			List<String> list = (List<String>) dataToParse.get(keyChanMap);
+			settings.channelMan = new ChannelManager();
+			for (String channelMappingString : list) {
+				String[] channelMap = channelMappingString.split(":");
+				Color imgColor = null;
+				Color txtColor = null;
+
+				int index = -1;
+				
+				try {
+					String[] rgbStrings = channelMap[2].split(",");
+					imgColor = new Color(Integer.parseInt(rgbStrings[0]), Integer.parseInt(rgbStrings[1]), Integer.parseInt(rgbStrings[2]));
+					rgbStrings = channelMap[3].split(",");
+					txtColor = new Color(Integer.parseInt(rgbStrings[0]), Integer.parseInt(rgbStrings[1]), Integer.parseInt(rgbStrings[2]));
+				
+					
+					index = Integer.parseInt(channelMap[4]);
+				} catch (Exception e) {
+					settings.needsUpdate = true;
+					continue;
+				}
+				
+				Channel chan = settings.channelMan.addChannel(channelMap[0], channelMap[1], imgColor, txtColor);
+				settings.channelMan.setMappedIndex(chan, index);
+
+			}
+			
+			// Channel Process
 			List<String> listChansProcess = (List<String>) dataToParse.get(keyChansToProcess);
-			settings.channelsToProcess = new ArrayList<Channel>();
 			for (String channelMappingString : listChansProcess) {
-				settings.channelsToProcess.add(Channel.parse(channelMappingString));
+				settings.channelMan.setProcessChannel(settings.channelMan.parse(channelMappingString), true);
 			}
 			
 			// Roi draw
-			settings.primaryRoiDrawChannel = Channel.parse((String) dataToParse.get(keyChanDraw));
 
+			settings.channelMan.setPrimaryROIDrawChan(settings.channelMan.parse((String) dataToParse.get(keyChanDraw)));
+			
 			// Save intermediates
 			settings.saveIntermediates = (boolean) dataToParse.get(keySaveInt);
 			
@@ -254,20 +264,20 @@ public class Settings {
 				OutputOption option = OutputOption.fromCondensed(outputOptionString.substring(0, outputOptionString.indexOf("(")));
 				if (option == null)
 					throw new NullPointerException("Invalid Settings Configuration");
-				OutputParams outputOption = new OutputParams(option);
+				OutputParams optionParams = new OutputParams(option);
 				String chanString = outputOptionString.substring(outputOptionString.indexOf("(") + 1, outputOptionString.indexOf(")"));
 				if (chanString != null && !chanString.equals("")) {
 					for (char c : chanString.toCharArray()) {
-						Channel chan = Channel.getChannelByAbbreviation(c + "");
+						Channel chan = settings.channelMan.parse(c + "");
 						if (chan == null) {
 							settings.needsUpdate = true;
 						} else {
-							outputOption.addChannel(chan);
+							optionParams.addChannel(chan);
 						}
 					}
 
 				}
-				enabledOptionsTemp.put(option, outputOption);
+				enabledOptionsTemp.put(option, optionParams);
 			}
 			Map<OutputOption, OutputParams> disabledOptionsTemp = new HashMap<OutputOption, OutputParams>();
 			for (String outputOptionString : (List<String>) dataToParse.get(keyOutputOptionsDisabled)) {
@@ -278,28 +288,28 @@ public class Settings {
 					continue;
 				}
 				
-				OutputParams outputOption = new OutputParams(option);
+				OutputParams optionParams = new OutputParams(option);
 				String chanString = outputOptionString.substring(outputOptionString.indexOf("(") + 1, outputOptionString.indexOf(")"));
 				if (chanString != null && !chanString.equals("")) {
 					for (char c : chanString.toCharArray()) {
-						Channel chan = Channel.getChannelByAbbreviation(c + "");
+						Channel chan = settings.channelMan.parse(c + "");
 						if (chan == null) {
 							settings.needsUpdate = true;
 						} else {
-							outputOption.addChannel(chan);
+							optionParams.addChannel(chan);
 						}
 					}
 
 				}
-				disabledOptionsTemp.put(option, outputOption);
+				disabledOptionsTemp.put(option, optionParams);
 			}
 			for (OutputOption option : OutputOption.values()) {
 				if (enabledOptionsTemp.containsKey(option)) {
-					settings.enabledOptions.put(option, enabledOptionsTemp.get(option));
+					settings.channelMan.addOutputOption(option, enabledOptionsTemp.get(option), true);
 				} else if (disabledOptionsTemp.containsKey(option)) {
-					settings.disabledOptions.put(option, disabledOptionsTemp.get(option));
+					settings.channelMan.addOutputOption(option, disabledOptionsTemp.get(option), false);
 				} else {
-					settings.disabledOptions.put(option, new OutputParams(option));
+					settings.channelMan.addOutputOption(option, new OutputParams(option), false);
 					settings.needsUpdate = true;
 				}
 			}
@@ -309,12 +319,28 @@ public class Settings {
 
 
 		}
-
+		
+		private static void updateSettings(LinkedHashMap<String, Object> rawData, String settingsVersion) {
+			// successively do the updates.
+			// if updates, needs to settings needsUpdates = true
+		}
+		
 		public static boolean saveSettings(Settings settings) {
+			return saveSettings(settings, settingsFileName);
+		}
+		
+		public static boolean saveSettings(Settings settings, String fileName) {
 			LinkedHashMap<String, Object> newSettings = new LinkedHashMap<String, Object>();
+			
+			newSettings.put(keyVersion, currentVersion);
+			
+			
 			List<String> chanMapString = new ArrayList<String>();
-			for (Entry<Integer, Channel> en : settings.channelMap.entrySet()) {
-				chanMapString.add(en.getKey() + ":" + en.getValue().toReadableString());
+			for (Channel chan : settings.channelMan.getOrderedChannels()) {
+				chanMapString.add(chan.getName() + ":" + chan.getAbbrev() + ":" 
+						+ chan.getImgColor().getRed() + "," + chan.getImgColor().getGreen() + "," + chan.getImgColor().getBlue() + ":"
+						+ chan.getTxtColor().getRed() + "," + chan.getTxtColor().getGreen() + "," + chan.getTxtColor().getBlue() + ":"
+						+ settings.channelMan.getMappedIndex(chan));
 			}
 			newSettings.put(keyChanMap, chanMapString);
 			if (settings.outputLocation != null) {
@@ -323,13 +349,13 @@ public class Settings {
 				newSettings.put(keyOutputLocation, "None");
 			}
 			List<String> chansToProcess = new ArrayList<String>();
-			for (Channel chan : settings.channelsToProcess) {
-				chansToProcess.add(chan.toReadableString());
+			for (Channel chan : settings.channelMan.getProcessChannels()) {
+				chansToProcess.add(chan.getName());
 			}
 			newSettings.put(keyChansToProcess, chansToProcess);
 			
 			// Roi primary
-			newSettings.put(keyChanDraw, settings.primaryRoiDrawChannel.toReadableString());
+			newSettings.put(keyChanDraw, settings.channelMan.getPrimaryROIDrawChan().getName());
 
 			// Save int
 			newSettings.put(keySaveInt, settings.saveIntermediates);
@@ -369,25 +395,13 @@ public class Settings {
 			// Settings
 			List<String> outputOptionEnabledStrings = new ArrayList<String>();
 			List<String> outputOptionDisabledStrings = new ArrayList<String>();
-			for (Entry<OutputOption, OutputParams> en : settings.enabledOptions.entrySet()) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("");
-				String delim = "";
-				for (Channel chan : en.getValue().includedChannels) {
-					sb.append(delim).append(chan.getAbbreviation());
-					delim = ",";
-				}
-				outputOptionEnabledStrings.add(en.getKey().getCondensed() + "(" + sb.toString() + ")");
+			for (Entry<OutputOption, OutputParams> en : settings.channelMan.getCopyOfOutputParamMapping(true).entrySet()) {
+				
+				outputOptionEnabledStrings.add(en.getKey().getCondensed() + "(" + en.getValue().concatChanAbbrevs() + ")");
 			}
-			for (Entry<OutputOption, OutputParams> en : settings.disabledOptions.entrySet()) {
-				StringBuilder sb = new StringBuilder();
-				sb.append("");
-				String delim = "";
-				for (Channel chan : en.getValue().includedChannels) {
-					sb.append(delim).append(chan.getAbbreviation());
-					delim = ",";
-				}
-				outputOptionDisabledStrings.add(en.getKey().getCondensed() + "(" + sb.toString() + ")");
+			for (Entry<OutputOption, OutputParams> en : settings.channelMan.getCopyOfOutputParamMapping(false).entrySet()) {
+
+				outputOptionDisabledStrings.add(en.getKey().getCondensed() + "(" + en.getValue().concatChanAbbrevs() + ")");
 			}
 			newSettings.put(keyOutputOptionsEnabled, outputOptionEnabledStrings);
 			newSettings.put(keyOutputOptionsDisabled, outputOptionDisabledStrings);
@@ -399,9 +413,9 @@ public class Settings {
 
 		    BufferedWriter writer = null;
 			try {
-				File file1 = new File(settingsMainPath);
-				file1.mkdir();
-				File file = new File(settingsFilePath);
+				new File(settingsMainPath).mkdir();
+				
+				File file = new File(settingsMainPath + File.separator + fileName);
 				file.createNewFile();
 				writer = new BufferedWriter(new FileWriter(file));
 				writer.write(output);
@@ -427,7 +441,7 @@ public class Settings {
 				Entry<String, Object> referenceEn = referenceItr.next();
 
 				Object valueSomewhere = query.get(referenceEn.getKey());
-				if (valueSomewhere == null || !_looselyTestEquality(valueSomewhere, referenceEn.getValue())) {
+				if (valueSomewhere == null /*|| !_looselyTestEquality(valueSomewhere, referenceEn.getValue())*/) {
 					newMap.put(referenceEn.getKey(), referenceEn.getValue());
 					hasChanges = true;
 				} else {

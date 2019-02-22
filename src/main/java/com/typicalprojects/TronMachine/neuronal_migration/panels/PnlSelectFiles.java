@@ -42,6 +42,7 @@ import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -54,12 +55,14 @@ import javax.swing.border.BevelBorder;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings;
 import com.typicalprojects.TronMachine.popup.HelpPopup;
+import com.typicalprojects.TronMachine.util.CustomFileChooser;
 import com.typicalprojects.TronMachine.util.DeepDirectoryWalker;
 import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.FileContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.SimpleJList.ListDropReceiver;
+import com.typicalprojects.TronMachine.util.Toolbox;
 
 public class PnlSelectFiles implements ListDropReceiver {
 
@@ -81,15 +84,16 @@ public class PnlSelectFiles implements ListDropReceiver {
 	private HelpPopup helpPopup;
 	private Thread processor;
 	private volatile GUI gui;
-	private FileBrowser fileBrowser;
+	private CustomFileChooser fileChooser;
 
 	public PnlSelectFiles( GUI guiRef) {
 
 		this.gui = guiRef;
-		this.fileBrowser = new FileBrowser(FileBrowser.MODE_BOTH, Arrays.asList("czi", "tif", "tiff"), true);
+		this.fileChooser = new CustomFileChooser(2, Arrays.asList("czi", "tif", "tiff"), true);
 		rawPanel = new JPanel();
 		rawPanel.setVisible(false);
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+		rawPanel.setBackground(new Color(220, 220, 220));
 
 		String message = "<html>If this box is checked, then only folders will be selected. When you select a folder, all CZI images within the folder will be selected along with all other CZI images in subfolder 6 levels deep.</html>";
 
@@ -195,13 +199,14 @@ public class PnlSelectFiles implements ListDropReceiver {
 			public void actionPerformed(ActionEvent e) {
 
 				Settings settings = GUI.settings;
+				List<File> files = null;
 				if (settings != null && settings.recentOpenFileLocations != null) {
-					fileBrowser.startBrowsing(settings.recentOpenFileLocations, gui.getComponent());
+					files = fileChooser.open(gui.getComponent(), settings.recentOpenFileLocations);
 				} else {
-					fileBrowser.startBrowsing(null, gui.getComponent());
+					files = fileChooser.open(gui.getComponent(), null);
+
 				}
 
-				List<File> files = fileBrowser.getSelectedFiles();
 				processFiles(files);
 			}
 
@@ -236,7 +241,8 @@ public class PnlSelectFiles implements ListDropReceiver {
 				if (listSelectedFiles.isEmpty()) return;
 
 				if (GUI.settings.outputLocation == null) {
-					JOptionPane.showMessageDialog(null, "<html>You have not set a location to output data.<br><br>Do so in the Preferences.</html>", "No Output Folder", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("You have not set a location to output data. Do so in the Preferences (File > Preferences).", "No Output Folder", null, JOptionPane.ERROR_MESSAGE);
+
 					return;
 				}
 
@@ -255,14 +261,15 @@ public class PnlSelectFiles implements ListDropReceiver {
 								maxLength = length;
 							}
 							int indexOf = container.file.getName().lastIndexOf('.');
-							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), gui.getLogger(), GUI.settings.createChannelSnapshot()));
+							futureImages.add(new ImagePhantom(container.file, container.file.getName().substring(0, indexOf), GUI.settings.createChannelSnapshot()));
 						}
 						if (processor != null) {
 							gui.getWizard().nextState(futureImages);
 						}
 						long currAvail = Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
 						if (currAvail < (maxLength * 1.5)) {
-							JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You only have " + currAvail + " bytes available for processing (RAM) and this might not be enough considering your image size(s).<br>If you run out of RAM, results are unclear. The program may crash or stall.", "Potential Memory Error", JOptionPane.ERROR_MESSAGE);
+							GUI.displayMessage("You only have " + currAvail + " bytes available for processing (RAM) and this might not be enough considering your image size(s). If you run out of RAM, results are unclear. The program may crash or stall.", "Potential Memory Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 						}
 						processor = null;
 					}
@@ -276,7 +283,9 @@ public class PnlSelectFiles implements ListDropReceiver {
 
 		this.btnCancelRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				cancel();
+				if (GUI.confirmWithUser("Are you sure you want to cancel this run? You will lose all progress.", "Confirm cancel?", gui.getComponent(), JOptionPane.WARNING_MESSAGE)) {
+					cancel();
+				}
 			}
 		});
 
@@ -349,7 +358,8 @@ public class PnlSelectFiles implements ListDropReceiver {
 				try {
 					cziFiles.addAll(ddw.getFilteredFiles(file));
 				} catch (IOException e1) {
-					JOptionPane.showMessageDialog(null, "<html>The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it.<br><br>Folders must have less than 500 files.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("The folder <em>" + file.getName() + "</em> either has too many files in it or you cannot access it. Folders must have less than 500 files.", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
+
 					return;
 				}
 
@@ -363,14 +373,15 @@ public class PnlSelectFiles implements ListDropReceiver {
 					}
 				}
 				if (!hasEnding) {
-					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have a valid extension.", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("The file <em>" + file.getName() + "</em> does not have a valid extension.", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
+
 					return;
 				}
 				cziFiles.add(new FileContainer(file, false));
 			}
 		}
 
-		List<File> fileRecents = fileBrowser.getRecents();
+		List<File> fileRecents = fileChooser.getRecents();
 		if (fileRecents != null && fileRecents.size() > 0) {
 			if (settings.recentOpenFileLocations != null) {
 				settings.recentOpenFileLocations.clear();
@@ -379,20 +390,22 @@ public class PnlSelectFiles implements ListDropReceiver {
 			}
 			settings.recentOpenFileLocations.addAll(fileRecents);
 			settings.needsUpdate= true;
-			Settings.SettingsLoader.saveSettings(settings); // if doesn't save, don't notify the user. Just won't save pref.
+			Settings.SettingsManager.saveSettings(settings); // if doesn't save, don't notify the user. Just won't save pref.
 
 		}
 		
 
 		if (cziFiles.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("<html>The selection was neither a CZI nor contained any files with extension '.czi'!", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
+
 			return;
 		}
 		Enumeration<FileContainer> en = listSelectedFiles.getElements();
 		while (en.hasMoreElements()) {
 			FileContainer fc = en.nextElement();
 			if (cziFiles.contains(fc)) {
-				JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("The file <em>" + fc.toString() + "</em> has already been added. Duplicate files are not allowed.", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
+
 				return;
 			}
 		}

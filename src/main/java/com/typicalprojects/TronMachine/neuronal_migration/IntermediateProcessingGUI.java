@@ -3,7 +3,6 @@ package com.typicalprojects.TronMachine.neuronal_migration;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -20,7 +19,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.typicalprojects.TronMachine.util.FileBrowser;
+import com.typicalprojects.TronMachine.util.CustomFileChooser;
 import com.typicalprojects.TronMachine.util.FileContainer;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.SimpleJList.ListDropReceiver;
@@ -52,7 +51,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 	private JButton btnRun;
 	private JButton btnCancel;
 	private SimpleJList<FileContainer> lstInput;
-	private FileBrowser fileBrowser;
+	private CustomFileChooser fileChooser;
 
 
 	/**
@@ -98,7 +97,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 		JPanel pnlSteps = new JPanel();
 		pnlSteps.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 
-		this.fileBrowser = new FileBrowser(FileBrowser.MODE_BOTH, Arrays.asList("ser"), false);
+		this.fileChooser = new CustomFileChooser(2, Arrays.asList("ser"), false);
 
 		btnCancel = new JButton("Cancel");
 		btnCancel.setFocusable(false);
@@ -152,7 +151,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 				+ "<li>Serialization folder (within Intermediate Files folder)</li>"
 				+ "<li>The intermediate file itself (ends in .ser, NOT RECOMMENDED)</li>"
 				+ "</ul></html>");
-		lblInstructionsStep2.setFont(GUI.smallFont);
+		lblInstructionsStep2.setFont(GUI.smallBoldFont);
 
 		JScrollPane scrollPane = new JScrollPane();
 
@@ -179,13 +178,15 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 		btnSelectFiles.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Settings settings = GUI.settings;
+				List<File> selected = null;
 				if (settings != null && settings.recentOpenFileLocations != null) {
-					fileBrowser.startBrowsing(settings.recentOpenFileLocations, gui.getComponent());
+					selected = fileChooser.open(gui.getComponent(), settings.recentOpenFileLocations);
 				} else {
-					fileBrowser.startBrowsing(null, gui.getComponent());
+					selected = fileChooser.open(gui.getComponent(), null);
 				}
-
-				processFiles(fileBrowser.getSelectedFiles());
+				System.out.println(selected == null);
+				System.out.println(selected.size());
+				processFiles(selected);
 			}
 		});
 
@@ -193,13 +194,14 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 				+ "<ul><li>Post-Object State: After all objects were selected</li>"
 				+ "<li>Post-ROI State: After all ROIs were selected</li>"
 				+ "</ul></html>");
-		lblInstructionsStep1.setFont(new Font("PingFang TC", Font.BOLD, 13));
+		lblInstructionsStep1.setFont(GUI.smallBoldFont);
 
 		rdbtnPostObj = new JRadioButton("Post-Object State");
 		rdbtnPostObj.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (rdbtnPostObj.isSelected()) {
 					btnSelectFiles.setEnabled(true);
+					lstInput.clear();
 				}
 			}
 		});
@@ -211,6 +213,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 			public void actionPerformed(ActionEvent e) {
 				if (rdbtnPostROI.isSelected()) {
 					btnSelectFiles.setEnabled(true);
+					lstInput.clear();
 				}
 			}
 		});
@@ -276,7 +279,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 		pnlSteps.setLayout(gl_pnlSteps);
 
 		JLabel lblInstructions = new JLabel("Select intermediate file folders, select state to start from, and hit 'Go'.");
-		lblInstructions.setFont(new Font("PingFang TC", Font.BOLD, 14));
+		lblInstructions.setFont(GUI.mediumBoldFont);
 
 		GroupLayout gl_pnlInstructions = new GroupLayout(pnlInstructions);
 		gl_pnlInstructions.setHorizontalGroup(
@@ -353,7 +356,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 					if (serFileDir.exists() && serFileDir.isDirectory()) {
 						possibleSerFiles = serFileDir.listFiles();
 					} else {
-						JOptionPane.showMessageDialog(null, "<html>The Intermediate Files folder (<em>" + file.getPath() + "</em>)<br>does not contain a 'Serialization' folder.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("The Intermediate Files folder (<em>" + file.getPath() + "</em>) does not contain a 'Serialization' folder.", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 				} else {
@@ -362,7 +365,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 						possibleSerFiles = serFileDir.listFiles();
 						
 					} else {
-						JOptionPane.showMessageDialog(null, "<html>The image output folder (<em>" + file.getPath() + "</em>) does not contain <br> a 'Serialization' folder within the 'Intermediate Files' folder.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("The image output folder (<em>" + file.getPath() + "</em>) does not contain a 'Serialization' folder within the 'Intermediate Files' folder.", "File Selection Error", null, JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 				}
@@ -384,27 +387,27 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 
 				}
 				if (!foundFile) {
-					JOptionPane.showMessageDialog(null, "<html>The folder at <em>" + file.getPath() + "</em> does not<br>contain the "+ (this.rdbtnPostObj.isSelected() ? "post-object" : "post-ROI") + " intermediate state file in its child folders.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("The folder at <em>" + file.getPath() + "</em> does not contain the "+ (this.rdbtnPostObj.isSelected() ? "post-object" : "post-ROI") + " intermediate state file in its child folders.", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
 			} else {
 				if (!file.getName().endsWith(".ser")) {
 					// shouldn't happen if FileBrowser functions correctly
-					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have a valid extension (.ser).", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("The file <em>" + file.getName() + "</em> does not have a valid extension (.ser).", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 					return;
 				} else if (file.getName().equals("postroistate.ser")) {
 					if (this.rdbtnPostObj.isSelected()) {
-						JOptionPane.showMessageDialog(null, "<html>You selected a post-ROI intermediate state file (postroistate.ser) but<br>have chosen to start from the post-object state", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You selected a post-ROI intermediate state file (postroistate.ser) but have chosen to start from the post-object state", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 				} else if (file.getName().equals("postobjstate.ser")) {
 					if (this.rdbtnPostROI.isSelected()) {
-						JOptionPane.showMessageDialog(null, "<html>You selected a post-object intermediate state file (postobjstate.ser) but<br>have chosen to start from the post-ROI state.", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You selected a post-object intermediate state file (postobjstate.ser) but have chosen to start from the post-ROI state.", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 				} else {
-					JOptionPane.showMessageDialog(null, "<html>The file <em>" + file.getName() + "</em> does not have a valid name (postobjstate.ser or postroistate.ser).", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("The file <em>" + file.getName() + "</em> does not have a valid name (postobjstate.ser or postroistate.ser).", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
@@ -412,7 +415,7 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 			}
 		}
 
-		List<File> fileRecents = fileBrowser.getRecents();
+		List<File> fileRecents = fileChooser.getRecents();
 		if (fileRecents != null && fileRecents.size() > 0) {
 			if (settings.recentOpenFileLocations != null) {
 				settings.recentOpenFileLocations.clear();
@@ -421,20 +424,20 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 			}
 			settings.recentOpenFileLocations.addAll(fileRecents);
 			settings.needsUpdate= true;
-			Settings.SettingsLoader.saveSettings(settings); // if doesn't save, don't notify the user. Just won't save pref.
+			Settings.SettingsManager.saveSettings(settings); // if doesn't save, don't notify the user. Just won't save pref.
 
 		}
 
 
 		if (serFiles.isEmpty()) {
-			JOptionPane.showMessageDialog(null, "<html>The selection did not yield any intermediate state files (end in .ser)", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("The selection did not yield any intermediate state files (end in .ser)", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		Enumeration<FileContainer> en = this.lstInput.getElements();
 		while (en.hasMoreElements()) {
 			FileContainer fc = en.nextElement();
 			if (serFiles.contains(fc)) {
-				JOptionPane.showMessageDialog(null, "<html>The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.</html>", "File Selection Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("The file <em>" + fc.toString() + "</em> has already been added.<br><br>Duplicate files are not allowed.", "File Selection Error", mainGui.getComponent(), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
@@ -448,7 +451,11 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 
 	@Override
 	public void dropped(List<Object> dropped) {
-
+		
+		if (!this.btnSelectFiles.isEnabled()) {
+			return;
+		}
+		
 		List<File> files = new ArrayList<File>();
 		for (Object obj : dropped) {
 			if (obj instanceof File && ((File) obj).exists()) {

@@ -25,28 +25,89 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
-public class OutputParams {
-	
-	public List<Channel> includedChannels = new ArrayList<Channel>();
-	OutputOption option;
+public class OutputParams implements Serializable {
+
+	private static final long serialVersionUID = -7386693999079593633L;
+	private Set<Channel> includedChannels = new HashSet<Channel>();
+	private OutputOption option;
 	
 	public OutputParams(OutputOption option) {
 		this.option = option;
 	}
 	
-	public void addChannel(Channel c) {
-		includedChannels.add(c);
-		includedChannels.sort(null);
+	public OutputOption getOption() {
+		return this.option;
 	}
 	
-	public void removeChannel(Channel c) {
-		includedChannels.remove(c);
+	/**
+	 * @return channels in this instance; changes are backed (but NOT validated, this needs to be done with the channel manager)
+	 */
+	protected Set<Channel> getContainedChannels() {
+		// If this is changed to return only a copy, this WILL affect behavior in channel manager which DIRECTLY
+		// edits this list backed by this instance.
+		return includedChannels;
 	}
 	
+	protected void setContainedChannels(Set<Channel> channels) {
+		this.includedChannels = channels;
+	}
+	
+	protected void removeChannel(Channel chan) {
+		this.includedChannels.remove(chan);
+	}
+	
+	protected void addChannel(Channel chan) {
+		this.includedChannels.add(chan);
+	}
+	
+	protected boolean contains(Channel chan) {
+		return this.includedChannels.contains(chan);
+	}
+
+	protected String concatChanAbbrevs() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("");
+		for (Channel chan : includedChannels) {
+			sb.append(chan.getAbbrev());
+		}
+		return sb.toString();
+	}
+	
+	protected OutputParams cloneLightly(ChannelManager cm) {
+		OutputParams op = new OutputParams(this.option);
+		op.includedChannels.addAll(cm.getEquivalentChannels(includedChannels));
+		return op;
+	}
+	
+	/**
+	 * @return the HTML version. Is in form: <display_name_output_option> ( <channel_abbreviations_colored> )
+	 */
+	public String toString() {
+		
+		try {
+			StringBuilder sb = new StringBuilder();
+			sb.append("<html>");
+			sb.append(option.getDisplay());
+			sb.append(" ( ");
+			String delim = "";
+			for (Channel chan : this.includedChannels) {
+				sb.append(delim).append("<font color='").append(chan.getHtmlColor()).append("'>").append(chan.getAbbrev() + "").append("</font>");
+				delim = ",";
+			}
+			sb.append(" )</html>");
+			return sb.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
+		
+
+	}
 	
 }

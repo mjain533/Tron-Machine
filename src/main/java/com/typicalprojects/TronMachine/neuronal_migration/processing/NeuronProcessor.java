@@ -37,26 +37,38 @@ import javax.swing.JOptionPane;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.ResultsTable;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
+import com.typicalprojects.TronMachine.util.Toolbox;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.plugin.RGBStackMerge;
 import ij.plugin.ZProjector;
 
+/**
+ * Encapsulates a worker thread. Used for processing neuron asynchronously, including 3D object counting
+ * and many other image processing techniques.
+ * 
+ * @author Justin Carrington
+ */
 public class NeuronProcessor {
-
-	public static final String SUPP_LBL_MASK = "mask";
-	public static final String SUPP_LBL_ORIGINAL = "original";
 
 	private final List<File> imagesToProcess;
 	private Thread threadProcessor;
 	private volatile Logger progressReporter;
 	private volatile boolean cancelled = false;
 
+	/**
+	 * Creates the processor but does not start it. That must be done with {@link #run()}.
+	 * 
+	 * @param serializedLocations the .ser files which designate pre-prrocessed images
+	 * @param progress the logger used to report progress.
+	 * @param wizard the main wizard used for this run, used to advance to the next state when complete or
+	 *  to cancel the run if there's any error.
+	 */
 	public NeuronProcessor(List<File> serializedLocations, final Logger progress, final Wizard wizard) {
 
 		this.imagesToProcess = serializedLocations;
@@ -87,9 +99,9 @@ public class NeuronProcessor {
 						Map<String, ResultsTable> tables = new HashMap<String, ResultsTable>();
 						ZProjector projector = new ZProjector();
 						Map<Channel, ImagePlus> chanMap = ic.getOriginals();
-						for (Channel chan : ic.getRunConfig().channelMap.values()) {
-							if (ic.getRunConfig().channelsToProcess.contains(chan)) {
-								log("Processing Channel: " + chan.name());
+						for (Channel chan : ic.getRunConfig().channelMan.getChannels()) {
+							if (ic.getRunConfig().channelMan.isProcessChannel(chan)) {
+								log("Processing Channel: " + chan.getName());
 
 								Object[] chanProcessed = processChannel(chanMap.get(chan), progressReporter, chan);
 								if (cancelled)
@@ -99,7 +111,7 @@ public class NeuronProcessor {
 								ic.addImage(OutputOption.MaxedChannel, chan, (ImagePlus) chanProcessed[1]);
 								ic.addImage(OutputOption.ProcessedObjects, chan, (ImagePlus) chanProcessed[2]);
 								
-								tables.put(chan.name(), (ResultsTable) chanProcessed[3]);
+								tables.put(chan.getName(), (ResultsTable) chanProcessed[3]);
 								
 							} else {
 								projector.setImage(ic.getChannelOrig(chan, true));
@@ -109,7 +121,7 @@ public class NeuronProcessor {
 
 							}
 							
-							ic.removeOriginal(chan, GUI.outputOptionContainsChannel(OutputOption.Channel, chan));
+							ic.removeOriginal(chan, ic.getRunConfig().channelMan.hasOutput(OutputOption.Channel, chan));
 
 						}
 						
@@ -142,7 +154,7 @@ public class NeuronProcessor {
 						wizard.nextState(imagesDoneProcessing);
 					}
 				} catch (OutOfMemoryError error) {
-					JOptionPane.showMessageDialog(null, "Java run out of memory!", "Out of Memory", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Java run out of memory!", "Out of Memory", null, JOptionPane.ERROR_MESSAGE);
 					wizard.cancel();
 				}
 			}
@@ -152,19 +164,27 @@ public class NeuronProcessor {
 	}
 
 
+	/**
+	 * Stops the current worker thread which is processing neurons.
+	 */
 	public synchronized void cancelProcessing() {
 		this.cancelled = true;
 		this.progressReporter = null;
 		this.threadProcessor = null;
 	}
+	
 
 	private void error(String msg, Wizard wizard) {
 		if (this.cancelled)
 			return;
-		JOptionPane.showMessageDialog(null, "<html>There was an error processing images:<br><br>"+msg+"</html>", "Processing Error", JOptionPane.ERROR_MESSAGE);
+		GUI.displayMessage("There was an error processing images:<br><br>" + msg, "Processing Error", null, JOptionPane.ERROR_MESSAGE);
+
 		wizard.cancel();
 	}
-
+	
+	/**
+	 * Starts the encapsulated workers
+	 */
 	public void run() {
 		this.threadProcessor.start();
 	}
@@ -202,7 +222,7 @@ public class NeuronProcessor {
 		logDone();
 
 		log("Counting 3D objects...");
-		Custome3DObjectCounter counter =new Custome3DObjectCounter(duplicate);
+		Custom3DObjectCounter counter =new Custom3DObjectCounter(duplicate);
 
 		counter.run(progressReporter, this);
 		if (this.cancelled)
@@ -235,11 +255,19 @@ public class NeuronProcessor {
 		impFinal = projector.getProjection();
 		logDone();
 		System.gc();
-		ImagePlus maxedOriginal = maxProject(originalImg);
-		ImageContainer.applyLUT(maxedOriginal, chan);
-		return new Object[] {impFinal, maxedOriginal, maxProject(counter.getObjectMap()), counter.getStats()};
+		ImagePlus maxedOriginal = Toolbox.maxProject(originalImg);
+		ImageContainer.applyLUT(maxedOriginal, chan.getImgColor());
+		return new Object[] {impFinal, maxedOriginal, Toolbox.maxProject(counter.getObjectMap()), counter.getStats()};
 	}
 
+	/**
+	 * Ease of use method for this class. Useful because we need to check if cancelled every time before
+	 * logging because sometimes if the user cancels processing, the thread may continue for a brief period
+	 * afterward until disposed of (because it's daemon). We wouldn't want the log to keep filling up with
+	 * messages after a cancellation because this would confuse a user.
+	 * 
+	 * @param info message to log
+	 */
 	private synchronized void log(String info) {
 		if (this.cancelled)
 			return;
@@ -248,28 +276,20 @@ public class NeuronProcessor {
 
 	}
 	
-	public synchronized void logDone() {
+	private synchronized void logDone() {
 		if (this.cancelled)
 			return;
 		
 		progressReporter.setCurrentTaskComplete();
 	}
 
-
+	/**
+	 * @return true if this thread has been cancelled. Dose not indicated if the thread finished or not.
+	 */
 	public boolean isCancelled() {
 		return this.cancelled;
 	}
 
-
-	public static ImagePlus maxProject(ImagePlus image) {
-		ImagePlus newI = image.duplicate();
-		newI.setTitle(image.getTitle());
-		ZProjector projector = new ZProjector();
-		projector.setImage(newI);
-		projector.setMethod(ZProjector.MAX_METHOD);
-		projector.doProjection();
-		return projector.getProjection();
-	}
 
 
 

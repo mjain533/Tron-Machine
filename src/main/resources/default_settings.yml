@@ -1,8 +1,9 @@
-ChannelMapping:
-- 0:Green
-- 1:Red
-- 2:Blue
-- 3:White
+Version: v2
+Channels:
+- Green:G:0,255,0:57,137,23:0
+- Red:R:255,0,0:255,0,0:1
+- Blue:B:0,0,255:0,0,255:2
+- White:W:255,255,255:0,0,0:3
 ChannelsToProcess:
 - Red
 - Green
@@ -26,10 +27,10 @@ SelectedCalibration: 1
 EnforceLUTs: true
 OutputOptionsEnabled:
 - ROIDraw(B)
-- ROIDrawF(G,R)
+- ROIDrawF(GR)
 - BinDraw(B)
-- ProcessedF(G,R)
-- DotsNoNum(G,R)
+- ProcessedF(GR)
+- DotsNoNum(GR)
 OutputOptionsDisabled:
 - Chan()
 - MaxedChan()

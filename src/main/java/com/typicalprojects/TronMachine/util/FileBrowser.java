@@ -46,6 +46,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.util.FileBrowser.IconName;
 
 import java.awt.Font;
@@ -59,6 +60,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -155,7 +157,7 @@ public class FileBrowser extends JDialog {
 	 * Create the frame.
 	 */
 
-	public FileBrowser(int mode, List<String> requiredExtensions, boolean selectMultiple) {
+	public FileBrowser(int mode, boolean test, List<String> requiredExtensions, boolean selectMultiple) {
 
 		this.mode = mode;
 		this.requiredExtensions = requiredExtensions;
@@ -273,14 +275,14 @@ public class FileBrowser extends JDialog {
 				} else if (focusedList == 2) {
 					File selected = listFiles2.getSelectedValue();
 					if (selected != null && selected.isDirectory()) {
-						String foldername = JOptionPane.showInputDialog(contentPane, "Select Folder Name:", "New Folder", JOptionPane.PLAIN_MESSAGE);
+						String foldername = GUI.getInput("Select Folder Name:", "New Folder", contentPane);
 						if (foldername == null || foldername.equals("")) {
 							return;
 						}
 						File toCreate = new File(selected.getPath() + File.separator + foldername);
 						try {
 							if (toCreate.exists()) {
-								JOptionPane.showMessageDialog(contentPane, "This folder already exists!", "New Folder Error", JOptionPane.ERROR_MESSAGE);
+								GUI.displayMessage("This folder already exists!", "New Folder Error", contentPane, JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 							toCreate.mkdir();
@@ -290,13 +292,16 @@ public class FileBrowser extends JDialog {
 							navigateInto(3, toCreate);
 						} catch (Exception ex) {
 							ex.printStackTrace();
-							JOptionPane.showMessageDialog(contentPane, "Could not create file!", "New Folder Error", JOptionPane.ERROR_MESSAGE);
+							GUI.displayMessage("Could not create file!", "New Folder Error", contentPane, JOptionPane.ERROR_MESSAGE);
+
+
 						}
 					}
 				} else if (focusedList == 1) {
 					File selected = listFiles1.getSelectedValue();
 					if (selected != null && selected.isDirectory()) {
-						String foldername = JOptionPane.showInputDialog(contentPane, "Select Folder Name:", "New Folder", JOptionPane.PLAIN_MESSAGE);
+						String foldername = GUI.getInput("Select Folder Name:", "New Folder", contentPane);
+
 						if (foldername == null || foldername.equals("")) {
 							return;
 						}
@@ -309,7 +314,7 @@ public class FileBrowser extends JDialog {
 							navigateInto(2, toCreate);
 						} catch (Exception ex) {
 							ex.printStackTrace();
-							JOptionPane.showMessageDialog(contentPane, "Could not create file!", "New Folder Error", JOptionPane.ERROR_MESSAGE);
+							GUI.displayMessage("Could not create file!", "New Folder Error", contentPane, JOptionPane.ERROR_MESSAGE);
 						}
 					}
 				}
@@ -326,13 +331,14 @@ public class FileBrowser extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				String home = System.getProperty("user.home");
 				if (home == null) {
-					JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
+
 					return;
 				}
 
 				File homeFile = new File(home);
 				if (homeFile == null || !homeFile.exists()) {
-					JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				navigateStartingAt(homeFile);
@@ -567,7 +573,7 @@ public class FileBrowser extends JDialog {
 		} else {
 			lblInstruction = new JLabel("Select a directory.");
 		}
-		lblInstruction.setFont(new Font("PingFang TC", Font.BOLD, 14));
+		lblInstruction.setFont(GUI.mediumBoldFont);
 		GroupLayout gl_panel_2 = new GroupLayout(panel_2);
 		gl_panel_2.setHorizontalGroup(
 				gl_panel_2.createParallelGroup(Alignment.LEADING)
@@ -640,7 +646,7 @@ public class FileBrowser extends JDialog {
 	}
 
 	public void startBrowsing(List<File> recents, Component component) {
-		
+
 		getRootPane().setDefaultButton(btnSelect); // Needed on any subsequent browses after the first one.
 		setLocationRelativeTo(component);
 		this.holdChanges = true;
@@ -650,13 +656,14 @@ public class FileBrowser extends JDialog {
 		if (recents == null || recents.isEmpty()) {
 			String home = System.getProperty("user.home");
 			if (home == null) {
-				JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
+
 				return;
 			}
 
 			File homeFile = new File(home);
 			if (homeFile == null || !homeFile.exists()) {
-				JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			this.cbRecents.removeAllItems();
@@ -673,13 +680,13 @@ public class FileBrowser extends JDialog {
 			if (cbRecents.getModel().getSize() == 0) {
 				String home = System.getProperty("user.home");
 				if (home == null) {
-					JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
 				File homeFile = new File(home);
 				if (homeFile == null || !homeFile.exists()) {
-					JOptionPane.showMessageDialog(contentPane, "Could not find home file.", "File Locate Error", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Could not find home file.", "File Locate Error", contentPane, JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				this.cbRecents.removeAllItems();
@@ -722,14 +729,40 @@ public class FileBrowser extends JDialog {
 		}
 	}
 
+	private boolean isSymlink(File file) {
+		File canon;
+		if (file.getParent() == null) {
+			canon = file;
+		} else {
+			File canonDir;
+			try {
+				canonDir = file.getParentFile().getCanonicalFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			}
+			canon = new File(canonDir, file.getName());
+		}
+		
+		try {
+			return !canon.getCanonicalFile().equals(canon.getAbsoluteFile());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 	private boolean checkFileExists(File file) {
 		if (!file.exists()) {
-			JOptionPane.showMessageDialog(contentPane, "A file no longer exists.", "File error.", JOptionPane.ERROR_MESSAGE);
-			_reNavigateDueToNonExistentFile();
+			if (!isSymlink(file)) {
+				GUI.displayMessage("A file no longer exists.", "File Error", contentPane, JOptionPane.ERROR_MESSAGE);
+
+				_reNavigateDueToNonExistentFile();
+			}
+
 			return false;
-		} else {
-			return true;
 		}
+		return true;
 	}
 
 	private boolean checkFilesInListsExist() {
@@ -737,8 +770,9 @@ public class FileBrowser extends JDialog {
 
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
-			if (!file.exists()) {
-				JOptionPane.showMessageDialog(contentPane, "A file in this view no longer exists.", "File error.", JOptionPane.ERROR_MESSAGE);
+			if (!file.exists() && !isSymlink(file)) {
+				GUI.displayMessage("A file in this view no longer exists.", "File Error", contentPane, JOptionPane.ERROR_MESSAGE);
+
 				_reNavigateDueToNonExistentFile();
 				return false;
 			}
@@ -747,8 +781,8 @@ public class FileBrowser extends JDialog {
 
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
-			if (!file.exists()) {
-				JOptionPane.showMessageDialog(contentPane, "A file in this view no longer exists.", "File error.", JOptionPane.ERROR_MESSAGE);
+			if (!file.exists() && !isSymlink(file)) {
+				GUI.displayMessage("A file in this view no longer exists.", "File Error", contentPane, JOptionPane.ERROR_MESSAGE);
 				_reNavigateDueToNonExistentFile();
 				return false;
 			}
@@ -757,8 +791,8 @@ public class FileBrowser extends JDialog {
 
 		while (filesEnumeration.hasMoreElements()) {
 			File file = filesEnumeration.nextElement();
-			if (!file.exists()) {
-				JOptionPane.showMessageDialog(contentPane, "A file in this view no longer exists.", "File error.", JOptionPane.ERROR_MESSAGE);
+			if (!file.exists() && !isSymlink(file)) {
+				GUI.displayMessage("A file in this view no longer exists.", "File Error", contentPane, JOptionPane.ERROR_MESSAGE);
 				_reNavigateDueToNonExistentFile();
 				return false;
 			}
@@ -860,7 +894,7 @@ public class FileBrowser extends JDialog {
 				if (f.isDirectory()) {
 					return i;
 				}
-				
+
 				if (forward)
 					i++;
 				else
@@ -870,7 +904,7 @@ public class FileBrowser extends JDialog {
 		} else if (this.mode == MODE_BOTH) {
 			for (int i = index; i >= 0 && i < list.getListSize();  ) {
 				File f = list.getElementAt(i);
-				
+
 				if (f.isDirectory()) {
 					return i;
 				} else if (this.requiredExtensions != null) {
@@ -882,7 +916,7 @@ public class FileBrowser extends JDialog {
 				} else {
 					return i;
 				}
-				
+
 				if (forward)
 					i++;
 				else
@@ -890,10 +924,10 @@ public class FileBrowser extends JDialog {
 			}
 
 		} else {
-			
+
 			for (int i = index; i >= 0 && i < list.getListSize();  ) {
 				File f = list.getElementAt(i);
-				
+
 				if (this.requiredExtensions != null) {
 					String name = f.getName();
 					int lastIndex = name.lastIndexOf('.');
@@ -903,15 +937,15 @@ public class FileBrowser extends JDialog {
 				} else {
 					return i;
 				}
-				
+
 				if (forward)
 					i++;
 				else
 					i--;
 			}
-			
+
 		}
-		
+
 		return -1;
 
 	}
@@ -952,7 +986,7 @@ public class FileBrowser extends JDialog {
 				this.holdChanges = false;
 				return;
 			}
-			
+
 
 			File parentFile = file.getParentFile();
 			if (parentFile == null) {
@@ -960,7 +994,7 @@ public class FileBrowser extends JDialog {
 
 				return;
 			}
-			
+
 			List<File> itemsToSet = null;
 			File parentOfParentFile= parentFile.getParentFile();
 
@@ -1007,37 +1041,30 @@ public class FileBrowser extends JDialog {
 					this.holdChanges = false;
 					return;
 				}
-				//JOptionPane.showMessageDialog(null, 1);
 				File parentFile = this.listFiles1.getElements().nextElement().getParentFile();
 
 				if (parentFile == null) {
 					this.holdChanges = false;
 					return;
 				}
-				//JOptionPane.showMessageDialog(null, 2);
 
 				File parentOfParentFile= parentFile.getParentFile();
 
 				List<File> itemsToSet = null;
 				if (parentOfParentFile == null) {
-					//JOptionPane.showMessageDialog(null, 3);
 					File[] files = File.listRoots();
 					if (files.length == 0) {
 						this.holdChanges = false;
 						return;
 					}
-					//JOptionPane.showMessageDialog(null, 4);
 					itemsToSet = Arrays.asList(files);
 					if (!itemsToSet.contains(parentFile) ) {
 						this.holdChanges = false;
 						return;
 					}
-					//JOptionPane.showMessageDialog(null, 5);
 				} else {
 					itemsToSet = _l(parentOfParentFile);
-					//JOptionPane.showMessageDialog(null, 6);
 				}
-				//JOptionPane.showMessageDialog(null, 7);
 
 				this.listFiles3.clear();
 				this.listFiles1.copyTo(this.listFiles2, false);
@@ -1187,7 +1214,7 @@ public class FileBrowser extends JDialog {
 class FileViewRenderer<K> implements ListCellRenderer<K> {
 
 	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
-	private static final Font fileListFont = new Font("PingFang TC", Font.BOLD, 14);
+	private static final Font fileListFont = GUI.mediumBoldFont;
 	private static final Color normalColor = Color.BLACK;
 	private static final Color deemphasizedColor = new Color(196, 196, 196);
 
@@ -1240,7 +1267,7 @@ class FileViewRenderer<K> implements ListCellRenderer<K> {
 				}
 			}
 
-			
+
 			if (file.getName().length()==0) {
 				theText = file.getPath();
 			} else {

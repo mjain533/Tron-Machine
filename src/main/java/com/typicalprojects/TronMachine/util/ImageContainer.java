@@ -47,6 +47,7 @@ import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputParams;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
 import ij.ImagePlus;
 import ij.io.FileInfo;
@@ -106,22 +107,25 @@ public class ImageContainer implements Serializable {
 				this.cal.pixelWidth = Double.parseDouble(pieces[0]);
 
 			}
-			if (ips.length != runConfig.channelMap.size()) {
+			if (ips.length != runConfig.channelMan.getNumberOfChannels(false)) {
 				throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 			}
 			Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
-			for (Entry<Integer, Channel> chanEn : runConfig.channelMap.entrySet()) {
-				if (chanEn.getKey() < ips.length) {
-					ImagePlus ip = ips[chanEn.getKey()];
+			for (Entry<Channel, Integer> chanEn : runConfig.channelMan.getChannelIndices().entrySet()) {
+				if (chanEn.getValue() == -1)
+					continue;
+				
+				if (chanEn.getValue() < ips.length) {
+					ImagePlus ip = ips[chanEn.getValue()];
 					ip.setProcessor(ip.getProcessor().convertToShortProcessor());
-					ip.setTitle(this.title + " Chan-" + chanEn.getValue().getAbbreviation());
+					ip.setTitle(this.title + " Chan-" + chanEn.getKey().getAbbrev());
 					if (this.dimensions == null) this.dimensions = ip.getDimensions();
 					if (GUI.settings.enforceLUTs) {
-						applyLUT(ip, chanEn.getValue());
+						applyLUT(ip, chanEn.getKey().getImgColor());
 					} else {
-						applyCustomLUT(ip, 255, 255, 255);
+						applyLUT(ip, new Color(255, 255, 255));
 					}
-					origImages.put(chanEn.getValue(), ip);
+					origImages.put(chanEn.getKey(), ip);
 				} else {
 					throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
 				}
@@ -129,46 +133,7 @@ public class ImageContainer implements Serializable {
 
 			this.images.put(OutputOption.Channel, origImages);
 
-			/*for (OutputOption it : imagesToOpen) {
-				if (it.equals(OutputOption.Channel)) {
 
-					
-				} else if (it.equals(OutputOption.cha)) {
-
-					Opener opener = new Opener();
-					Map<Channel, ImagePlus> origImages = new HashMap<Channel, ImagePlus>();
-
-					File intermediateFilesDir = getIntermediateFilesDirectory();
-
-
-					for (Channel chan : runConfig.channelMap.values()){
-						File file = new File(intermediateFilesDir + File.separator + title + " Chan-" + chan.getAbbreviation() + ".tiff");
-						if (file.exists()) {
-							ImagePlus ip = opener.openImage(file.getPath());
-							ip.setCalibration(this.cal);
-							ip.setTitle(this.title + " Chan-" + chan.getAbbreviation());
-							if (this.dimensions == null) this.dimensions = ip.getDimensions();
-							origImages.put(chan, ip);
-						}
-
-					}
-
-					if (origImages.size() != runConfig.channelMap.size()) {
-						throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
-					}
-
-					this.images.put(OutputOption.ChannelOrigTiff, origImages);
-				} else {
-					this.images.put(it, openSupplementalImages(it));
-					if (this.dimensions == null) {
-						Collection<ImagePlus> ip = this.images.get(it).values();
-						if (!ip.isEmpty()) {
-							this.dimensions = ip.iterator().next().getDimensions();
-						}
-					}
-
-				}
-			}*/
 
 			if (this.dimensions[0] < 50 || this.dimensions[1] < 50) {
 				throw new Exception("Image size is too small (must be at least 50x50 pixels)");
@@ -194,6 +159,10 @@ public class ImageContainer implements Serializable {
 
 	public int[] getDimensions() {
 		return this.dimensions;
+	}
+	
+	public boolean isWithinImage(int x, int y) {
+		return (x >= 0 && y >= 0 && x < this.dimensions[0] && y < this.dimensions[1]);
 	}
 
 	public String getImageTitle() {
@@ -271,10 +240,10 @@ public class ImageContainer implements Serializable {
 			
 			ImagePlus orig = originals.get(chan);
 			if (orig.isStack()) {
-				new FileSaver(orig).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbreviation() + ".tiff");
+				new FileSaver(orig).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
 
 			} else {
-				new FileSaver(orig).saveAsTiff(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbreviation() + ".tiff");
+				new FileSaver(orig).saveAsTiff(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
 
 			}
 
@@ -328,7 +297,6 @@ public class ImageContainer implements Serializable {
 
 	}
 	
-	// TODO: test which methods after this one are actually relevant/necessary
 
 	public Map<Channel, ImagePlus> openSupplementalImages(OutputOption it) {
 
@@ -345,8 +313,8 @@ public class ImageContainer implements Serializable {
 
 					if (file.getName().contains("Chan-")) {
 						String ending = file.getName().substring(file.getName().indexOf("Chan-"));
-						if (ending.length() >= 6 && Channel.getChannelByAbbreviation(ending.charAt(5) + "") != null) {
-							Channel chan = Channel.getChannelByAbbreviation(ending.charAt(5) + "");
+						if (ending.length() >= 6 && this.runConfig.channelMan.parse(ending.charAt(5) + "") != null) {
+							Channel chan = this.runConfig.channelMan.parse(ending.charAt(5) + "");
 							ip.setTitle(this.title + " Chan-" + ending.charAt(5));
 							supp.put(chan, ip);
 						} else {
@@ -397,9 +365,9 @@ public class ImageContainer implements Serializable {
 
 					if (file.getName().contains("Chan-")) {
 						String ending = file.getName().substring(file.getName().indexOf("Chan-"));
-						if (ending.length() >= 6 && Channel.getChannelByAbbreviation(ending.charAt(5) + "") != null) {
+						if (ending.length() >= 6 && this.runConfig.channelMan.parse(ending.charAt(5) + "") != null) {
 
-							if (Channel.getChannelByAbbreviation(ending.charAt(5) + "").equals(chan)) {
+							if (this.runConfig.channelMan.parse(ending.charAt(5) + "").equals(chan)) {
 								ImagePlus ip = opener.openImage(file.getPath());
 								ip.setCalibration(this.cal);
 								ip.setTitle(this.title + " Chan-" + ending.charAt(5));
@@ -436,8 +404,8 @@ public class ImageContainer implements Serializable {
 					for (Entry<OutputOption,OutputParams> en : tags.entrySet()) {
 						if (en.getKey() == OutputOption.Channel) {
 
-							for (Channel chan : en.getValue().includedChannels) {
-								if (file.getName().endsWith("Chan-" + chan.getAbbreviation() + ".tiff")) {
+							for (Channel chan : this.runConfig.channelMan.getOutputParamChannels(en.getValue())) {
+								if (file.getName().endsWith("Chan-" + chan.getAbbrev() + ".tiff")) {
 									delete = false;
 									break;
 								}
@@ -448,8 +416,8 @@ public class ImageContainer implements Serializable {
 								delete = false;
 								break;
 							} else {
-								for (Channel chan : en.getValue().includedChannels) {
-									if (file.getName().contains("Chan-" + chan.getAbbreviation())) {
+								for (Channel chan : this.runConfig.channelMan.getOutputParamChannels(en.getValue())) {
+									if (file.getName().contains("Chan-" + chan.getAbbrev())) {
 										delete = false;
 										break;
 									}
@@ -476,10 +444,10 @@ public class ImageContainer implements Serializable {
 			AdvancedWorkbook aw = new AdvancedWorkbook();
 			List<String> keys = new ArrayList<String>(results.keySet());
 
-			for (Channel chan : Channel.values()) {
-				if (keys.contains(chan.name())) {
-					aw.addSheetFromNeuronCounterResultTable(chan.name(), results.get(chan.name()));
-					keys.remove(chan.name());
+			for (Channel chan : this.runConfig.channelMan.getChannels()) {
+				if (keys.contains(chan.getName())) {
+					aw.addSheetFromNeuronCounterResultTable(chan.getName(), results.get(chan.getName()));
+					keys.remove(chan.getName());
 				}
 			}
 			for (String key : keys) {
@@ -518,7 +486,7 @@ public class ImageContainer implements Serializable {
 	}
 
 	public void saveSupplementalImage(OutputOption it, ImagePlus image, Channel chan) {
-		String title = this.title.concat(chan != null ? " Chan-" + chan.abbrev : "");
+		String title = this.title.concat(chan != null ? " Chan-" + chan.getAbbrev() : "");
 		image.setTitle(title);
 		String savePath = getIntermediateFilesDirectory().getPath() + File.separator + title.concat(" ").concat(it.getImageSuffix()).concat(".tiff");
 
@@ -566,65 +534,6 @@ public class ImageContainer implements Serializable {
 		}
 
 		return results;
-
-	}
-
-
-
-	public enum Channel {
-		GREEN("G", new Color(57, 137, 23), "green"), RED("R", Color.RED, "red"), BLUE("B", Color.BLUE, "blue"), WHITE("W", Color.GRAY, "gray");
-
-		private String abbrev;
-		private Color color;
-		private String htmlColor;
-
-		private Channel(String abbrev, Color color, String htmlColor) {
-			this.abbrev = abbrev;
-			this.color = color;
-			this.htmlColor = htmlColor;
-		}
-
-		public String getAbbreviation() {
-			return this.abbrev;
-		}
-
-		public Color getColor() {
-			return this.color;
-		}
-
-		public String getHTMLColor() {
-			return this.htmlColor;
-		}
-
-		public static Channel getChannelByAbbreviation(String abbrev) {
-
-			for (Channel chan : values()) {
-				if (chan.getAbbreviation().equals(abbrev)) {
-					return chan;
-				}
-			}
-			return null;
-		}
-
-		public String toString() {
-			return this.abbrev;
-		}
-
-		public String toReadableString() {
-			String origName = super.name();
-			return origName.charAt(0) + origName.substring(1).toLowerCase();
-		}
-
-		public static Channel parse(String query) {
-			if (query == null)
-				return null;
-			for (Channel chan : values()) {
-				if (query.equalsIgnoreCase(chan.name()))
-					return chan;
-			}
-			return null;
-		}
-
 
 	}
 
@@ -758,7 +667,11 @@ public class ImageContainer implements Serializable {
 		
 	}
 	
-	public static void applyCustomLUT(ImagePlus imp, int red, int green, int blue) {
+	public static void applyLUT(ImagePlus imp, Color color) {
+		int red = color.getRed();
+		int green = color.getGreen();
+		int blue = color.getBlue();
+
 		FileInfo fi = new FileInfo();
 		fi.reds = new byte[256]; 
 		fi.greens = new byte[256]; 
@@ -781,55 +694,6 @@ public class ImageContainer implements Serializable {
 		imp.updateImage();
 	}
 
-	public static void applyLUT(ImagePlus imp, Channel chan) {
-
-
-		FileInfo fi = new FileInfo();
-		fi.reds = new byte[256]; 
-		fi.greens = new byte[256]; 
-		fi.blues = new byte[256];
-		fi.lutSize = 256;
-		switch (chan) {
-		case GREEN:
-			primaryColor(2, fi.reds, fi.greens, fi.blues);
-			break;
-		case RED:
-			primaryColor(4, fi.reds, fi.greens, fi.blues);
-			break;
-		case BLUE:
-			primaryColor(1, fi.reds, fi.greens, fi.blues);
-			break;
-		case WHITE:
-			applyCustomLUT(imp, 255, 255, 255);
-			return;
-		default:
-			return;
-		}
-		fi.fileName = "CustomLUT";
-
-		ImageProcessor ip = imp.getChannelProcessor();
-		IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
-		ip.setColorModel(cm);
-		if (imp.getStackSize()>1)
-			imp.getStack().setColorModel(cm);
-		imp.updateImage();
-
-	}
-
-
-	private static void primaryColor(int color, byte[] reds, byte[] greens, byte[] blues) {
-		for (int i=0; i<256; i++) {
-			if ((color&4)!=0) {
-				reds[i] = (byte)i;
-			} else if ((color&2)!=0) {
-				greens[i] = (byte)i;
-			} else if ((color&1)!=0) {
-				blues[i] = (byte)i;
-			}
-		}
-		return;
-	}
-
 	public void saveCurrentState(File fileName) throws IOException {
 		FileOutputStream fileStream = new FileOutputStream(fileName); 
 		ObjectOutputStream out = new ObjectOutputStream(fileStream); 
@@ -846,7 +710,6 @@ public class ImageContainer implements Serializable {
 		ImageContainer object1 = null;
 		try {
 			object1 = (ImageContainer)in.readObject();
-			object1.images.get(OutputOption.Channel).get(Channel.BLUE).show();
 		} catch (ClassNotFoundException e) {
 			in.close();
 			fileInput.close();
@@ -862,8 +725,6 @@ public class ImageContainer implements Serializable {
 	private void writeObject(ObjectOutputStream stream)
 			throws IOException {
 
-		// NOTE: this may need to be adjusted for future updates.
-
 		stream.defaultWriteObject();
 		stream.writeDouble(cal.pixelWidth);
 		stream.writeDouble(cal.pixelHeight);
@@ -876,7 +737,7 @@ public class ImageContainer implements Serializable {
 		for (Entry<OutputOption, Map<Channel,ImagePlus>> imagesEn : this.images.entrySet()) {
 			for (Entry<Channel, ImagePlus> imageEn : imagesEn.getValue().entrySet()) {
 				stream.writeUTF(imagesEn.getKey().getCondensed());
-				stream.writeUTF(imageEn.getKey().toReadableString());
+				stream.writeObject(imageEn.getKey());
 				stream.flush();
 				byte[] bytes = new FileSaver(imageEn.getValue()).serialize();
 				stream.writeInt(bytes.length);
@@ -919,8 +780,7 @@ public class ImageContainer implements Serializable {
 		Opener opener = new Opener();
 		for (int i = 0; i < numImages; i++) {
 			OutputOption outputOption = OutputOption.fromCondensed((String) stream.readUTF());
-			String chanString = (String) stream.readUTF();
-			Channel chan = Channel.parse(chanString); // May need to update
+			Channel chan = (Channel) stream.readObject();
 			
 			int size = stream.readInt(); // Read byte count
 

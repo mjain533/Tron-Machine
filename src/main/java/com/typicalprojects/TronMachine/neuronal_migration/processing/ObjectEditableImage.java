@@ -45,16 +45,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.Custom3DCounter.Column;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Zoom;
 import com.typicalprojects.TronMachine.util.ResultsTable;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.neuronal_migration.*;
-
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
 import java.util.Set;
 
@@ -69,9 +67,9 @@ public class ObjectEditableImage implements Serializable{
 
 	private static final long serialVersionUID = -5899135921935041272L; // for serialization
 	private ImageContainer ic;
-	private transient Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
-	private int dotSize = Custome3DObjectCounter.opResultDotsSize;
-	private int fontSize = Custome3DObjectCounter.opResultFontSize;
+	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
+	private int dotSize = Custom3DObjectCounter.opResultDotsSize;
+	private int fontSize = Custom3DObjectCounter.opResultFontSize;
 	private transient Zoom zoom = Zoom.ZOOM_100;
 	private transient boolean creatingDeletionZone = false;
 	private transient List<Point> deletionZone = new ArrayList<Point>();
@@ -89,14 +87,14 @@ public class ObjectEditableImage implements Serializable{
 		this.imagePnl = gui.getPanelDisplay().getImagePanel();
 		this.ic = ic;
 		this.selectionStateData = new OBJSelectMeta();
-		for (Channel chan : ic.getRunConfig().channelsToProcess) {
+		for (Channel chan : ic.getRunConfig().channelMan.getProcessChannels()) {
 			this.points.put(chan, new LinkedList<Point>());
 			this.selectionStateData.addChannelToLookAt(chan);
 		}
 		
 		for (Entry<String, ResultsTable> en : results.entrySet()) {
 			ResultsTable rt = en.getValue();
-			Channel chan = Channel.parse(en.getKey());
+			Channel chan = ic.getRunConfig().channelMan.parse(en.getKey());
 			if (chan == null)
 				continue;
 			double[] xCoords = rt.getColumnAsDoubles(Column.X.getColumnNum());
@@ -260,8 +258,9 @@ public class ObjectEditableImage implements Serializable{
 	}
 
 	public void createAndAddNewImagesToIC() {
-
-		for (Channel chan : this.ic.getRunConfig().channelMap.values()) {
+		
+		RunConfiguration rc = this.ic.getRunConfig();
+		for (Channel chan : this.ic.getRunConfig().channelMan.getChannels()) {
 			if (this.points.containsKey(chan)) {
 				this.dots = true;
 				this.mask = true;
@@ -271,43 +270,43 @@ public class ObjectEditableImage implements Serializable{
 				this.ic.addImage(OutputOption.ProcessedFull, chan, processedFull);
 				// Needed this added for display during ROI selection, regardless of saving.
 				
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedFull, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedFull, chan)) {
 					this.ic.saveSupplementalImage(OutputOption.ProcessedFull, processedFull, chan);
 				}
 								
 				// Shouldn't need this if just implement the getImgWithDots method in ROIEditableImage.
 				
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDots, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedDots, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDots, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsNoNum, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedDotsNoNum, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDotsNoNum, getImgWithDots(chan, false, false), chan);
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedDotsObjects, chan)) {
 					this.dots = true;
 					this.mask = true;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedDotsObjects, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedObjects, chan)) {
 					this.dots = false;
 					this.mask = true;
 					this.original = false;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedObjects, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedObjectsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedObjectsOriginal, chan)) {
 					this.dots = false;
 					this.mask = true;
 					this.original = true;
 					this.ic.saveSupplementalImage(OutputOption.ProcessedObjectsOriginal, getImgWithDots(chan, false, true), chan);
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.ProcessedDotsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.ProcessedDotsOriginal, chan)) {
 					this.dots = true;
 					this.mask = false;
 					this.original = true;
@@ -315,7 +314,7 @@ public class ObjectEditableImage implements Serializable{
 				}
 			}
 			
-			if (GUI.outputOptionContainsChannel(OutputOption.MaxedChannel, chan)) {
+			if (rc.channelMan.hasOutput(OutputOption.MaxedChannel, chan)) {
 				this.dots = false;
 				this.mask = false;
 				this.original = true;
@@ -330,11 +329,8 @@ public class ObjectEditableImage implements Serializable{
 	}
 	
 	public ROIEditableImage convertToROIEditableImage() {
-		Map<String, List<Point>> ptsString = new HashMap<String, List<Point>>();
-		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
-			ptsString.put(en.getKey().name(), en.getValue());
-		}
-		return new ROIEditableImage(this.gui, this.getContainer(), ptsString);
+
+		return new ROIEditableImage(this.gui, this.getContainer(), this.points);
 	}
 
 	/*@SuppressWarnings("deprecation")
@@ -567,14 +563,9 @@ public class ObjectEditableImage implements Serializable{
 	private void writeObject(ObjectOutputStream stream)
 			throws IOException {
 		stream.defaultWriteObject();
-		Map<String, List<Point>> ptsString = new HashMap<String, List<Point>>();
-		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
-			ptsString.put(en.getKey().toReadableString(), en.getValue());
-		}
-		stream.writeObject(ptsString);
+
 	}
 
-	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream stream)
 			throws IOException, ClassNotFoundException {
 		
@@ -591,11 +582,7 @@ public class ObjectEditableImage implements Serializable{
 		
 		// Read objects
 		stream.defaultReadObject();
-		Map<String, List<Point>> ptsString = (Map<String, List<Point>>) stream.readObject();
-		this.points = new HashMap<Channel, List<Point>>();
-		for (Entry<String, List<Point>> en : ptsString.entrySet()) {
-			Channel chan = Channel.parse(en.getKey());
-			this.points.put(chan, en.getValue());
+		for (Channel chan : this.points.keySet()) {
 			this.selectionStateData.addChannelToLookAt(chan);
 		}
 		this.gui = GUI.SINGLETON;
@@ -645,7 +632,7 @@ public class ObjectEditableImage implements Serializable{
 		}
 	}
 	
-	public class OBJSelectMeta {
+	public static class OBJSelectMeta {
 		
 		private Set<Channel> channelsToLookAt = new HashSet<Channel>();
 		

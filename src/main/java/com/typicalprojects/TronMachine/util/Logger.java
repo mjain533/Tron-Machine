@@ -33,4 +33,6 @@ public interface Logger {
 	
 	public void setCurrentTaskProgress(int progress, int total);
 	
+	public void setCurrentTaskCompleteWithError();
+	
 }

@@ -47,7 +47,8 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
 public class AdvancedWorkbook {
 
@@ -105,12 +106,12 @@ public class AdvancedWorkbook {
 		return workbook.getSheet(name);
 	}
 
-	public LinkedHashMap<String, Map<Channel, double[]>> pullNeuronCounterData() {
+	public LinkedHashMap<String, Map<Channel, double[]>> pullNeuronCounterData(ChannelManager chanManager) {
 
 
 		LinkedHashMap<Channel, XSSFSheet> sheets = new LinkedHashMap<Channel, XSSFSheet>();
-		for (Channel chan : Channel.values()) {
-			XSSFSheet sheet = getSheet(chan.name());
+		for (Channel chan : chanManager.getChannels()) {
+			XSSFSheet sheet = getSheet(chan.getName());
 			if (sheet != null)
 				sheets.put(chan, sheet);
 		}
@@ -218,7 +219,7 @@ public class AdvancedWorkbook {
 
 	}*/
 
-	public void writeSummaryStatsSheets(Map<Channel, LinkedHashMap<String, double[]>> denseDataMap) throws Exception {
+	public void writeSummaryStatsSheets(Map<Channel, LinkedHashMap<String, double[]>> denseDataMap, ChannelManager chanMap) throws Exception {
 
 		XSSFSheet summarySheet = workbook.createSheet("SUMMARY");
 
@@ -235,7 +236,7 @@ public class AdvancedWorkbook {
 		_getCell(summarySheet, 2, 0).setCellValue(new XSSFRichTextString("File Name"));;
 
 		int chanTitleOffset = 1;
-		for (Channel chan : Channel.values()) {
+		for (Channel chan : chanMap.getChannels()) {
 			LinkedHashMap<String, double[]> chanSummary = denseDataMap.get(chan);
 			if (chanSummary == null)
 				continue;
@@ -243,7 +244,7 @@ public class AdvancedWorkbook {
 			summarySheet.addMergedRegion(new CellRangeAddress(1, 1, chanTitleOffset, chanTitleOffset + 2));
 
 			Cell chanTitleCell = _getCell(summarySheet, 1, chanTitleOffset);
-			_setTextCenterUppercase(chanTitleCell, chan.name());
+			_setTextCenterUppercase(chanTitleCell, chan.getName());
 			_getCell(summarySheet, 2, chanTitleOffset).setCellValue(new XSSFRichTextString("Mean"));
 			_getCell(summarySheet, 2, chanTitleOffset + 1).setCellValue(new XSSFRichTextString("SD"));
 			_getCell(summarySheet, 2, chanTitleOffset + 2).setCellValue(new XSSFRichTextString("N"));

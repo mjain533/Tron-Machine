@@ -62,7 +62,7 @@ public class RoiProcessor {
 						wizard.nextState();
 					}
 				} catch (OutOfMemoryError error) {
-					JOptionPane.showMessageDialog(null, "Java run out of memory!", "Out of Memory", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Java run out of memory!", "Out of Memory", null, JOptionPane.ERROR_MESSAGE);
 					wizard.cancel();
 				}
 			}

@@ -30,7 +30,7 @@ import com.typicalprojects.TronMachine.util.ResultsTable;
 
 import ij.ImagePlus;
 
-public class Custome3DObjectCounter {
+public class Custom3DObjectCounter {
 
 	private ImagePlus imageStack;
 
@@ -75,7 +75,7 @@ public class Custome3DObjectCounter {
 	private String summary = null;
 	private ResultsTable stats = null;
 		
-	public Custome3DObjectCounter(ImagePlus imageStack) throws IllegalArgumentException {
+	public Custom3DObjectCounter(ImagePlus imageStack) throws IllegalArgumentException {
 		if (imageStack.getBitDepth()>16){
 			throw new IllegalArgumentException();
 		}

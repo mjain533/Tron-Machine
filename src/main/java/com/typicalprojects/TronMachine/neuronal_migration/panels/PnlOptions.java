@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.DefaultListCellRenderer;
@@ -65,6 +64,7 @@ import javax.swing.border.EmptyBorder;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.NeuronProcessor;
@@ -73,8 +73,6 @@ import com.typicalprojects.TronMachine.neuronal_migration.processing.Preprocesse
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
 import com.typicalprojects.TronMachine.popup.HelpPopup;
-import com.typicalprojects.TronMachine.popup.TextInputPopup;
-import com.typicalprojects.TronMachine.popup.TextInputPopupReceiver;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChangeReceiver;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
@@ -82,25 +80,43 @@ import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 
-public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackReceiver, BrightnessChangeReceiver {
-
+/**
+ * The panel used to display options during each phase of the neuron processing. On the left side of the GUI.
+ * 
+ * @author Justin Carrington
+ */
+public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeReceiver {
+	
+	/** Constant designating {@link PnlOptions} is disabled **/
 	public static final int STATE_DISABLED = 1;
-	public static final int STATE_INFO = 2;
+	
+	/** Constant designating {@link PnlOptions} is displaying slice selection **/
+	public static final int STATE_SLICE = 2;
+	
+	/** Constant designating {@link PnlOptions} is displaying object selection fields **/
 	public static final int STATE_OBJ = 3;
-	public static final int STATE_COUNT_DIST = 4;
-	public static final int LAYOUT_TYPE_INFO = 1;
+	
+	/** Constant designating {@link PnlOptions} is displaying ROI selection fields **/
+	public static final int STATE_ROI = 4;
+	
+	/** Constant designating {@link PnlOptions} the layout is for slice selection **/
+	public static final int LAYOUT_TYPE_SLICE = 1;
+	
+	/** Constant designating {@link PnlOptions} the layout is for object selection **/
 	public static final int LAYOUT_TYPE_OBJ = 2;
-	public static final int LAYOUT_TYPE_COUNT_DIST = 3;
+	
+	/** Constant designating {@link PnlOptions} the layout is for ROI selection **/
+	public static final int LAYOUT_TYPE_ROI = 3;
 
-	private JPanel rawPanel;
-	private GUI gui;
 
-	private PreprocessedEditableImage imageCurrentlyPreprocessing = null;
-	private ObjectEditableImage imageCurrentlyObjEditing = null;
-	private ROIEditableImage imageCurrentlyROIEditing = null;
+	private final JPanel rawPanel;
+	private final GUI gui;
+
+	private volatile PreprocessedEditableImage imageCurrentlyPreprocessing = null;
+	private volatile ObjectEditableImage imageCurrentlyObjEditing = null;
+	private volatile ROIEditableImage imageCurrentlyROIEditing = null;
 
 	private JLabel lblDisabled;
 	private Color colorDisabled = new Color(169, 169, 169);
@@ -117,14 +133,15 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 
 
-	private JTextField infoTxtDisplaying;
-	private JTextField infoTxtLowSlice;
-	private JTextField infoTxtHighSlice;
-	private JLabel infoLblCurrDisp;
-	private JLabel infoLblSelectSlices;
-	private JLabel infoLblThru;
-	private JButton infoBtnNext;
-	private JLabel infoLblERR;
+	private JTextField sliceTxtDisplaying;
+	private JTextField sliceTxtLowSlice;
+	private JTextField sliceTxtHighSlice;
+	private JLabel sliceLblCurrDisp;
+	private JLabel sliceLblSelectSlices;
+	private JLabel sliceLblThru;
+	private JButton sliceBtnNext;
+	private JLabel sliceLblERR;
+	private JCheckBox sliceChkApplyToAll;
 
 	private JButton objBtnRemove;
 	private JButton objBtnNext;
@@ -134,8 +151,6 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private JButton objBtnPick;
 	private HelpPopup objHelpPopup;
 
-
-	private TextInputPopup roiNamePopup;
 
 	private List<File> imagesForObjectAnalysis = new LinkedList<File>();
 	private List<File> imagesForObjectSelection = new LinkedList<File>();
@@ -152,14 +167,22 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 	private JCheckBox objChkMask;
 	private JCheckBox objChkOriginal;
 	private JCheckBox objChkDots;
-	private JScrollPane distSP;
-	private SimpleJList<PolarizedPolygonROI> distListROI;
-	private JLabel distLblInstruction;
-	private JLabel distLblCurrDisp;
+	private JScrollPane roiSP;
+	private SimpleJList<PolarizedPolygonROI> roiListROI;
+	private JLabel roiLblInstruction;
+	private JLabel roiLblCurrDisp;
 
-	public volatile Thread currThread;
+	/** Stores the current worker. Useful because may need to cancel processing at some point. **/
+	private volatile Thread currWorker;
 
 
+	/**
+	 * Constructs the options panel. It is fully constructed after this constructor finishes, and is ready
+	 * to be added to a GUI component. This can be done via the {@link #getRawPanel()} method.
+	 * 
+	 * @param gui the main GUI frame. This is used for many purposes, including accessing other panels in the
+	 * 	GUI.
+	 */
 	public PnlOptions(GUI gui) {
 
 		this.rawPanel =  new JPanel();
@@ -192,46 +215,48 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		lblDisabled = new JLabel("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
 		lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
 
-		this.roiNamePopup = new TextInputPopup("<html>To create the ROI, type its name below and then select the side of the ROI to be designated as POSITIVE:</html>", this);
-
-		setUpDirectionsPanels();
+		initializeInnerPanels();
 		setDisplayState(STATE_DISABLED, null);
 
 	}
 
-	private void setUpDirectionsPanels() {
+	/**
+	 * This panel works by actually completing replacing an inner JPanel based on the current display state.
+	 * This method does all of the initialization of these Panels.
+	 */
+	private void initializeInnerPanels() {
 
 
 		// distance 
 
-		distLblCurrDisp = new JLabel("Currently Displaying");
+		roiLblCurrDisp = new JLabel("Currently Displaying");
 
 		distTxtCurrDisp = new JTextField();
 		distTxtCurrDisp.setColumns(10);
 		distTxtCurrDisp.setFocusable(false);
 		distTxtCurrDisp.setEditable(false);
 
-		distLblInstruction = new JLabel("Please create at least one ROI below.");
+		roiLblInstruction = new JLabel("Please create at least one ROI below.");
 
 		distBtnAddROI = new JButton("<html><p style='text-align: center;'><a style='text-decoration:underline'>A</a>dd</p></html>");
-		distBtnAddROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
+		distBtnAddROI.setFont(GUI.extraSmallBoldFont);
 		distBtnAddROI.setFocusable(false);
 		distBtnAddROI.setMargin(new Insets(0, -30, 0, -30));
 
 		distBtnCancelROI = new JButton("Clear");
-		distBtnCancelROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
+		distBtnCancelROI.setFont(GUI.extraSmallBoldFont);
 		distBtnCancelROI.setFocusable(false);
 		distBtnAddROI.setMnemonic(KeyEvent.VK_C);
 		distBtnCancelROI.setMargin(new Insets(0, -30, 0, -30));
 
 		distBtnDeleteROI = new JButton("Delete");
-		distBtnDeleteROI.setFont(new Font("PingFang TC", Font.BOLD, 10));
+		distBtnDeleteROI.setFont(GUI.extraSmallBoldFont);
 		distBtnDeleteROI.setFocusable(false);
 		distBtnDeleteROI.setMargin(new Insets(0, -30, 0, -30));
 
 
-		distSP = new JScrollPane();
-		distSP.setFocusable(false);
+		roiSP = new JScrollPane();
+		roiSP.setFocusable(false);
 
 		distBtnNext = new JButton("Next");
 		distBtnNext.setFocusable(false);
@@ -248,27 +273,27 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 
 
-		distListROI = new SimpleJList<PolarizedPolygonROI>(new PolygonROIRenderer<PolarizedPolygonROI>(this));
-		distSP.setViewportView(distListROI);
-		distListROI.setFocusable(false);
+		roiListROI = new SimpleJList<PolarizedPolygonROI>(new PolygonROIRenderer<PolarizedPolygonROI>(this));
+		roiSP.setViewportView(roiListROI);
+		roiListROI.setFocusable(false);
 		MouseAdapter mouseAdaptor = new MouseAdapter() {
-		    public void mouseClicked(MouseEvent evt) {
-		        @SuppressWarnings("unchecked")
+			public void mouseClicked(MouseEvent evt) {
+				@SuppressWarnings("unchecked")
 				SimpleJList<PolarizedPolygonROI> list = (SimpleJList<PolarizedPolygonROI>)evt.getSource();
-		        if (evt.getClickCount() == 2) {
+				if (evt.getClickCount() == 2) {
 
-		            // Double-click detected
-		            int index = list.locationToIndex(evt.getPoint());
-		            if (index > -1 && imageCurrentlyROIEditing != null) {
-		            		PolarizedPolygonROI output = list.getElementAt(index);
-		            		imageCurrentlyROIEditing.promptUserForTag(output);
-		            		list.updateUI();
+					// Double-click detected
+					int index = list.locationToIndex(evt.getPoint());
+					if (index > -1 && imageCurrentlyROIEditing != null) {
+						PolarizedPolygonROI output = list.getElementAt(index);
+						imageCurrentlyROIEditing.promptUserForTag(output);
+						list.updateUI();
 
-		            }
-		        }
-		    }
+					}
+				}
+			}
 		};
-		distListROI.addMouseListener(mouseAdaptor);
+		roiListROI.addMouseListener(mouseAdaptor);
 
 		// Objects
 
@@ -308,7 +333,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		objBtnRemove.setMargin(new Insets(0,0,0,0));
 		objBtnPick.setFocusable(false);
 		objBtnNext.setFocusable(false);
-		
+
 		objLblShow = new JLabel("Show:");
 		objChkMask = new JCheckBox("Mask");
 		objChkMask.setFocusable(false);
@@ -324,67 +349,64 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		// Slices
 
-		infoLblCurrDisp = new JLabel("Displaying:");
+		sliceLblCurrDisp = new JLabel("Displaying:");
 
-		infoLblERR = new JLabel("Invalid selection.");
+		sliceLblERR = new JLabel("Invalid selection.");
 
-		infoTxtDisplaying = new JTextField();
-		infoTxtDisplaying.setColumns(10);
-		infoTxtDisplaying.setEditable(false);
+		sliceTxtDisplaying = new JTextField();
+		sliceTxtDisplaying.setColumns(10);
+		sliceTxtDisplaying.setEditable(false);
 
-		infoLblSelectSlices = new JLabel("Select Slices:");
+		sliceLblSelectSlices = new JLabel("Select Slices:");
 
-		infoTxtLowSlice = new JTextField();
-		infoTxtLowSlice.setColumns(10);
+		sliceTxtLowSlice = new JTextField();
+		sliceTxtLowSlice.setColumns(10);
 
-		infoLblThru = new JLabel("thru");
+		sliceLblThru = new JLabel("thru");
 
-		infoTxtHighSlice = new JTextField();
-		infoTxtHighSlice.setColumns(10);
+		sliceTxtHighSlice = new JTextField();
+		sliceTxtHighSlice.setColumns(10);
+		sliceChkApplyToAll = new JCheckBox("Apply to all (if possible)");
+		sliceChkApplyToAll.setBackground(colorEnabled);
 
-		infoBtnNext = new JButton("Next");
-		infoBtnNext.setFocusable(false);
+		sliceBtnNext = new JButton("Next");
+		sliceBtnNext.setFocusable(false);
 
-		infoLblERR = new JLabel("ERROR: Invalid slice selection.");
-		infoLblERR.setForeground(Color.RED);
-		infoLblERR.setVisible(false);
+		sliceLblERR = new JLabel("ERROR: Invalid slice selection.");
+		sliceLblERR.setForeground(Color.RED);
+		sliceLblERR.setVisible(false);
 
-
-
-
-
-
-		this.infoBtnNext.addActionListener(new ActionListener() {
+		this.sliceBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 
-				currThread = new Thread(new Runnable() {
+				currWorker = new Thread(new Runnable() {
 					public void run(){
-						try {
-							infoBtnNext.setEnabled(false);
-							int lower = Integer.parseInt(infoTxtLowSlice.getText());
-							int higher = Integer.parseInt(infoTxtHighSlice.getText());
+						sliceBtnNext.setEnabled(false);
+						int lower = Integer.parseInt(sliceTxtLowSlice.getText());
+						int higher = Integer.parseInt(sliceTxtHighSlice.getText());
 
-							if (lower < 1 || lower >= higher) {
-								throw new Exception();
-							}
-							infoLblERR.setVisible(false);
-
-							if (currThread != null && !displayNextPreprocessedImage(lower, higher)) {
-
-								gui.getWizard().nextState();
-								imagesForSliceSelection = null;
-							}
-
-							infoBtnNext.setEnabled(true);
-						} catch (Exception ex) {
-							infoBtnNext.setEnabled(true);
-							infoLblERR.setVisible(true);
+						if (lower < 1 || lower >= higher ||
+								!imageCurrentlyPreprocessing.isValidSliceSelection(lower, higher)) {
+							sliceBtnNext.setEnabled(true);
+							sliceLblERR.setVisible(true);
+							return;
 						}
+						sliceLblERR.setVisible(false);
+
+
+						if (currWorker != null && !nextPreprocessedImage(lower, higher, sliceChkApplyToAll.isSelected())) {
+							sliceChkApplyToAll.setSelected(false);
+							gui.getWizard().nextState();
+							imagesForSliceSelection = null;
+						}
+
+						sliceBtnNext.setEnabled(true);
+
 					}
 				});
-				currThread.setDaemon(true);
-				currThread.start();
+				currWorker.setDaemon(true);
+				currWorker.start();
 
 			}
 		});
@@ -401,7 +423,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.objBtnRemove.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (objBtnRemove.getText().equals("Cancel")) {
 					objBtnNext.setEnabled(true);
 					objBtnPick.setText("Pick Mult.");
@@ -412,7 +434,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					}
 					return;
 				}
-				
+
 				String text = objTxtRemove.getText();
 
 				if (text.equals("")) return;
@@ -428,7 +450,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 							Integer lower = Integer.parseInt(upperLower[0]);
 							Integer higher = Integer.parseInt(upperLower[1]);
 							if (lower > higher) {
-								JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(),  "<html>Error: For value ranges, the lower bound must<br>be lower than the higher bound.</html>", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+								GUI.displayMessage("Error: For value ranges, the lower bound must be lower than the higher bound.", "Invalid Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 							for (int i = lower; i <= higher; i++) {
@@ -438,7 +460,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						}
 					}
 				} catch (Exception exc) {
-					JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(),  "<html>Error: Found text that isn't valid<br>format (not ','  '-'  or an integer).</html.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Error: Found text that isn't valid<br>format (not ','  '-'  or an integer).", "Invalid Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 					return;
 				}
 
@@ -446,56 +469,58 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				boolean validPoints = imageCurrentlyObjEditing.removePoints(chan, objectsToRemove);
 				objTxtRemove.setText("");
 				if (!validPoints) {
-
-					JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(),  "<html>Warning: Your input contained at least one<br>object number that don't exist.</html>", "Invalid Input", JOptionPane.WARNING_MESSAGE);
+					GUI.displayMessage("Warning: Your input contained at least one object number that doesn't exist.", "Odd Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE);
 				}
 
 
 			}
 		});
-		
+
 		this.objChkDots.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (imageCurrentlyObjEditing != null) {
 					try {
-						
+
 						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
 
 					} catch (IllegalArgumentException ex) {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 						objChkDots.setSelected(true);
 					}
 				}
 			}
 		});
-		
+
 		this.objChkOriginal.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (imageCurrentlyObjEditing != null) {
 					try {
-						
+
 						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
 
 					} catch (IllegalArgumentException ex) {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 						objChkOriginal.setSelected(true);
 					}
 				}
 			}
 		});
-		
+
 		this.objChkMask.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (imageCurrentlyObjEditing != null) {
 					try {
-						
+
 						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedChannel());
 
 					} catch (IllegalArgumentException ex) {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "You must have at least one layer selected.", "Layer Error", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 						objChkMask.setSelected(true);
 					}
 				}
@@ -504,7 +529,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.objBtnPick.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				if (objBtnPick.getText().equals("Pick Mult.")) {
 					if (imageCurrentlyObjEditing != null) {
 						objBtnNext.setEnabled(false);
@@ -521,7 +546,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					objTxtRemove.setEnabled(true);
 					boolean occurred = imageCurrentlyObjEditing.deleteObjectsWithinDeletionZone(gui.getPanelDisplay().getSliderSelectedChannel());
 					if (!occurred) {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html><body><p style='width: 200px;'>No objects were removed because you didn't select at least 3 points for the bounding region.</p></body></html", "Error Removing Points", JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("No objects were removed because you didn't select at least 3 points for the bounding region.", "Error Removing Points", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 					}
 				}
 
@@ -533,7 +559,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.objBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				currThread = new Thread(new Runnable() {
+				currWorker = new Thread(new Runnable() {
 					public void run(){
 						try {
 							objBtnNext.setEnabled(false);
@@ -542,15 +568,20 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 							Channel chan = imageCurrentlyObjEditing.getSelectionStateMeta().getChannelNotLookedAt();
 							if (chan != null) {
-								if (JOptionPane.showConfirmDialog(gui.getPanelDisplay().getImagePanel(), "<html>You have not yet looked at the "+ chan.name() + " channel yet.<br><br>Are you sure you want to continue?</html>", "Confirm Skip Channel", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+
+
+								if (!GUI.confirmWithUser("You have not yet looked at the "+ chan.getName() + 
+										" channel yet. Are you sure you want to continue?", 
+										"Confirm Skip Channel", 
+										gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
 									objBtnNext.setEnabled(true);
 									objTxtRemove.setEnabled(true);
 									return;
 
 								}
 							}
-							
-							if (currThread != null && !displayNextObjImage()) {
+
+							if (currWorker != null && !nextObjImage()) {
 
 								gui.getWizard().nextState();
 
@@ -564,8 +595,8 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						}
 					}
 				});
-				currThread.setDaemon(true);
-				currThread.start();
+				currWorker.setDaemon(true);
+				currWorker.start();
 
 			}
 		});
@@ -587,10 +618,36 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						distBtnDeleteROI.setEnabled(false);
 						distBtnCancelROI.setEnabled(false);
 						distBtnNext.setEnabled(false);
-						roiNamePopup.display(gui.getPanelDisplay().getImagePanel());
-					}else {
-						JOptionPane.showMessageDialog(gui.getPanelDisplay().getImagePanel(), "<html>You must select at least 2 points on<br>the image before creating an ROI.<br><br>The ROI line must not overlap with existing lines.</html>", "ROI Creation Error", JOptionPane.ERROR_MESSAGE);
+						String input = GUI.getInput("To create the ROI, type its name below and then select the side of the ROI to be designated as POSITIVE:", "Select ROI Name", gui.getPanelDisplay().getImagePanel());
 						
+						if (input == null || input.equals("")) {
+
+							distBtnAddROI.setEnabled(true);
+							distBtnDeleteROI.setEnabled(true);
+							distBtnCancelROI.setEnabled(true);
+							distBtnNext.setEnabled(true);
+						} else {
+
+							if (!imageCurrentlyROIEditing.convertSelectionToRoi(input)) {
+
+								GUI.displayMessage("Error: Either this name is already taken, you didn't select any points, or the line you drew overlapped (or would overlap when extended to the image side) with an existing ROI line.", "ROI naming error.", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+
+								distBtnAddROI.setEnabled(true);
+								distBtnDeleteROI.setEnabled(true);
+								distBtnCancelROI.setEnabled(true);
+								distBtnNext.setEnabled(true);
+							} else {
+
+								imageCurrentlyROIEditing.setSelectingPositive();
+							}
+
+
+							gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
+
+						}
+					} else {
+						GUI.displayMessage("You must select at least 2 points on he image before creating an ROI.<br><br>The ROI line must not overlap with existing lines.", "ROI Creation Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+
 					}
 				}
 			}
@@ -598,13 +655,13 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.distBtnDeleteROI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				List<PolarizedPolygonROI> selectedRois = distListROI.getSelectedMult();
+				List<PolarizedPolygonROI> selectedRois = roiListROI.getSelectedMult();
 				if (selectedRois != null && !selectedRois.isEmpty() && imageCurrentlyROIEditing != null) {
 					for (PolarizedPolygonROI roi : selectedRois) {
 						imageCurrentlyROIEditing.removeROI(roi);
-						distListROI.removeItem(roi);
+						roiListROI.removeItem(roi);
 					}
-					distListROI.clearSelection();
+					roiListROI.clearSelection();
 
 					gui.getPanelDisplay().getImagePanel().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedChannel()), -1, -1, Zoom.ZOOM_100);
 				}
@@ -623,202 +680,331 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.distBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				pressROINextImage();
+				nextROIImage();
 
 			}
 		});
 	}
-
+	
+	/**
+	 * @return the swing component for this panel.
+	 */
 	public JPanel getRawPanel() {
 		return this.rawPanel;
 	}
 
-	public synchronized void processInputFromTextPopup(String text) {
+	/**
+	 * First checks to make sure the first ROI image is valid (has at least one ROI, has valid Tags, has edited
+	 * tags if user requires this). If these checks pass, the current ROI selection selection is opened. Then opens the next. 
+	 * If it fails, it will skip the image and immediately open the next image. <br><br>
+	 * 
+	 * All steps after the initial validation are performed asynchronously in a worker thread.
+	 * 
+	 */
+	private synchronized void nextROIImage() { 
+		
+		distBtnAddROI.setEnabled(false);
+		distBtnDeleteROI.setEnabled(false);
+		distBtnCancelROI.setEnabled(false);
+		distBtnNext.setEnabled(false);
+		
+		boolean cancelNext = false;
+		
+		if (imageCurrentlyROIEditing != null) {
+			String errorsInTagValidation = null;
+			if (!imageCurrentlyROIEditing.hasROIs()) {
+				GUI.displayMessage("Error: You must create at least one ROI first.", "Processing Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+				cancelNext = true;
+			} else if ((errorsInTagValidation = imageCurrentlyROIEditing.validateTags()) != null) {
+				GUI.displayMessage("Error: You must apply appropriate tags. Message:<br><br>"+errorsInTagValidation, "Processing Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+				cancelNext = true;
+			} else if (!imageCurrentlyROIEditing.getSelectionStateMeta().haveTagsBeenEdited()) {
 
-		if (text == null || text.equals("")) {
+				if (!GUI.confirmWithUser("You have not edited any ROI line tags tags (i.e. setting which is the Reference roi). "+
+						"Are you sure you want to continue?", 
+						"Confirm Skip Tag Selection", 
+						gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
 
+					cancelNext = true;
+
+				}
+			}
+		}
+		
+		if (cancelNext) {
 			distBtnAddROI.setEnabled(true);
 			distBtnDeleteROI.setEnabled(true);
 			distBtnCancelROI.setEnabled(true);
 			distBtnNext.setEnabled(true);
-		} else {
-
-			if (!imageCurrentlyROIEditing.convertSelectionToRoi(text)) {
-				JOptionPane.showMessageDialog(gui.getComponent(), "<html>Error: Either this name is already taken, you didn't select any points,<br>or the line you drew overlapped (or would overlap when extended to the image side) with an existing ROI line.</html>", "ROI naming error.", JOptionPane.ERROR_MESSAGE);
-				distBtnAddROI.setEnabled(true);
-				distBtnDeleteROI.setEnabled(true);
-				distBtnCancelROI.setEnabled(true);
-				distBtnNext.setEnabled(true);
-			} else {
-				
-				
-				imageCurrentlyROIEditing.setSelectingPositive();
-			}
-			this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(this.gui.getPanelDisplay().getSliderSelectedChannel()), Zoom.ZOOM_100, -1, -1);
-
+			return;
 		}
-
 		
-
-	}
-	
-	private synchronized void pressROINextImage() { 
-		
-		currThread = new Thread(new Runnable() {
+		currWorker = new Thread(new Runnable() {
 			public void run(){
 
 				try {
-					
-					if (currThread == null)
+
+					if (currWorker == null)
 						return;
 					
-					if (imageCurrentlyROIEditing != null) {
-						if (!imageCurrentlyROIEditing.hasROIs()) {
-							JOptionPane.showMessageDialog(gui.getComponent(), "Error: You must create at least one ROI first.", "Processing Error", JOptionPane.ERROR_MESSAGE);
-							return;
-						}
-						
-						String errorsInTagValidation = imageCurrentlyROIEditing.validateTags();
-						
-						if (errorsInTagValidation != null) {
-							JOptionPane.showMessageDialog(gui.getComponent(), "<html>Error: You must apply appropriate tags. Message:<br><br>"+errorsInTagValidation+"</html>", "Processing Error", JOptionPane.ERROR_MESSAGE);
-							return;
-						}
-					}
+					gui.getBrightnessAdjuster().reset(true);
+					gui.getBrightnessAdjuster().removeDisplay();
+					setDisplayState(STATE_DISABLED, "Please wait...");
+					gui.getPanelDisplay().setDisplayState(false, "Please wait...");
+					
+					int status = _nextROIImageHelper();
+					
+					boolean goToNextState = false;
+					if (status == 1)
+						goToNextState = true;
+					else if (status == 2) {
 
-					distBtnAddROI.setEnabled(false);
-					distBtnDeleteROI.setEnabled(false);
-					distBtnCancelROI.setEnabled(false);
-					distBtnNext.setEnabled(false);
+						do {
 
-					if (currThread != null && !displayNextROISelectImage()) {
+							status = _nextROIImageHelper();
+
+						} while (status == 2);
+
+						if (status == 1)
+							goToNextState = true;
+
+					} else if (status != 3)
+						throw new RuntimeException(); // shouldn't occur, a safety measure.
+					
+					if (currWorker == null)
+						return;
+					
+					if (goToNextState) {
 
 						gui.getWizard().nextState();
+						return;
 
 					}
+					
+					System.out.println(status);
+					
+					ImageContainer ic = imageCurrentlyROIEditing.getContainer();
+					RunConfiguration runConfig = ic.getRunConfig();
 
+					gui.getPanelDisplay().setSliceSlider(false, -1, -1);
+
+					Channel roiDrawChan = runConfig.channelMan.getPrimaryROIDrawChan();
+					List<Channel> channelsForROISelection = runConfig.channelMan.getOrderedChannels();
+					channelsForROISelection.remove(roiDrawChan);
+					channelsForROISelection.add(0, roiDrawChan);
+
+
+					gui.getPanelDisplay().setChannelSlider(true, channelsForROISelection);
+
+					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(roiDrawChan), Zoom.ZOOM_100, -1, -1);
+
+					distTxtCurrDisp.setText(ic.getImageTitle());
 					distBtnNext.setEnabled(true);
+					distBtnCancelROI.setEnabled(true);
+					distBtnAddROI.setEnabled(true);
+					distBtnDeleteROI.setEnabled(true);
+					distBtnHelp.setEnabled(true);
+					roiListROI.clear();
+					if (imageCurrentlyROIEditing.hasROIs()) {
+						for (PolarizedPolygonROI roi : imageCurrentlyROIEditing.getROIs()) {
+							roiListROI.addItem(roi);
+						}
+					}
+
+					if (!runConfig.channelMan.isProcessChannel(roiDrawChan)) {
+						gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, roiDrawChan);
+					}
+					setDisplayState(STATE_ROI, null);
+					
+					distBtnAddROI.setEnabled(true);
+					distBtnDeleteROI.setEnabled(true);
+					distBtnCancelROI.setEnabled(true);
+					distBtnNext.setEnabled(true);
+					
+					gui.getPanelDisplay().setDisplayState(true, null);
+					gui.getLogger().setCurrentTaskComplete();
+					
+					
 				} catch (Exception ex) {
+					GUI.displayMessage("An unknown error has occurred.<br>" + ex.getMessage() + "<br>", "Display Next Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+					ex.printStackTrace();
 					distBtnNext.setEnabled(true);
 				}
 			}
 		});
-		currThread.setDaemon(true);
-		currThread.start();
-		
+		currWorker.setDaemon(true);
+		currWorker.start();
+
 	}
 
-	private synchronized boolean displayNextPreprocessedImage(int lastLowSliceSelection, int lastHighSliceSelection) {
+	/**
+	 * First selects slices and saves the current pre-processed image, if it exists. Then, opens a preprocessed
+	 * image and starts slice selection. However, if <code>reuseLastSettings</code> is selected, then this
+	 * method becomes iterative (not recursive). It will continue to process the remainder of images using the 
+	 * same settings passed for <code>lastLowSliceSelection</code> and <code>lastHighSliceSelection</code>.
+	 * 
+	 * When this method is called, it is assumed that all fields in the currently displayed layout are
+	 * correct. Therefore, any validation of fields should be done before calling on this method.
+	 * 
+	 * @param lastLowSliceSelection The minimum slice bound for the current pre-processed image
+	 * @param lastHighSliceSelection The maximum slice bound for the current pre-processed image
+	 * @param reuseLastSettings true if this method should be iterative, applying the previous parameters to 
+	 *  all successful imagess.
+	 * @return true if there are more images to be processed, false if finished.
+	 * @throws IllegalArgumentException if <code>reuseLastSettings</code>
+	 */
+	private synchronized boolean nextPreprocessedImage(int lastLowSliceSelection, int lastHighSliceSelection, boolean reuseLastSettings) throws IllegalArgumentException {
 
-		setDisplayState(STATE_DISABLED, "Processing...");
-		this.gui.getPanelDisplay().setDisplayState(false, "Processing...");
+		setDisplayState(STATE_DISABLED, "Please wait...");
+		this.gui.getPanelDisplay().setDisplayState(false, "Please wait...");
+
+		// Since we assume the current image slice selection was already validated, we should only get a value
+		// of 1,2, or 4.
+		int status = _nextPreprocessedImageHelper(lastLowSliceSelection, lastHighSliceSelection);
+
+		if (status == 1)
+			return false;	
+		else if (status != 4) {
+
+			if (status != 2)
+				throw new RuntimeException(); // shouldn't occur
+
+			do {
+
+				status = _nextPreprocessedImageHelper(-1, -1);
+
+			} while (status == 2);
+
+			if (status == 1)
+				return false;
+		}
+
+		// Check if batch
+		if (reuseLastSettings) {
+
+			boolean breakAndDisplay = false;
+			while (!breakAndDisplay) {
+				status = _nextPreprocessedImageHelper(lastLowSliceSelection, lastHighSliceSelection);
+				if (status == 1)
+					return false;
+				else if (status == 3) {
+					// Slice selection was invalid for this image.
+					GUI.displayMessage("The slice selection you chose to apply to all images is out of range for an image. Apply-All has been cancelled.", 
+							"Apply-All Error", this.gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+					this.sliceChkApplyToAll.setSelected(false);
+					breakAndDisplay = true;
+				}
+				// status should be 2 or 4, just continue to next.
+			}
+			// This part reached, must mean that slice selection was invalid.
+		}
+
+		List<Channel> listToSendSlider = this.imageCurrentlyPreprocessing.getRunConfig().channelMan.getOrderedChannels();
+		int stackSize = imageCurrentlyPreprocessing.getOrigStackSize(listToSendSlider.get(0));
+		this.gui.getPanelDisplay().setSliceSlider(true, 1, stackSize);
+		this.gui.getPanelDisplay().setChannelSlider(true, listToSendSlider);
+		this.gui.getPanelDisplay().setImage(imageCurrentlyPreprocessing.getSlice(listToSendSlider.get(0), 1, false), Zoom.ZOOM_100, -1, -1);
+		this.sliceTxtDisplaying.setText(imageCurrentlyPreprocessing.getContainer().getImageTitle());
+		this.sliceTxtLowSlice.setText("" + 1);
+		this.sliceTxtHighSlice.setText("" + stackSize);
+
+		setDisplayState(STATE_SLICE, null);
+		this.gui.getPanelDisplay().setDisplayState(true, null);
+		return true;
+	}
+
+	/**
+	 * This is a helper method.
+	 * 
+	 * Does batch opening and slice selection of pre-processed image. Occurs when the Apply to all option is
+	 * selected upon slice selection of the first image.
+	 * 
+	 * @param lastLowSliceSelection The minimum slice bound for the current pre-processed image
+	 * @param lastHighSliceSelection The maximum slice bound for the current pre-processed image
+	 * @return integer corresponding to the state. 1 = there are no more images to pre-process. 2 = the next
+	 *  image could not be opened for some reason (user is informed of this). 3 = last slice selection was invalid.
+	 *  Leaves last image set as current. 4 = successfully picked next, which is now set as the current.
+	 */
+	private synchronized int _nextPreprocessedImageHelper(int lastLowSliceSelection, int lastHighSliceSelection) {
 
 		if (this.imageCurrentlyPreprocessing != null && lastLowSliceSelection != -1 && lastHighSliceSelection != -1) {
 			this.gui.getLogger().setCurrentTask("Selecting slices & saving state...");
 
-			this.imageCurrentlyPreprocessing.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
-			
+			try {
+				this.imageCurrentlyPreprocessing.setSliceRegion(lastLowSliceSelection, lastHighSliceSelection);
+			} catch (IllegalArgumentException e) {
+				this.gui.getLogger().setCurrentTask("Error: Slice selection out of range.");
+				return 3;
+			}
+
 			File serializeFile = this.imageCurrentlyPreprocessing.getContainer().getSerializeFile(ImageContainer.STATE_SLC);
 			PreprocessedEditableImage.savePreprocessedImage(this.imageCurrentlyPreprocessing, serializeFile);
 			this.imagesForObjectAnalysis.add(serializeFile);
-			
+
 			this.gui.getLogger().setCurrentTaskComplete();
 			this.imageCurrentlyPreprocessing = null;
 		}
 
 
 		if (this.imagesForSliceSelection.isEmpty())
-			return false;
+			return 1;
 
 		ImagePhantom pi = this.imagesForSliceSelection.remove(0);
+		this.gui.getLogger().setCurrentTask("Opening " + pi.getTitle() + "...");
 		String errors = pi.openOriginal(GUI.settings.outputLocation, GUI.dateString);
 
 		if (errors != null) {
-			JOptionPane.showMessageDialog(null, "<html>There was an error opening file " + pi.getTitle() + ":<br><br>" + errors+ "</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
-			this.gui.getSelectFilesPanel().cancel();
-			return true;
+			GUI.displayMessage("There was an error opening file " + pi.getTitle() + ":<br><br>" + errors, "File Open Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+			this.gui.getLogger().setCurrentTaskCompleteWithError();
+			this.imageCurrentlyPreprocessing = null;
+			return 2; // return true because we want to continue processing other images.
+		} else {
+			this.gui.getLogger().setCurrentTaskComplete();
 		}
+		
 
-		
 		this.imageCurrentlyPreprocessing = new PreprocessedEditableImage(pi.getIC(), this.gui);
-		
-		Map<Integer, Channel> chanMap = this.imageCurrentlyPreprocessing.getRunConfig().channelMap;
-		List<Channel> listToSendSlider = new ArrayList<Channel>();
-		for (int i = 0; i < chanMap.size(); i++) {
-			Channel chan = chanMap.get(i);
-			if (chan != null) listToSendSlider.add(chan);
-			else break;
-		}
-		int stackSize = imageCurrentlyPreprocessing.getOrigStackSize(listToSendSlider.get(0));
-		this.gui.getPanelDisplay().setSliceSlider(true, 1, stackSize);
-		this.gui.getPanelDisplay().setChannelSlider(true, listToSendSlider);
-		this.gui.getPanelDisplay().setImage(imageCurrentlyPreprocessing.getSlice(listToSendSlider.get(0), 1, false), Zoom.ZOOM_100, -1, -1);
-		this.infoTxtDisplaying.setText(imageCurrentlyPreprocessing.getContainer().getImageTitle());
-		this.infoTxtLowSlice.setText("" + 1);
-		this.infoTxtHighSlice.setText("" + stackSize);
-		
-		setDisplayState(STATE_INFO, null);
-		this.gui.getPanelDisplay().setDisplayState(true, null);
-		return true;
+
+		return 4;
+
 	}
 
-	private synchronized boolean displayNextObjImage() {
-		setDisplayState(STATE_DISABLED, "Opening image...");
-		this.gui.getPanelDisplay().setDisplayState(false, "Opening image...");
-
-		if (this.imageCurrentlyObjEditing != null) {
-			
-			this.gui.getLogger().setCurrentTask("Creating new images...");
-
-			this.imageCurrentlyObjEditing.createAndAddNewImagesToIC();
-			this.gui.getLogger().setCurrentTaskComplete();
-
-			this.gui.getLogger().setCurrentTask("Saving state...");
-
-			// convert
-			ROIEditableImage roiei = this.imageCurrentlyObjEditing.convertToROIEditableImage();
-			// delete obj if not serve ints
-			imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
-			imageCurrentlyObjEditing.deleteSerializedVersion();
-			if (GUI.settings.saveIntermediates) {
-				ObjectEditableImage.saveObjEditableImage(this.imageCurrentlyObjEditing, this.imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ));
-			}
-
-			// save roi
-			File serializeFile = roiei.getContainer().getSerializeFile(ImageContainer.STATE_ROI);
-			ROIEditableImage.saveROIEditableImage(roiei, serializeFile);
-			this.imagesForROICreation.add(serializeFile);
-			this.gui.getLogger().setCurrentTaskComplete();
-
-			this.imageCurrentlyObjEditing = null;
-		}
-
-
-		if (this.imagesForObjectSelection.isEmpty())
-			return false;
-
-		this.gui.getLogger().setCurrentTask("Opening image...");
-
-		this.imageCurrentlyObjEditing = ObjectEditableImage.loadObjEditableImage(this.imagesForObjectSelection.remove(0));
+	/**
+	 * First saves the current object selection. Then opens the next. If it fails, it will skip the image and
+	 * immediately open the next image.
+	 * 
+	 * @return true if there are more images to be processed, false if finished.
+	 */
+	private synchronized boolean nextObjImage() {
 		
-		if (imageCurrentlyObjEditing == null) {
-			
-			JOptionPane.showMessageDialog(null, "<html>There was an error opening saved object state.</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
-			this.gui.getSelectFilesPanel().cancel();
-			return true;
-			// TODO maybe instead of just failing, go to the next image.
-		}
+		setDisplayState(STATE_DISABLED, "Please wait...");
+		this.gui.getPanelDisplay().setDisplayState(false, "Pleast wait...");
+
+		int status = _nextObjImageHelper();
+
+		if (status == 1)
+			return false; // no more images
+		else if (status == 2) {
+
+			do {
+
+				status = _nextObjImageHelper();
+
+			} while (status == 2);
+
+			if (status == 1)
+				return false;
+		} else if (status != 3)
+			throw new RuntimeException(); // shouldn't occur, a safety measure.
+		
 		ImageContainer ic = imageCurrentlyObjEditing.getContainer();
 
 		this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
 		List<Channel> chans = new ArrayList<Channel>();
 		int processedInsertIndex = 0;
-		for (int i = 0; i < ic.getRunConfig().channelMap.size(); i++) {
-			Channel chan = ic.getRunConfig().channelMap.get(i);
-			if (chan == null)
-				continue;
-			
-			if (imageCurrentlyObjEditing.getRunConfig().channelsToProcess.contains(chan)) {
+		for (Channel chan : ic.getRunConfig().channelMan.getOrderedChannels()) {
+
+			if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
 				chans.add(processedInsertIndex, chan); // Add to beginning
 				processedInsertIndex++;
 			} else {
@@ -846,15 +1032,85 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.gui.getLogger().setCurrentTaskComplete();
 		return true;
 	}
+	
+	/**
+	 * This is a helper method. <br><br>
+	 * 
+	 * Saves the current object image and then opens the next one, storing in {@link #imageCurrentlyObjEditing}.
+	 * Returns an integer corresponding to the result of these operations.
+	 * 
+	 * @return 1 = there are no more images to process. 2 = the next image could not be opened for some reason 
+	 * (user is informed of this). 3 = successfully picked next, which is now set as the current.
+	 */
+	private synchronized int _nextObjImageHelper() {
+		
+		if (this.imageCurrentlyObjEditing != null) {
 
-	private synchronized boolean displayNextROISelectImage() {
-		this.gui.getBrightnessAdjuster().reset(true);
-		this.gui.getBrightnessAdjuster().removeDisplay();
-		setDisplayState(STATE_DISABLED, "Processing...");
-		this.gui.getPanelDisplay().setDisplayState(false, "Processing...");
+			this.gui.getLogger().setCurrentTask("Creating new images...");
+
+			this.imageCurrentlyObjEditing.createAndAddNewImagesToIC();
+			this.gui.getLogger().setCurrentTaskComplete();
+
+			this.gui.getLogger().setCurrentTask("Saving state...");
+
+			// convert
+			ROIEditableImage roiei = this.imageCurrentlyObjEditing.convertToROIEditableImage();
+			// delete obj if not serve ints
+			imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
+			imageCurrentlyObjEditing.deleteSerializedVersion();
+			if (GUI.settings.saveIntermediates) {
+				ObjectEditableImage.saveObjEditableImage(this.imageCurrentlyObjEditing, this.imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ));
+			}
+
+			// save roi
+			File serializeFile = roiei.getContainer().getSerializeFile(ImageContainer.STATE_ROI);
+			ROIEditableImage.saveROIEditableImage(roiei, serializeFile);
+			this.imagesForROICreation.add(serializeFile);
+			this.gui.getLogger().setCurrentTaskComplete();
+
+			this.imageCurrentlyObjEditing = null;
+		}
+
+
+		if (this.imagesForObjectSelection.isEmpty())
+			return 1;
+
+		this.gui.getLogger().setCurrentTask("Opening image...");
+
+		this.imageCurrentlyObjEditing = ObjectEditableImage.loadObjEditableImage(this.imagesForObjectSelection.remove(0));
+
+		if (imageCurrentlyObjEditing == null) {
+			this.gui.getLogger().setCurrentTaskCompleteWithError();
+			GUI.displayMessage("There was an error opening saved object state.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+
+			return 2; // returning true allows it to just skip to the next image.
+		} else if (!imageCurrentlyObjEditing.getRunConfig().channelMan.hasIdenticalChannels(GUI.settings.channelMan)) {
+			this.gui.getLogger().setCurrentTaskCompleteWithError();
+			GUI.displayMessage("The saved Object state couldn't be opened because the Channel Setup does not match the current Channel Setup "
+					+ "in the Preferences. To fix this, use the Templates option in the Preferences to load the Channel Setup from a run.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			return 2;
+		} else {
+			this.gui.getLogger().setCurrentTaskComplete();
+		}
+
+		return 3;
+
+	}
+	
+
+	/**
+	 * This is a helper method. <br><br>
+	 * 
+	 * Saves the current ROI image and then opens the next one, storing in {@link #imageCurrentlyROIEditing}.
+	 * Returns an integer corresponding to the result of these operations.
+	 * 
+	 * @return 1 = there are no more images to process. 2 = the next image could not be opened for some reason 
+	 * (user is informed of this). 3 = successfully picked next, which is now set as the current.
+	 */
+	private synchronized int _nextROIImageHelper() {
 
 		if (this.imageCurrentlyROIEditing != null) {
-			
+
 			this.gui.getLogger().setCurrentTask("Saving state...");
 
 			imageCurrentlyROIEditing.deleteSerializedVersion();
@@ -863,13 +1119,13 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 			this.gui.getLogger().setCurrentTaskComplete();
 			this.imagesForROIAnalysis.add(imageCurrentlyROIEditing.getContainer().getSerializeFile(ImageContainer.STATE_ROI));
-			
+
 			this.imageCurrentlyROIEditing = null;
 		}
 
 
 		if (this.imagesForROICreation.isEmpty()) {
-			return false;
+			return 1;
 
 		}
 
@@ -877,114 +1133,127 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		this.imageCurrentlyROIEditing = ROIEditableImage.loadROIEditableImage(this.imagesForROICreation.remove(0));
 		if (imageCurrentlyROIEditing == null) {
-			JOptionPane.showMessageDialog(null, "<html>There was an error opening saved ROI state.</html>", "File Open Error", JOptionPane.ERROR_MESSAGE);
-			this.gui.getSelectFilesPanel().cancel();
-			return true;
-			// TODO maybe instead of just failing, go to the next image.
-		}
-		ImageContainer ic = imageCurrentlyROIEditing.getContainer();
-				
-
-		this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
-		
-		Channel roiDrawChan = ic.getRunConfig().primaryRoiDrawChannel;
-		
-		List<Channel> channelsForROISelection = new ArrayList<Channel>();
-		channelsForROISelection.add(roiDrawChan);
-		for (Channel chan : GUI.settings.getChannels()) {
-			if (!chan.equals(roiDrawChan)) {
-				channelsForROISelection.add(chan);
-			}
-		}
-
-		this.gui.getPanelDisplay().setChannelSlider(true, channelsForROISelection);
-
-		this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(roiDrawChan), Zoom.ZOOM_100, -1, -1);
-
-		this.distTxtCurrDisp.setText(ic.getImageTitle());
-		this.distBtnNext.setEnabled(true);
-		this.distBtnCancelROI.setEnabled(true);
-		this.distBtnAddROI.setEnabled(true);
-		this.distBtnDeleteROI.setEnabled(true);
-		this.distBtnHelp.setEnabled(true);
-		this.distListROI.clear();
-		if (this.imageCurrentlyROIEditing.hasROIs()) {
-			for (PolarizedPolygonROI roi : this.imageCurrentlyROIEditing.getROIs()) {
-				this.distListROI.addItem(roi);
-			}
+			GUI.displayMessage("There was an error opening saved ROI state.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			this.gui.getLogger().setCurrentTaskCompleteWithError();
+			return 2;
+		} else if (!imageCurrentlyROIEditing.getRunConfig().channelMan.hasIdenticalChannels(GUI.settings.channelMan)) {
+			GUI.displayMessage("The saved ROI state couldn't be opened because the Channel Setup does not match the current Channel Setup "
+					+ "in the Preferences. To fix this, use the Templates option in the Preferences to load the Channel Setup from a run.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("There was an error opening saved ROI state.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			return 2;
+		} else {
+			this.gui.getLogger().setCurrentTaskComplete();
 		}
 		
-		RunConfiguration runConfig = ic.getRunConfig();
-		if (!runConfig.channelsToProcess.contains(runConfig.primaryRoiDrawChannel)) {
-			this.gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, roiDrawChan);
-		}
-		setDisplayState(STATE_COUNT_DIST, null);
+		return 3;
 		
-		this.gui.getPanelDisplay().setDisplayState(true, null);
-		this.gui.getLogger().setCurrentTaskComplete();
-		return true;
 	}
-
+	
+	/**
+	 * Sets the images which will be displayed for slice selection. This does NOT begin slice selection.
+	 * To do that, use {@link #startSliceSelecting()}
+	 * 
+	 * @param images the phantom images from which we can derive and ImagePlus.
+	 */
 	public synchronized void setImagesForSliceSelection(List<ImagePhantom> images) {
 		this.imagesForSliceSelection = images;
 	}
 
+	/**
+	 * Sets the images which will be displayed for object selection. This does NOT begin object selection.
+	 * To do that, use {@link #startImageObjectSelecting()}
+	 * 
+	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
+	 */
 	public synchronized void setImagesForObjSelection(List<File> images) {
 
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			this.imagesForObjectAnalysis.clear();
 			this.imagesForObjectSelection = images;
 		}
 	}
 	
+	/**
+	 * Sets the images which will be displayed for ROI selection. This does NOT begin ROI selection.
+	 * To do that, use {@link #startAnalyzingROIs()}
+	 * 
+	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
+	 */
 	public synchronized void setImagesForROISelection(List<File> images) {
 
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.imagesForROICreation = images;
 		}
 	}
-
+	
+	/**
+	 * Begins slice selection
+	 */
 	public synchronized void startSliceSelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES)
-			displayNextPreprocessedImage(-1,-1);
+			nextPreprocessedImage(-1,-1, false);
 	}
 
+	/**
+	 * Begins processing image object by creating a worker.
+	 */
 	public synchronized void startProcessingImageObjects() {
 
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			this.neuronProcessor = new NeuronProcessor(this.imagesForObjectAnalysis, this.gui.getLogger(),this.gui.getWizard());
+			this.neuronProcessor = new NeuronProcessor(new ArrayList<File>(this.imagesForObjectAnalysis), this.gui.getLogger(),this.gui.getWizard());
+			this.imagesForObjectAnalysis.clear();
 			this.neuronProcessor.run();
 		}
 
 	}
-	
+
+	/**
+	 * Starts processing ORIS by creating a worker.
+	 */
 	public synchronized void startAnalyzingROIs() {
 
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			this.roiProcessor = new RoiProcessor(this.imagesForROIAnalysis, this.gui.getLogger(),this.gui.getWizard());
+			this.roiProcessor = new RoiProcessor(new ArrayList<File>(this.imagesForROIAnalysis), this.gui.getLogger(),this.gui.getWizard());
+			this.imagesForROIAnalysis.clear();
 			this.roiProcessor.run();
 		}
 
 	}
-
+	
+	/**
+	 * Starts image object selection by user.
+	 */
 	public synchronized void startImageObjectSelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) 
-			displayNextObjImage();
+			nextObjImage();
 
 	}
-
+	
+	/**
+	 * Starts ROI selection by user.
+	 */
 	public synchronized void startImageROISelecting() {
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			pressROINextImage();
+			nextROIImage();
 		}
-		
-	}
 
+	}
+	
+	/**
+	 * The current display state.
+	 * 
+	 * @return One of {@link #STATE_DISABLED}, {@link #STATE_OBJ}, {@link #STATE_ROI}, or {@link #STATE_SLICE}
+	 */
 	public int getState() {
 		return this.currentState;
 	}
-
-	public void setDisplayState(int state, String disabledMsg) {
+	
+	/**
+	 * Sets the current display state.
+	 * 
+	 * @param state One of {@link #STATE_DISABLED}, {@link #STATE_OBJ}, {@link #STATE_ROI}, or {@link #STATE_SLICE}
+	 * @param disabledMsg The disabled message to be put over the clear panel (only when in a disabled state)
+	 */
+	public synchronized void setDisplayState(int state, String disabledMsg) {
 
 		this.currentState = state;
 		switch (state) {
@@ -996,20 +1265,20 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			setLayout(false, -1);
 			this.objBtnPick.setText("Pick Mult.");
 			this.objBtnRemove.setText("Remove");
-			this.infoLblERR.setVisible(false);
-			this.infoTxtDisplaying.setText("");
-			this.infoTxtHighSlice.setText("");
-			this.infoTxtLowSlice.setText("");
+			this.sliceLblERR.setVisible(false);
+			this.sliceTxtDisplaying.setText("");
+			this.sliceTxtHighSlice.setText("");
+			this.sliceTxtLowSlice.setText("");
 			break;
-		case STATE_INFO:
-			this.infoLblERR.setVisible(false);
-			setLayout(true, LAYOUT_TYPE_INFO);
+		case STATE_SLICE:
+			this.sliceLblERR.setVisible(false);
+			setLayout(true, LAYOUT_TYPE_SLICE);
 			break;
 		case STATE_OBJ:
 			setLayout(true, LAYOUT_TYPE_OBJ);
 			break;
-		case STATE_COUNT_DIST:
-			setLayout(true, LAYOUT_TYPE_COUNT_DIST);
+		case STATE_ROI:
+			setLayout(true, LAYOUT_TYPE_ROI);
 			break;
 		default:
 			throw new IllegalStateException();
@@ -1025,7 +1294,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			this.rawPanel.setBackground(colorEnabled);
 
 			switch (type) {
-			case LAYOUT_TYPE_INFO:
+			case LAYOUT_TYPE_SLICE:
 				GroupLayout gl_pnlInfo = new GroupLayout(this.rawPanel);
 				gl_pnlInfo.setHorizontalGroup(
 						gl_pnlInfo.createParallelGroup(Alignment.LEADING)
@@ -1033,21 +1302,23 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 								.addContainerGap()
 								.addGroup(gl_pnlInfo.createParallelGroup(Alignment.TRAILING)
 										.addGroup(gl_pnlInfo.createSequentialGroup()
-												.addComponent(infoLblCurrDisp)
+												.addComponent(sliceLblCurrDisp)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(infoTxtDisplaying, GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE))
+												.addComponent(sliceTxtDisplaying, GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE))
 										.addGroup(Alignment.LEADING, gl_pnlInfo.createSequentialGroup()
-												.addComponent(infoLblSelectSlices)
+												.addComponent(sliceLblSelectSlices)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(infoTxtLowSlice, GroupLayout.PREFERRED_SIZE, 58, GroupLayout.PREFERRED_SIZE)
+												.addComponent(sliceTxtLowSlice, GroupLayout.PREFERRED_SIZE, 58, GroupLayout.PREFERRED_SIZE)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(infoLblThru)
+												.addComponent(sliceLblThru)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(infoTxtHighSlice, GroupLayout.PREFERRED_SIZE, 54, GroupLayout.PREFERRED_SIZE))
+												.addComponent(sliceTxtHighSlice, GroupLayout.PREFERRED_SIZE, 54, GroupLayout.PREFERRED_SIZE))
+										.addGroup(Alignment.LEADING, gl_pnlInfo.createSequentialGroup()
+												.addComponent(sliceChkApplyToAll))
 										.addGroup(gl_pnlInfo.createSequentialGroup()
-												.addComponent(infoLblERR, GroupLayout.DEFAULT_SIZE, 244, Short.MAX_VALUE)
+												.addComponent(sliceLblERR, GroupLayout.DEFAULT_SIZE, 244, Short.MAX_VALUE)
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(infoBtnNext)))
+												.addComponent(sliceBtnNext)))
 								.addContainerGap())
 						);
 				gl_pnlInfo.setVerticalGroup(
@@ -1055,18 +1326,20 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						.addGroup(gl_pnlInfo.createSequentialGroup()
 								.addContainerGap()
 								.addGroup(gl_pnlInfo.createParallelGroup(Alignment.BASELINE)
-										.addComponent(infoTxtDisplaying, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-										.addComponent(infoLblCurrDisp))
+										.addComponent(sliceTxtDisplaying, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(sliceLblCurrDisp))
 								.addPreferredGap(ComponentPlacement.RELATED)
 								.addGroup(gl_pnlInfo.createParallelGroup(Alignment.BASELINE)
-										.addComponent(infoLblSelectSlices)
-										.addComponent(infoTxtLowSlice, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-										.addComponent(infoLblThru)
-										.addComponent(infoTxtHighSlice, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-								.addPreferredGap(ComponentPlacement.RELATED, 24, Short.MAX_VALUE)
+										.addComponent(sliceLblSelectSlices)
+										.addComponent(sliceTxtLowSlice, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+										.addComponent(sliceLblThru)
+										.addComponent(sliceTxtHighSlice, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+								.addPreferredGap(ComponentPlacement.UNRELATED)
+								.addComponent(sliceChkApplyToAll)
+								.addPreferredGap(ComponentPlacement.RELATED, /*24*/24, Short.MAX_VALUE)
 								.addGroup(gl_pnlInfo.createParallelGroup(Alignment.TRAILING, false)
-										.addComponent(infoLblERR, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addComponent(infoBtnNext, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+										.addComponent(sliceLblERR, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										.addComponent(sliceBtnNext, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 								.addContainerGap())
 						);
 				this.rawPanel.setLayout(gl_pnlInfo);
@@ -1107,9 +1380,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 												.addComponent(objBtnNext))
 										/*.addComponent(objBtnNext, Alignment.TRAILING)*/
 										)
-								
+
 								.addContainerGap())
-						
+
 						);
 				gl_objPnl.setVerticalGroup(
 						gl_objPnl.createParallelGroup(Alignment.LEADING)
@@ -1131,9 +1404,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 								//
 								.addGroup(gl_objPnl.createParallelGroup(Alignment.BASELINE)
 										.addComponent(objLblShow)
-										
+
 										//.addGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								        //.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										//.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 
 										.addComponent(objChkMask)
 										.addComponent(objChkOriginal)
@@ -1144,7 +1417,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 						);
 				this.rawPanel.setLayout(gl_objPnl);
 				break;
-			case LAYOUT_TYPE_COUNT_DIST:
+			case LAYOUT_TYPE_ROI:
 				GroupLayout gl_pnlDist = new GroupLayout(this.rawPanel);
 				gl_pnlDist.setHorizontalGroup(
 						gl_pnlDist.createParallelGroup(Alignment.LEADING)
@@ -1152,11 +1425,11 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 								.addContainerGap()
 								.addGroup(gl_pnlDist.createParallelGroup(Alignment.LEADING)
 										.addGroup(gl_pnlDist.createSequentialGroup()
-												.addComponent(distLblCurrDisp)
+												.addComponent(roiLblCurrDisp)
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(distTxtCurrDisp, GroupLayout.DEFAULT_SIZE, 247, Short.MAX_VALUE))
 										.addGroup(gl_pnlDist.createSequentialGroup()
-												.addComponent(distLblInstruction)
+												.addComponent(roiLblInstruction)
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(distBtnHelp, GroupLayout.PREFERRED_SIZE, 22, GroupLayout.PREFERRED_SIZE))
 										.addGroup(gl_pnlDist.createSequentialGroup()
@@ -1166,7 +1439,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 																.addComponent(distBtnDeleteROI, Alignment.LEADING, 0, 0, Short.MAX_VALUE)
 																.addComponent(distBtnCancelROI, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 43, Short.MAX_VALUE)))
 												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(distSP, GroupLayout.DEFAULT_SIZE, 192, Short.MAX_VALUE)
+												.addComponent(roiSP, GroupLayout.DEFAULT_SIZE, 192, Short.MAX_VALUE)
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(distBtnNext)))
 								.addContainerGap())
@@ -1177,14 +1450,14 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 								.addContainerGap()
 								.addGroup(gl_pnlDist.createParallelGroup(Alignment.BASELINE)
 										.addComponent(distTxtCurrDisp, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-										.addComponent(distLblCurrDisp))
+										.addComponent(roiLblCurrDisp))
 								.addPreferredGap(ComponentPlacement.RELATED)
 								.addGroup(gl_pnlDist.createParallelGroup(Alignment.LEADING, false)
 										.addComponent(distBtnHelp, 0, 0, Short.MAX_VALUE)
-										.addComponent(distLblInstruction, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+										.addComponent(roiLblInstruction, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 								.addPreferredGap(ComponentPlacement.RELATED)
 								.addGroup(gl_pnlDist.createParallelGroup(Alignment.LEADING, false)
-										.addComponent(distSP, 0, 0, Short.MAX_VALUE)
+										.addComponent(roiSP, 0, 0, Short.MAX_VALUE)
 										.addGroup(gl_pnlDist.createParallelGroup(Alignment.TRAILING)
 												.addGroup(gl_pnlDist.createSequentialGroup()
 														.addComponent(distBtnAddROI, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
@@ -1209,16 +1482,18 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		}
 
 	}
-
-	public void sliderSliceChanged(int slice) {
+	
+	@Override
+	public synchronized void sliderSliceChanged(int slice) {
 		if(this.imageCurrentlyPreprocessing != null)
 		{
 			this.gui.getPanelDisplay().setImage(this.imageCurrentlyPreprocessing.getSlice(gui.getPanelDisplay().getSliderSelectedChannel(), slice, false), Zoom.ZOOM_100, -1, -1);
 		}
 	}
 
-	public void sliderChanChanged(Channel chan) {
-		if (currentState == STATE_INFO) {
+	@Override
+	public synchronized void sliderChanChanged(Channel chan) {
+		if (currentState == STATE_SLICE) {
 			if(this.imageCurrentlyPreprocessing != null)
 			{
 				this.gui.getPanelDisplay().setImage(this.imageCurrentlyPreprocessing.getSlice(chan, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
@@ -1229,7 +1504,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			{
 				this.imageCurrentlyObjEditing.getSelectionStateMeta().lookAt(chan);
 				imageCurrentlyObjEditing.setZoom(Zoom.ZOOM_100);
-				if (imageCurrentlyObjEditing.getRunConfig().channelsToProcess.contains(chan)) {
+				if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
 					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
 					this.objBtnPick.setEnabled(true);
 					this.objBtnRemove.setEnabled(true);
@@ -1245,9 +1520,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getContainer().getImage(OutputOption.MaxedChannel, chan, false), Zoom.ZOOM_100, -1, -1);
 				}
 			}
-		} else if (currentState == STATE_COUNT_DIST) {
+		} else if (currentState == STATE_ROI) {
 			if (imageCurrentlyROIEditing != null) {
-				if (!imageCurrentlyROIEditing.getRunConfig().channelsToProcess.contains(chan)) {
+				if (!imageCurrentlyROIEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
 					this.gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, chan);
 					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 				} else {
@@ -1257,8 +1532,18 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 			}
 		}
 	}
-
-	public synchronized void cancelNeuronProcessing() {
+	
+	/**
+	 * Cancels neuron processing by resetting all fields and canceling any workers. Not synchronized, meaning
+	 * this will regardless of what is being done elsewhere in the panel.
+	 */
+	public void cancelNeuronProcessing() {
+		
+		if (this.currWorker != null) {
+			this.currWorker.interrupt();
+			this.currWorker = null; // should stop the thread, because these are always made daemon
+		}
+		
 		if (this.neuronProcessor != null) {
 			this.neuronProcessor.cancelProcessing();
 			this.neuronProcessor = null;
@@ -1275,14 +1560,17 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		this.imagesForROICreation = new LinkedList<File>();
 		this.imagesForSliceSelection = new LinkedList<ImagePhantom>();
 
-		this.infoLblERR.setVisible(false);
+		this.sliceChkApplyToAll.setSelected(false);
+
+		this.sliceLblERR.setVisible(false);
 	}
 
-	public void mouseClickOnImage(Point p) {
+	@Override
+	public synchronized void mouseClickOnImage(Point p) {
 
 		if (currentState == STATE_OBJ) {
 
-			if (p != null && imageCurrentlyObjEditing != null && imageCurrentlyObjEditing.getRunConfig().channelsToProcess.contains(gui.getPanelDisplay().getSliderSelectedChannel())) {
+			if (p != null && imageCurrentlyObjEditing != null && imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(gui.getPanelDisplay().getSliderSelectedChannel())) {
 				if (this.imageCurrentlyObjEditing.isCreatingDeletionZone()) {
 					imageCurrentlyObjEditing.addDeletionZonePoint(p, gui.getPanelDisplay().getSliderSelectedChannel());
 				} else {
@@ -1290,7 +1578,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 				}
 
 			}
-		} else if (currentState == STATE_COUNT_DIST) {
+		} else if (currentState == STATE_ROI) {
 
 			if (p != null && imageCurrentlyROIEditing != null) {
 				if (imageCurrentlyROIEditing.isSelectingPositiveRegion()) {
@@ -1298,7 +1586,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 					this.distBtnNext.setEnabled(true);
 					this.distBtnCancelROI.setEnabled(true);
 					this.distBtnDeleteROI.setEnabled(true);
-					this.distListROI.addItem(imageCurrentlyROIEditing.selectPositiveRegionForCurrentROI(p));
+					this.roiListROI.addItem(imageCurrentlyROIEditing.selectPositiveRegionForCurrentROI(p));
 				} else {
 
 					imageCurrentlyROIEditing.addPoint(p);
@@ -1308,8 +1596,9 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 		}		
 	}
-
-	public void updateImage(int min, int max) {
+	
+	@Override
+	public synchronized void updateImage(int min, int max) {
 		if (this.imageCurrentlyROIEditing == null) {
 			return;
 		}
@@ -1318,28 +1607,37 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 		gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
 	}
 
+	/**
+	 * @return image currently object editing, will be null if not in the object edit phase.
+	 */
 	public ObjectEditableImage getObjectEditableImage() {
 		return this.imageCurrentlyObjEditing;
 	}
 
-	public void triggerROIAddButton() {
-		this.distBtnAddROI.doClick();
+	/**
+	 * Does same thing as manually clicking add ROI button. Useful so that keystrokes can trigger the add
+	 * ROI button, rather than needing to manually press it.
+	 */
+	public synchronized void triggerROIAddButton() {
+		if (this.distBtnAddROI.isEnabled()) {
+			this.distBtnAddROI.doClick();
+		}
 	}
 
-	public void triggerROIClearButton() {
-		this.distBtnCancelROI.doClick();
-	}
-	
-	public boolean objDeleteTextFieldHasFocus() {
-		return this.objTxtRemove.isFocusOwner();
-	}
-	
+
+	/**
+	 * Renderer which handles the display of ROI objects in the list of ROIs in the panel during ROI selection
+	 * 
+	 * @author justincarrington
+	 * 
+	 * @param <K> the type for the renderer
+	 */
 	private static class PolygonROIRenderer<K> implements ListCellRenderer<K> {
-		
+
 		private static Font smallFont = new Font("PingFang TC", Font.BOLD, 12);
 		protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 		private PnlOptions pnlOp;
-		
+
 		private PolygonROIRenderer(PnlOptions op) {
 			this.pnlOp = op;
 		}
@@ -1374,7 +1672,7 @@ public class PnlOptions implements TextInputPopupReceiver, PnlDisplayFeedbackRec
 
 
 		}
-		
+
 	}
 
 }

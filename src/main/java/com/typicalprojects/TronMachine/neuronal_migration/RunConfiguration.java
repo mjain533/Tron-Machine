@@ -25,71 +25,16 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import com.typicalprojects.TronMachine.util.ImageContainer;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 public class RunConfiguration implements Serializable {
 	
 	private static final long serialVersionUID = 7663254682478791055L; // For serialization
-	public transient Map<Integer, ImageContainer.Channel> channelMap = null;
-	public transient List<Channel> channelsToProcess = null;
-	public transient Channel primaryRoiDrawChannel = null;
+	public ChannelManager channelMan = null;
 	
 	protected RunConfiguration(Settings settings) {
-		this.channelMap = settings.channelMap;
-		this.channelsToProcess = settings.channelsToProcess;
-		this.primaryRoiDrawChannel = settings.primaryRoiDrawChannel;
+		this.channelMan = settings.channelMan;
 	}
 	
-	private void writeObject(ObjectOutputStream stream)
-			throws IOException {
-		
-		// NOTE: this may need to be adjusted for future updates.
-		
-		stream.defaultWriteObject();
-		Map<Integer, String> channelMapStrings = new HashMap<Integer,String>();
-		for (Entry<Integer, Channel> en : this.channelMap.entrySet()) {
-			channelMapStrings.put(en.getKey(), en.getValue().toReadableString());
-		}
-		stream.writeObject(channelMapStrings);
-		List<String> channelToProcessString = new ArrayList<String>();
-		for (Channel chan : this.channelsToProcess) {
-			channelToProcessString.add(chan.toReadableString());
-		}
-		stream.writeObject(channelToProcessString);
-		stream.writeObject(this.primaryRoiDrawChannel.toReadableString());
-
-		
-	}
-
-	@SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream stream)
-			throws IOException, ClassNotFoundException {
-		
-		// NOTE: this may need to be adjusted for future updates.
-
-		stream.defaultReadObject();
-		Map<Integer, String> channelMapStrings = (Map<Integer,String>) stream.readObject();
-		this.channelMap = new HashMap<Integer, Channel>();
-		for (Entry<Integer, String> en : channelMapStrings.entrySet()) {
-			this.channelMap.put(en.getKey(), Channel.parse(en.getValue()));
-		}
-		List<String> channelToProcessString = (List<String>) stream.readObject();
-		this.channelsToProcess = new ArrayList<Channel>();
-		for (String string : channelToProcessString) {
-			this.channelsToProcess.add(Channel.parse(string));
-		}
-		this.primaryRoiDrawChannel = Channel.parse((String) stream.readObject());
-	}
 	
 }

@@ -42,28 +42,28 @@ import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.util.Logger;
 
 public class PnlLog implements Logger {
-	
+
 	private JPanel rawPanel;
 	private volatile JTextArea textLog;
 	private volatile JScrollPane spLog;
-	
+
 	private volatile String task;
 	private JLabel lblLog;
 	private JLabel lblDisabled = new JLabel("");
-	
+
 	public PnlLog(GUI gui) {
-		
-		
+
+
 		rawPanel = new JPanel();
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
-		
+
 		lblLog = new JLabel("Status:");
 		lblLog.setFocusable(false);
-		
+
 		spLog = new JScrollPane();
 		spLog.setFocusable(false);
-		
-		
+
+
 		textLog = new JTextArea();
 		textLog.setEditable(false);
 		textLog.setEnabled(true);
@@ -72,26 +72,26 @@ public class PnlLog implements Logger {
 		setDisplayState(false);
 
 	}
-	
+
 	public JPanel getRawPanel(){ 
 		return this.rawPanel;
 	}
 
 	public synchronized void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
-		
+
 		if (textLog.getLineCount() > 300) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
 				// won't happen
 			}
-			
+
 		}
 		String progressPart = "";
 		if (oldTask != null && oldTask.equals(task) && totalProgress != -1) {
 			progressPart = " ("+ progressSoFar + "/" + totalProgress +")";
 			String currText = textLog.getText();
-			
+
 			String newText = task + progressPart + currText.substring(currText.indexOf('\n'));
 			textLog.setText(newText);
 			spLog.getVerticalScrollBar().setValue(0);
@@ -100,7 +100,7 @@ public class PnlLog implements Logger {
 		if (progressSoFar <= totalProgress && progressSoFar != -1 && totalProgress != -1) {
 			progressPart = " ("+ progressSoFar + "/" + totalProgress +")";
 		}
-		
+
 		if (textLog.getText().equals("")) {
 			textLog.setText(task + progressPart);
 		} else {
@@ -108,69 +108,94 @@ public class PnlLog implements Logger {
 
 		}
 		spLog.getVerticalScrollBar().setValue(0);
-		
+
 	}
 
 	@Override
 	public synchronized void setCurrentTask(final String newTask) {
-		
+
 		/*Runnable run = new Runnable() {
 			@Override
 			public void run() {*/
-				task = newTask;
-				if (task == null) {
-					return;
-				}
-				if (textLog.getLineCount() > 400) {
-					try {
-						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
-					} catch (BadLocationException e) {
-						// won't happen
-					}
-				}
-				textLog.setText(task + '\n' + textLog.getText());
-				spLog.getVerticalScrollBar().setValue(0);
+		task = newTask;
+		if (task == null) {
+			return;
+		}
+		if (!newTask.endsWith("."))
+			task = task + ".";
+		
+		if (textLog.getLineCount() > 400) {
+			try {
+				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+			} catch (BadLocationException e) {
+				// won't happen
+			}
+		}
+		textLog.setText(task + '\n' + textLog.getText());
+		spLog.getVerticalScrollBar().setValue(0);
 
-	/*		}
+		/*		}
 		};
 		SwingUtilities.invokeLater(run);*/
+
+
+	}
+
+	@Override
+	public synchronized void setCurrentTaskCompleteWithError() {
 		
+		if (task == null || textLog.getLineCount() == 0)
+			return;
+
+
+		if (textLog.getLineCount() > 300) {
+			try {
+				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+			} catch (BadLocationException e) {
+				// won't happen
+			}
+
+		}
+
+
+		try {
+			textLog.setText(task + " Error." + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
+		} catch (BadLocationException e) {
+			// won't happen
+		}
+
+		task = null;
+		spLog.getVerticalScrollBar().setValue(0);
 		
 	}
-	
+
 	@Override
 	public synchronized void setCurrentTaskComplete() {
-		
-		/*Runnable run = new Runnable() {
-			@Override
-			public void run() {*/
-				if (task == null || textLog.getLineCount() == 0)
-					return;
-				
-					
-				if (textLog.getLineCount() > 300) {
-					try {
-						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
-					} catch (BadLocationException e) {
-						// won't happen
-					}
 
-				}
+		if (task == null || textLog.getLineCount() == 0)
+			return;
 
-				
-				try {
-					textLog.setText(task + " Done." + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
-				} catch (BadLocationException e) {
-					// won't happen
-				}
 
-				task = null;
-				spLog.getVerticalScrollBar().setValue(0);
+		if (textLog.getLineCount() > 300) {
+			try {
+				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+			} catch (BadLocationException e) {
+				// won't happen
+			}
 
-		/*	}
-		};
-		SwingUtilities.invokeLater(run);*/
-		
+		}
+
+
+		try {
+			textLog.setText(task + " Done." + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
+		} catch (BadLocationException e) {
+			// won't happen
+		}
+
+		task = null;
+		spLog.getVerticalScrollBar().setValue(0);
+
+
 	}
 
 	@Override
@@ -178,30 +203,30 @@ public class PnlLog implements Logger {
 		/*Runnable run = new Runnable() {
 			@Override
 			public void run() {*/
-				if (task == null)
-					return;
-					
-				if (textLog.getLineCount() > 300) {
-					try {
-						textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
-					} catch (BadLocationException e) {
-						// won't happen
-					}
+		if (task == null)
+			return;
 
-				}
-				
-				try {
-					textLog.setText(task + " (" + progress + "/" + total + ")" + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
-				} catch (BadLocationException e) {
-					// won't happen
-				}
+		if (textLog.getLineCount() > 300) {
+			try {
+				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
+			} catch (BadLocationException e) {
+				// won't happen
+			}
 
-				spLog.getVerticalScrollBar().setValue(0);
+		}
+
+		try {
+			textLog.setText(task + " (" + progress + "/" + total + ")" + "\n" + textLog.getText().substring(textLog.getLineEndOffset(0)));
+		} catch (BadLocationException e) {
+			// won't happen
+		}
+
+		spLog.getVerticalScrollBar().setValue(0);
 		/*	}
 		};
 		SwingUtilities.invokeLater(run);*/
 	}
-	
+
 	public void setDisplayState(boolean enabled) {
 
 		this.rawPanel.removeAll();
@@ -209,23 +234,23 @@ public class PnlLog implements Logger {
 			this.rawPanel.setBackground(PnlDisplay.colorEnabled);
 			GroupLayout gl_pnlLog = new GroupLayout(rawPanel);
 			gl_pnlLog.setHorizontalGroup(
-				gl_pnlLog.createParallelGroup(Alignment.LEADING)
+					gl_pnlLog.createParallelGroup(Alignment.LEADING)
 					.addGroup(gl_pnlLog.createSequentialGroup()
-						.addContainerGap()
-						.addGroup(gl_pnlLog.createParallelGroup(Alignment.LEADING)
-							.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
-							.addComponent(lblLog))
-						.addContainerGap())
-			);
+							.addContainerGap()
+							.addGroup(gl_pnlLog.createParallelGroup(Alignment.LEADING)
+									.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
+									.addComponent(lblLog))
+							.addContainerGap())
+					);
 			gl_pnlLog.setVerticalGroup(
-				gl_pnlLog.createParallelGroup(Alignment.LEADING)
+					gl_pnlLog.createParallelGroup(Alignment.LEADING)
 					.addGroup(gl_pnlLog.createSequentialGroup()
-						.addContainerGap()
-						.addComponent(lblLog)
-						.addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
-						.addContainerGap())
-			);
+							.addContainerGap()
+							.addComponent(lblLog)
+							.addPreferredGap(ComponentPlacement.RELATED)
+							.addComponent(spLog, GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+							.addContainerGap())
+					);
 			this.rawPanel.setLayout(gl_pnlLog);
 
 		} else {
@@ -238,5 +263,5 @@ public class PnlLog implements Logger {
 			this.rawPanel.add(lblDisabled, BorderLayout.CENTER);
 		}
 	}
-	
+
 }

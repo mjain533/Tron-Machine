@@ -32,6 +32,7 @@ import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.MouseInfo;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -54,20 +55,18 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
 import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
+import com.typicalprojects.TronMachine.util.Toolbox;
 import com.typicalprojects.TronMachine.util.Zoom;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 import ij.ImagePlus;
 
 public class PnlDisplay  {
-
-
-
 
 	private JLabel lblDisabled;
 	public static Color colorDisabled = new Color(169, 169, 169);
@@ -95,11 +94,8 @@ public class PnlDisplay  {
 
 	public PnlDisplay(GUI gui, PnlDisplayFeedbackReceiver sliderOutputHandler) {
 		
-		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		Image img = new ImageIcon(FileBrowser.class.getClassLoader().getResource("cursor.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH);
 
-		cursor = toolkit.createCustomCursor(img , new java.awt.Point(7, 
-		           7), "img");
+		cursor = Toolbox.createCursor();
 
 		
 		
@@ -199,17 +195,18 @@ public class PnlDisplay  {
 					return;
 
 				lastSelectedChan = chan;
-				lblChanNum.setText(chan.getAbbreviation());
+				lblChanNum.setText(chan.getAbbrev() + "");
 				outputHandler.sliderChanChanged(chan);
 
 
 			}
 		});
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher() {
-
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent ke) {
+
 				synchronized (PnlDisplay.class) {
+					
 					switch (ke.getID()) {
 					case KeyEvent.KEY_RELEASED:
 
@@ -223,7 +220,7 @@ public class PnlDisplay  {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei == null)
 									break;
-								if (!oei.getRunConfig().channelsToProcess.contains(getSliderSelectedChannel()))
+								if (!oei.getRunConfig().channelMan.isProcessChannel(getSliderSelectedChannel()))
 									break;
 
 								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
@@ -251,7 +248,7 @@ public class PnlDisplay  {
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
-									if (!oei.getRunConfig().channelsToProcess.contains(getSliderSelectedChannel()))
+									if (!oei.getRunConfig().channelMan.isProcessChannel(getSliderSelectedChannel()))
 										break;
 									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
@@ -277,7 +274,7 @@ public class PnlDisplay  {
 								ke.consume();
 								gui.getPanelOptions().triggerROIAddButton();
 							} else if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+								if (isMouseWithinImgPanel()) {
 									getImagePanel().grabFocus();
 									ke.consume();
 									getImagePanel().shiftImage(1);
@@ -287,7 +284,7 @@ public class PnlDisplay  {
 							break;
 						case KeyEvent.VK_W:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+								if (isMouseWithinImgPanel()) {
 
 									ke.consume();
 									getImagePanel().grabFocus();
@@ -298,7 +295,7 @@ public class PnlDisplay  {
 							break;
 						case KeyEvent.VK_S:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+								if (isMouseWithinImgPanel()) {
 
 									ke.consume();
 									getImagePanel().grabFocus();
@@ -308,7 +305,7 @@ public class PnlDisplay  {
 							break;
 						case KeyEvent.VK_D:
 							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (!gui.getPanelOptions().objDeleteTextFieldHasFocus()) {
+								if (isMouseWithinImgPanel()) {
 
 									ke.consume();
 									getImagePanel().grabFocus();
@@ -367,7 +364,7 @@ public class PnlDisplay  {
 						
 						if (oei != null) {
 							Channel chan = getSliderSelectedChannel();
-							if (oei.getRunConfig().channelsToProcess.contains(chan)) {
+							if (oei.getRunConfig().channelMan.isProcessChannel(chan)) {
 								Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
 								Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
 								if (closest != null) {
@@ -403,6 +400,13 @@ public class PnlDisplay  {
 
 		});
 
+	}
+	
+	public boolean isMouseWithinImgPanel() {
+	    java.awt.Point mousePos = MouseInfo.getPointerInfo().getLocation();
+	    Rectangle bounds = this.pnlImage.getBounds();
+	    bounds.setLocation(this.pnlImage.getLocationOnScreen());
+	    return bounds.contains(mousePos);
 	}
 
 	public void setDisplayState(boolean enabled, String disabledMessage) {
@@ -512,7 +516,7 @@ public class PnlDisplay  {
 			this.sldrChan.setValue(0);
 			this.lastSelectedChan = chans.get(0);
 
-			this.lblChanNum.setText(chans.get(0).getAbbreviation());
+			this.lblChanNum.setText(chans.get(0).getAbbrev() + "");
 			this.sldrChan.setEnabled(true);
 
 		} else {

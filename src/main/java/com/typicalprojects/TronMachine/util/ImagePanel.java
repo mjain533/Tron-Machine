@@ -263,7 +263,10 @@ public class ImagePanel extends JPanel{
 		g2.setColor(Color.MAGENTA);
 		g2.drawRect(upperLeftImagePosX + 5, upperLeftImagePosY + 5, scaleFactor, scaleFactor);
 		g2.setColor(Color.CYAN);
-		g2.drawRect((int) (upperLeftImagePosX + 5 + (scaleFactor * (this.zoomX / (double) this.image.getWidth()))), (int) (upperLeftImagePosY + 5 + (scaleFactor * (this.zoomY / (double) this.image.getHeight()))), (int) (scaleFactor * (this.zoomWidth / (double) this.image.getWidth())), (int) (scaleFactor * (this.zoomHeight / (double) this.image.getHeight())));
+		g2.drawRect((int) (upperLeftImagePosX + 5 + (scaleFactor * (this.zoomX / (double) this.image.getWidth()))), 
+				(int) (upperLeftImagePosY + 5 + (scaleFactor * (this.zoomY / (double) this.image.getHeight()))), 
+				(int) (scaleFactor * (this.zoomWidth / (double) this.image.getWidth())) + 1, 
+				(int) (scaleFactor * (this.zoomHeight / (double) this.image.getHeight())) + 1);
 		//g.setColor(Color.YELLOW);
 		
 	}

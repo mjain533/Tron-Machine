@@ -35,15 +35,17 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+
 public class PnlInstructions {
 	
 	private JLabel currInstructions;
 	
 	private JPanel rawPanel;
 	
-	private final Font fontActiveInstruction = new Font("PingFang TC", Font.BOLD, 13);
+	private final Font fontActiveInstruction = GUI.smallBoldFont;
 	private final Color colorActiveInstruction = new Color(0, 128, 0);
-	private final Font fontPassive = new Font("PingFang TC", Font.PLAIN, 13);
+	private final Font fontPassive = GUI.smallPlainFont;
 	private final Color colorPassive = Color.BLACK;
 	
 	public PnlInstructions() {

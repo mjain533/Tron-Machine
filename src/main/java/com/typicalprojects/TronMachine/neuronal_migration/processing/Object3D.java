@@ -31,6 +31,9 @@ import java.util.Arrays;
 import java.util.Vector;
 
 
+/**
+ * Bean representing a 3D Object
+ */
 public class Object3D {
     /**Stores coordinates and intensities of the current Object3D: obj_voxels[index][0:x, 1:y, 2:z, 3:intensity]*/
     public int[][] obj_voxels;
@@ -102,7 +105,7 @@ public class Object3D {
     /**Calibration of the Object3D*/
     public Calibration cal;
     
-    int currIndex;
+    private int currIndex;
     
     /** Creates a new instance of Object3D (distances will be calibrated according to the input calibration)
      *  @param size specifies the number of voxels for the new 3DObject, distances being calibrated.
@@ -133,6 +136,7 @@ public class Object3D {
      *  @param z specifies the z coordinate of the voxel to be added.
      *  @param val specifies the intensity of the voxel to be added.
      *  @param isSurf specifies if the voxel to be added is on the surface of the object.
+     * 	@param surf surface value
      */
     public void addVoxel(int x, int y, int z, int val, boolean isSurf, float surf){
         currIndex++;

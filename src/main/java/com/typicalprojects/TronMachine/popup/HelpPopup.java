@@ -31,6 +31,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 
 import java.awt.Font;
 import java.awt.Image;
@@ -75,7 +76,7 @@ public class HelpPopup extends JFrame {
 	public HelpPopup(int height, int width, String message) {
 		this.height = height;
 		this.width = width;
-		setFont(new Font("PingFang TC", Font.PLAIN, 13));
+		setFont(GUI.smallPlainFont);
 		setTitle("Help");
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		setBounds(100, 100, width, height);

@@ -34,14 +34,12 @@ import com.typicalprojects.TronMachine.util.ImageContainer.ImageOpenException;
 public class ImagePhantom {
 	private ImageContainer ic;
 	private File imageFile;
-	private Logger logger;
 	private String title;
 	private RunConfiguration runConfig;
 
-	public ImagePhantom(File imageFile, String titleNoExtension, Logger logger, RunConfiguration runConfig) {
+	public ImagePhantom(File imageFile, String titleNoExtension, RunConfiguration runConfig) {
 		this.title = titleNoExtension;
 		this.imageFile = imageFile;
-		this.logger = logger;
 		this.runConfig = runConfig;
 	}
 
@@ -54,15 +52,12 @@ public class ImagePhantom {
 
 	public String openOriginal(File resaveOutputDir, String timeOfRun) {
 		// As one CZI
-		logger.setCurrentTask("Opening " + title + "...");
 		try {
 			ic = new ImageContainer(title, this.imageFile, resaveOutputDir, timeOfRun, this.runConfig);
-			logger.setCurrentTaskComplete();
 			return null;
 
 
 		} catch (ImageOpenException e) {
-			logger.setCurrentTask("Failed to open.");
 			e.printStackTrace();
 			return (e.getMessage() == null ? "Unknown reason." : e.getMessage());
 

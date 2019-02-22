@@ -42,6 +42,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,24 +53,32 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.awt.event.ActionListener;
 import java.awt.Dimension;
+import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Desktop;
 
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileSystemView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.typicalprojects.TronMachine.MainFrame;
-import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsLoader;
+import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsManager;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlInstructions;
@@ -77,27 +86,42 @@ import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlLog;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.util.Logger;
+import com.typicalprojects.TronMachine.util.Toolbox;
 
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JSeparator;
 
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.AbstractListModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.Icon;
+import javax.swing.JFileChooser;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.ListSelectionModel;
 
 public class GUI  {
 
 
 	private JFrame quantFrame;
 	private final MainFrame parentFrame;
-	public static final Font mediumFont = new Font("PingFang TC", Font.BOLD, 14);
-	public static final Font smallFont = new Font("PingFang TC", Font.BOLD, 13);
+	
+	/** PingFangTC, bold, size 14 **/
+	public static final Font mediumBoldFont = new Font("PingFang TC", Font.BOLD, 14);
+	/** PingFangTC, bold, size 13 **/
+	public static final Font smallBoldFont = new Font("PingFang TC", Font.BOLD, 13);
+	/** PingFangTC, plain, size 13 **/
 	public static final Font smallPlainFont = new Font("PingFang TC", Font.PLAIN, 13);
-	public static final Font medium_smallPlainFont = new Font("PingFang TC", Font.PLAIN, 10);
+	/** PingFangTC, plain, size 10 **/
+	public static final Font extraSmallPlainFont = new Font("PingFang TC", Font.PLAIN, 10);
+	/** PingFangTC, bold, size 10 **/
+	public static final Font extraSmallBoldFont = new Font("PingFang TC", Font.BOLD, 10);
+
+	
 
 
 	public static String dateString = null;
@@ -114,12 +138,10 @@ public class GUI  {
 	private volatile Wizard wizard;
 	private JMenuItem mntmPreferences;
 	private JMenuItem mntmBrightnessAdj;
-	private JMenuItem mntmSummaryStats;
 
 	private Preferences prefs;
 	private IntermediateProcessingGUI itmdProcessingGUI;
 	private BrightnessAdjuster brightnessAdjuster;
-	private StatsGUI statsGUI;
 	private volatile JLabel lblAttributes = null;
 	private JMenuItem mntmItmdProcessingGUI;
 	public static GUI SINGLETON = null;
@@ -130,37 +152,135 @@ public class GUI  {
 	 * @throws FormatException 
 	 */
 	public GUI(MainFrame parent) throws IOException {
-		
 
+		try {
+			Runtime.getRuntime().exec("defaults write -g ApplePressAndHoldEnabled -bool false");
+		} catch (Exception e) {
 
+		}
 
 		SINGLETON = this;
 		settings = null;
 		try {
-			settings = SettingsLoader.loadSettings(false);
+			settings = SettingsManager.loadSettings(false);
+			
 			if (settings.needsUpdate) {
-				SettingsLoader.saveSettings(settings);
+				SettingsManager.saveSettings(settings);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (settings == null) {
-				JOptionPane.showMessageDialog(parent, "<html>There was an error loading settings:<br><br>" + e.getMessage() + "</html>", "Settings Load Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("There was an error loading settings:<br><br>" + e.getMessage(), "Settings Load Error", parent,  JOptionPane.ERROR_MESSAGE);
 			} else {
-				JOptionPane.showMessageDialog(parent, "<html>There was an error updating settings:<br><br>" + e.getMessage() + "</html>", "Settings Update Error", JOptionPane.ERROR_MESSAGE);
+				GUI.displayMessage("<html>There was an error updating settings:<br><br>" + e.getMessage(), "Settings Update Error", parent,  JOptionPane.ERROR_MESSAGE);
 
 			}
 			throw new IOException();
 		}
 		this.parentFrame = parent;
+		
 		DateFormat dateFormat = new SimpleDateFormat("ddMMyyyy h-m-s a");
 		Date date = new Date();
 		dateString = dateFormat.format(date);
-
 
 		initialize();
 
 
 	}
+	
+	public class RectentFileList extends JPanel {
+
+        private final JList<File> list;
+        private final FileListModel listModel;
+        private final JFileChooser fileChooser;
+
+        public RectentFileList(JFileChooser chooser) {
+            fileChooser = chooser;
+            listModel = new FileListModel();
+            list = new JList<File>(listModel);
+            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            list.setCellRenderer(new FileListCellRenderer());
+
+            setLayout(new BorderLayout());
+            add(new JScrollPane(list));
+
+            list.addListSelectionListener(new ListSelectionListener() {
+                @Override
+                public void valueChanged(ListSelectionEvent e) {
+                    if (!e.getValueIsAdjusting()) {
+                        File file = list.getSelectedValue();
+                        // You might like to check to see if the file still exists...
+                        fileChooser.setSelectedFile(file);
+                    }
+                }
+            });
+        }
+
+        public void clearList() {
+            listModel.clear();
+        }
+
+        public void add(File file) {
+            listModel.add(file);
+        }
+
+        public class FileListModel extends AbstractListModel<File> {
+
+            private List<File> files;
+
+            public FileListModel() {
+                files = new ArrayList<File>();
+            }
+
+            public void add(File file) {
+                if (!files.contains(file)) {
+                    if (files.isEmpty()) {
+                        files.add(file);
+                    } else {
+                        files.add(0, file);
+                    }
+                    fireIntervalAdded(this, 0, 0);
+                }
+            }
+
+            public void clear() {
+                int size = files.size() - 1;
+                if (size >= 0) {
+                    files.clear();
+                    fireIntervalRemoved(this, 0, size);
+                }
+            }
+
+            @Override
+            public int getSize() {
+                return files.size();
+            }
+
+            @Override
+            public File getElementAt(int index) {
+                return files.get(index);
+            }
+        }
+
+        public class FileListCellRenderer extends DefaultListCellRenderer {
+
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof File) {
+                    File file = (File) value;
+                    Icon ico = FileSystemView.getFileSystemView().getSystemIcon(file);
+                    setIcon(ico);
+                    setToolTipText(file.getParent());
+                    setText(file.getName());
+                }
+                return this;
+            }
+
+        }
+
+    }
+  
 
 	public void show() {
 
@@ -184,8 +304,7 @@ public class GUI  {
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
 				if (wizard.getStatus() != Status.SELECT_FILES) {
-					if (JOptionPane.showConfirmDialog(quantFrame, "Do you really want to quit?", "Confirm Quit", 
-							JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE) == JOptionPane.YES_OPTION) {
+					if (GUI.confirmWithUser("Do you really want to quit?", "Confirm Quit", quantFrame, JOptionPane.WARNING_MESSAGE)) {
 						doExit();
 					}
 				} else {
@@ -194,24 +313,24 @@ public class GUI  {
 			}
 		});
 
-		setUIFont(smallFont);
+		setUIFont(smallBoldFont);
 
 		JMenuBar menuBar = new JMenuBar();
 		quantFrame.setJMenuBar(menuBar);
 
 		JMenu mnFile = new JMenu("File");
-		mnFile.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		mnFile.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnFile);
 
 		JMenuItem mntmExit = new JMenuItem("Exit");
 		mntmExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				int selection = JOptionPane.showConfirmDialog(quantFrame, "Do you really want to quit?", "Confirm Quit", 
-						JOptionPane.OK_CANCEL_OPTION, JOptionPane.ERROR_MESSAGE);
-				if (selection == 0) {
+				if (GUI.confirmWithUser("Do you really want to quit?", "Confirm Quit", quantFrame, JOptionPane.ERROR_MESSAGE)) {
 					doExit();
+
 				}
+
 			}
 		});
 
@@ -243,7 +362,7 @@ public class GUI  {
 		mnFile.add(mntmExit);
 
 		JMenu mnOptions = new JMenu("Options");
-		mnOptions.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		mnOptions.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnOptions);
 		mntmBrightnessAdj = new JMenuItem("Adjust Brightness");
 		mntmBrightnessAdj.addActionListener(new ActionListener() {
@@ -265,29 +384,10 @@ public class GUI  {
 		mnOptions.add(mntmBrightnessAdj);
 
 		JMenu mnProcess = new JMenu("Process");
-		mnProcess.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		mnProcess.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnProcess);
 
-		this.mntmSummaryStats = new JMenuItem("Summary Stats");
-		mnProcess.add(this.mntmSummaryStats);
-		this.statsGUI = new StatsGUI(this);
-		this.mntmSummaryStats.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
 
-				EventQueue.invokeLater(new Runnable() {
-					public void run() {
-						try {
-							statsGUI.display(quantFrame);
-							unfocusTemporarily();
-						} catch (Exception e) {
-						}
-					}
-				});
-
-			}
-		});
-		mntmSummaryStats.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		
 		this.itmdProcessingGUI = new IntermediateProcessingGUI(this);
 		this.mntmItmdProcessingGUI = new JMenuItem("Process from Intermediates");
 		mnProcess.add(this.mntmItmdProcessingGUI);
@@ -310,9 +410,9 @@ public class GUI  {
 		});
 		mntmItmdProcessingGUI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
-		
+
 		JMenu mnNavigation = new JMenu("Navigation");
-		mnNavigation.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		mnNavigation.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnNavigation);
 
 		JMenuItem mntmBackToMain = new JMenuItem("Back to Main Menu...");
@@ -347,12 +447,12 @@ public class GUI  {
 		}
 		final String currentVersion = properties.getProperty("version");
 		lblAttributes = new JLabel("Developed by J. Carrington, R. Taylor, K. Taylor, and E. Dent. Copyright 2018. Version "+ currentVersion+".");
-		lblAttributes.setFont(new Font("PingFang TC", Font.BOLD, 13));
+		lblAttributes.setFont(smallBoldFont);
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
 		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
 
 		JMenu mnHelp = new JMenu("Help");
-		mnHelp.setFont(smallFont.deriveFont(Font.BOLD, 16));
+		mnHelp.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
 		menuBar.add(mnHelp);
 
 		JMenuItem mntmQuickStart = new JMenuItem("Quick Start Quide");
@@ -453,7 +553,7 @@ public class GUI  {
 
 		pnlCONTENT.setLayout(gl_pnlCONTENT);
 
-		setUIFont(smallFont);
+		setUIFont(smallBoldFont);
 		Thread updateRetrieveThread = new Thread(new Runnable() {
 			public void run(){
 				try {
@@ -481,9 +581,9 @@ public class GUI  {
 							}
 
 						}
-						
+
 					}
-					
+
 					if (update) {
 						lblAttributes.setText("<html>" + lblAttributes.getText() + " <font color='RED'>(Updates Available)</font></html>");
 					}
@@ -495,7 +595,7 @@ public class GUI  {
 		});
 		updateRetrieveThread.setDaemon(true);
 		updateRetrieveThread.start();
-		
+
 
 	}
 
@@ -520,6 +620,12 @@ public class GUI  {
 	}
 
 	public void doExit() {
+		try {
+			Runtime.getRuntime().exec("defaults write -g ApplePressAndHoldEnabled -bool true");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.exit(0);
 	}
 
@@ -567,8 +673,6 @@ public class GUI  {
 	public void setMenuItemsEnabledDuringRun(boolean enabled) {
 		this.prefs.setEnabled(enabled);
 		this.prefs.resetPreferences(enabled);
-		this.statsGUI.removeDisplay();
-		this.statsGUI.resetFields();
 		this.mntmItmdProcessingGUI.setEnabled(enabled);
 	}
 
@@ -594,17 +698,6 @@ public class GUI  {
 		return false;
 	}
 
-	public static boolean outputOptionContainsChannel(OutputOption option, Channel chan) {
-		return (GUI.settings.enabledOptions.containsKey(option) && GUI.settings.enabledOptions.get(option).includedChannels.contains(chan));
-	}
-
-	public static boolean outputOptionsContainChannel(Collection<OutputOption> options, Channel chan) {
-		for (OutputOption option : options) {
-			if (outputOptionContainsChannel(option, chan))
-				return true;
-		}
-		return false;
-	}
 
 	private static String readAll(Reader rd) throws IOException {
 		StringBuilder sb = new StringBuilder();
@@ -626,7 +719,69 @@ public class GUI  {
 			is.close();
 		}
 	}
+
+	/**
+	 * @return dimensions of current screen. [width, height]
+	 */
+	public int[] updateResolution() {
+		DisplayMode mode = this.quantFrame.getGraphicsConfiguration().getDevice().getDisplayMode();
+		return new int[] {mode.getWidth(), mode.getHeight()};
+	}
+
+	public static boolean confirmWithUser(String msg, String title, Component relative, int joptionMsgType){
+		String string;
+		JLabel label = new JLabel(msg);
+		if (label.getPreferredSize().width > 300) {
+			string = "<html><body><p style='width:" + 300 + "px;'>"+msg+"</p></body></html>";
+		} else {
+			string = "<html><body><p>" + msg+ "</p></body></html>";
+		}
+		if (relative == null)
+			relative = GUI.SINGLETON.quantFrame;
+		return JOptionPane.showConfirmDialog(relative, string, title, JOptionPane.YES_NO_OPTION, joptionMsgType) == JOptionPane.YES_OPTION;
+	}
+
+	public static void displayMessage(String msg, String title, Component relative, int joptionpaneMsgType) {
+		String string;
+		JLabel label = new JLabel(msg);
+		if (label.getPreferredSize().width > 300) {
+			string = "<html><body><p style='width:" + 300 + "px;'>"+msg+"</p></body></html>";
+		} else {
+			string = "<html><body><p>" + msg+ "</p></body></html>";
+		}
+		if (relative == null)
+			relative = GUI.SINGLETON.quantFrame;
+		JOptionPane.showMessageDialog(relative,
+				string, title, joptionpaneMsgType);
+
+
+	}
 	
+	public static String getTooltipText(String text) {
+		JLabel label = new JLabel(text);
+		if (label.getPreferredSize().width > 200) {
+			text = "<html><body><p style='width:" + 200 + "px;'>"+text+"</p></body></html>";
+		} else {
+			text = "<html><body><p>" + text+ "</p></body></html>";
+		}
+		return text;
+
+	}
+
+	public static String getInput(String msg, String title, Component relative) {
+		String string;
+		JLabel label = new JLabel(msg);
+		if (label.getPreferredSize().width > 300) {
+			string = "<html><body><p style='width:" + 300 + "px;'>"+msg+"</p></body></html>";
+		} else {
+			string = "<html><body><p>" + msg+ "</p></body></html>";
+		}
+		if (relative == null)
+			relative = GUI.SINGLETON.quantFrame;
+		return JOptionPane.showInputDialog(relative,
+				string, title, JOptionPane.QUESTION_MESSAGE);
+
+	}
 
 
 }

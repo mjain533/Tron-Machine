@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,12 +54,17 @@ import org.apache.commons.lang.StringUtils;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.Analyzer.Calculation;
+import com.typicalprojects.TronMachine.popup.Displayable;
+import com.typicalprojects.TronMachine.popup.MultiSelectPopup;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
+import com.typicalprojects.TronMachine.util.Line;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.ResultsTable;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
+import com.typicalprojects.TronMachine.util.Toolbox;
 
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
@@ -74,7 +80,7 @@ public class ROIEditableImage implements Serializable {
 	private static final long serialVersionUID = 9162213686232534708L; // For serialization
 
 	private ImageContainer ic;
-	private Map<String, List<Point>> objData;
+	private Map<Channel, List<Point>> objData;
 
 	private transient GUI gui = null;
 
@@ -83,14 +89,17 @@ public class ROIEditableImage implements Serializable {
 	private transient boolean selectingPositive = false;
 	private PolarizedPolygonROI currentlyCreating = null;
 	private Map<Tag, PolarizedPolygonROI> tags = new HashMap<Tag, PolarizedPolygonROI>();
+	private transient MultiSelectPopup<Tag> multiSelectPopup = new MultiSelectPopup<Tag>();
+	private ROISelectMeta selectionStateData = null;
 
 	private List<Point> points = new ArrayList<Point>();
 
-	public ROIEditableImage(GUI gui, ImageContainer ic, Map<String, List<Point>> objData) {
+	public ROIEditableImage(GUI gui, ImageContainer ic, Map<Channel, List<Point>> objData) {
 
 		this.gui = gui;
 		this.ic =ic;
 		this.objData = objData;
+		this.selectionStateData = new ROISelectMeta();
 
 	}
 
@@ -102,10 +111,14 @@ public class ROIEditableImage implements Serializable {
 		return this.ic.getRunConfig();
 	}
 
+	public ROISelectMeta getSelectionStateMeta() {
+		return this.selectionStateData;
+	}
+
 	public boolean hasROIs() {
 		return !this.rois.isEmpty();
 	}
-	
+
 	public List<PolarizedPolygonROI> getROIs() {
 		return this.rois;
 	}
@@ -135,16 +148,17 @@ public class ROIEditableImage implements Serializable {
 	}
 
 	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
+		
+
 		if (this.cache.containsKey(channelToDrawROI)) {
 			return this.cache.get(channelToDrawROI);
 		}
 
 
-
 		Object[] obj = convertPointsToArray();
 		ImagePlus dup = null;
 
-		if (getRunConfig().channelsToProcess.contains(channelToDrawROI)) {
+		if (getRunConfig().channelMan.isProcessChannel(channelToDrawROI)) {
 			dup = new ImagePlus("dup", 
 					this.
 					ic.
@@ -159,10 +173,39 @@ public class ROIEditableImage implements Serializable {
 
 		ImageProcessor ip = dup.getProcessor();
 		//ip.setLineWidth(3);
-		double imgSize = Math.min(dup.getDimensions()[0], dup.getDimensions()[1] );
+		double imgSize = Math.max(dup.getDimensions()[0], dup.getDimensions()[1] );
+		float strokeWidth = ((float) imgSize) / 300.0f;
+		double orthogonalDistanceFromLine = imgSize / 68;
+		Font font = new Font("Arial", Font.BOLD, (int) (imgSize / 50));
+		ip.setFont(font);
+		
+		if (points.size() == 1) {
 
-		ip.setFont(new Font("Arial", Font.BOLD, (int) (imgSize / 50)));
 
+
+			ip.setColor(Color.GREEN);
+			int size = (int) (Math.min(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
+			ip.fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
+			dup.updateImage();
+
+		} else if (points.size() > 1) {
+
+			PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
+			pgr.setStrokeColor(Color.GREEN);
+			pgr.setFillColor(Color.GREEN);
+
+			pgr.setStrokeWidth(strokeWidth);
+			if (points.size() > 2) {
+				pgr.fitSplineForStraightening();;
+			}
+
+			ip.setColor(Color.GREEN);
+			ip.drawOverlay(new Overlay(pgr));
+			dup.updateImage();
+
+
+		}
+		
 		for (int i = 0; i <= this.rois.size(); i++) {
 
 			PolarizedPolygonROI roiWrapper;
@@ -179,25 +222,29 @@ public class ROIEditableImage implements Serializable {
 				roi = roiWrapper.get();
 			}
 
-			roi.setFillColor(Color.GREEN);
-
-
-			roi.setStrokeWidth(imgSize / 300.0);
+			roi.setStrokeColor(Color.GREEN);
+			roi.setStrokeWidth(strokeWidth);
 			ip.drawOverlay(new Overlay(roi));
-			int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
-			middleY= Math.min(middleY, dup.getDimensions()[1] - 4);
+			
+			int middleY = roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)];
+			middleY= Math.min(middleY, dup.getDimensions()[1] - 1 - (ip.getFontMetrics().getHeight()/ 2));
+			middleY= Math.max(middleY, 0 + (ip.getFontMetrics().getHeight() / 2));
 			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
-
-			ip.setColor(Color.GREEN);
+			middleX= Math.min(middleX, dup.getDimensions()[0] - 1 - (ip.getFontMetrics().stringWidth(roiWrapper.getName())/ 2));
+			middleX= Math.max(middleX, 0 + (ip.getFontMetrics().stringWidth(roiWrapper.getName()) / 2));
+			
+			ip.drawString(""); // TODO remove
+			
+			ip.setColor(Color.YELLOW);
 			if(roiWrapper.positiveRegionIsSet()) {
 				if (roi.getPolygon().npoints > 12) {
 					int polySize = (int) (roi.getPolygon().npoints / 6.0);
 
 					Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
-					posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, 15));
-					posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, 15));
-					posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, 15));
-					posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, 15));
+					posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, orthogonalDistanceFromLine));
+					posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, orthogonalDistanceFromLine));
+					posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, orthogonalDistanceFromLine));
+					posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, orthogonalDistanceFromLine));
 
 					for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
 
@@ -206,13 +253,15 @@ public class ROIEditableImage implements Serializable {
 							continue;
 
 						try {
-							if (roiWrapper.isPositive(val[0], val[1])) {
+							boolean firstIsPositive = ic.isWithinImage(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
+							if (firstIsPositive) {
+								Toolbox.drawString(ip, font, "+", val[0], val[1], Color.YELLOW, null);
+								Toolbox.drawString(ip, font, "-", val[2], val[3], Color.YELLOW, null);
 
-								ip.drawString("+", val[0]-6, val[1]+13);
-								ip.drawString("–", val[2]-5, val[3]+11);
 							} else {
-								ip.drawString("–", val[0]-5, val[1]+11);
-								ip.drawString("+", val[2]-6, val[3]+13);
+								Toolbox.drawString(ip, font, "-", val[0], val[1], Color.YELLOW, null);
+								Toolbox.drawString(ip, font, "+", val[2], val[3], Color.YELLOW, null);
+								
 
 							}
 						} catch (Exception e) {
@@ -224,10 +273,8 @@ public class ROIEditableImage implements Serializable {
 
 				}
 			}
-
-			ip.setColor(Color.RED);
-
-			ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
+			
+			Toolbox.drawStringWithBorderBox(ip, font, roiWrapper.getName(), middleX, middleY, Color.RED, Color.BLACK, Color.YELLOW);
 
 		}
 
@@ -243,61 +290,34 @@ public class ROIEditableImage implements Serializable {
 			dup.updateImage();
 		}
 
-		if (this.points.isEmpty()) {
-			bi = dup.getBufferedImage();
-			this.cache.put(channelToDrawROI, bi);
-			return bi;
-		}
+		bi = dup.getBufferedImage();
+		
 
-		//
-
-
-		//ip.drawRect(0, 0, ip.getWidth(), ip.getHeight());
-		//
-
-		if (points.size() == 1) {
-
-
-
-			ip.setColor(Color.GREEN);
-			int size = (int) (Math.min(dup.getDimensions()[0], dup.getDimensions()[1] ) / 100.0);
-			ip.fillRect((int) ((float[]) obj[0])[0] - (size / 2), (int) ((float[]) obj[1])[0] - (size / 2), size, size);
-			dup.updateImage();
-			bi = dup.getBufferedImage();
-
-		} else {
-
-			PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
-			pgr.setStrokeColor(Color.GREEN);
-			pgr.setFillColor(Color.GREEN);
-			double size = Math.min(dup.getDimensions()[0], dup.getDimensions()[1] );
-
-			pgr.setStrokeWidth(size / 300.0);
-			if (points.size() > 2) {
-				pgr.fitSplineForStraightening();;
-			}
-
-			ip.setColor(Color.GREEN);
-			ip.drawOverlay(new Overlay(pgr));
-			dup.updateImage();
-			bi = dup.getBufferedImage();
-
-
-		}
 
 		this.cache.put(channelToDrawROI, bi);
 		return bi;
 
 
 	}
-
+	
 	public void addPoint(Point p) {
+		
+		if (!this.points.isEmpty()) {
+			Point nearest = this.points.get(this.points.size() - 1);
+			if (Analyzer.calculate(Calculation.DIST, p.x, nearest.x, p.y, nearest.y) < 2.5) {
+				return;
+			}
+		}
+		
 		this.cache.clear();
 		this.points.add(p);
 
 	}
 
 	public boolean convertSelectionToRoi(String name) {
+
+
+		
 		if (this.points.size() < 2) {
 			return false;
 		}
@@ -306,70 +326,77 @@ public class ROIEditableImage implements Serializable {
 			if (wrapper.getName().equals(name))
 				return false;
 		}
-
-		ImagePlus drawImage = this.ic.getImage(OutputOption.MaxedChannel, getRunConfig().primaryRoiDrawChannel, false);
-
-
-		Point newStart = getStretchedPoint(this.points.get(0), drawImage.getDimensions());
-		if (newStart != null) {
-			this.points.add(0, newStart);
-		}
-
-		Point newEnd = getStretchedPoint(this.points.get(this.points.size() - 1), drawImage.getDimensions());
-
-		if (newEnd != null) {
-
-			this.points.add(newEnd);
-		}
-
+		
+		// Create first polygon with given points
 		Object[] obj = convertPointsToArray();
-
 		PolygonRoi pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
+		pgr.fitSplineForStraightening();
 
+		// Find add add extrapolation points
+		int pointsToTake = 5;
+		Polygon poly = pgr.getPolygon();
+		if (poly.npoints < 5) {
+			pointsToTake = 2;
+		}
+		Line extrapolationLine1 = new Line(poly.xpoints[pointsToTake - 1], poly.ypoints[pointsToTake - 1], poly.xpoints[0], poly.ypoints[0]);
+		Line extrapolationLine2 = new Line(poly.xpoints[poly.npoints - pointsToTake], poly.ypoints[poly.npoints - pointsToTake], poly.xpoints[poly.npoints - 1], poly.ypoints[poly.npoints - 1]);
+		int[] dims = this.ic.getDimensions();
+		Point extrapP1 = null;
+		Point extrapP2 = null;
+		try {
+			extrapP1 = extrapolationLine1.getExtrapolatedPoint(0, 0, dims[0] - 1, dims[1] - 1);
+			extrapP2 = extrapolationLine2.getExtrapolatedPoint(0, 0, dims[0] - 1, dims[1] - 1);
+		} catch (Exception e) {
+			e.printStackTrace();
+			extrapP1 = getStretchedPoint(this.points.get(0), dims);
+			extrapP2 = getStretchedPoint(this.points.get(this.points.size() - 1), dims);
+
+		}
+		if (extrapP1 != null) {
+			this.points.add(0, extrapP1);
+		}
+		if (extrapP2 != null) {
+			this.points.add(extrapP2);
+		}
+		
+		// Re-create the new polygon
+		obj = convertPointsToArray();
+		pgr = new PolygonRoi((float[]) obj[0], (float[]) obj[1], points.size(), Roi.POLYLINE) ;
+		pgr.fitSplineForStraightening();
+
+		ImagePlus drawImage = this.ic.getImage(OutputOption.MaxedChannel, getRunConfig().channelMan.getPrimaryROIDrawChan(), false);
+
+		// Set draw properties
 		pgr.setStrokeColor(Color.GREEN);
 		pgr.setFillColor(Color.GREEN);
 		double imgSize = Math.min(drawImage.getDimensions()[0], drawImage.getDimensions()[1] );
-
 		pgr.setStrokeWidth(imgSize / 300.0);
-		pgr.fitSplineForStraightening();
 
-		if (newStart == null) {
-			newStart = this.points.get(0);
-		}
-
-		if (newEnd == null) {
-			newEnd = this.points.get(this.points.size() - 1);
-		}
-
-		pgr.setName(name);
-		Polygon polygon = pgr.getPolygon();
-		int[] newxs = new int[polygon.npoints + 2];
-		System.arraycopy(polygon.xpoints, 0, newxs, 1, polygon.npoints);
-		int[] newys = new int[polygon.npoints + 2];
-		System.arraycopy(polygon.ypoints, 0, newys, 1, polygon.npoints);
-		newxs[0] = newStart.x;
-		newxs[newxs.length - 1] = newEnd.x;
-		newys[0] = newStart.y;
-		newys[newys.length - 1] = newEnd.y;
+		poly = pgr.getPolygon();
+		int[] newxs = new int[poly.npoints + 2];
+		System.arraycopy(poly.xpoints, 0, newxs, 1, poly.npoints);
+		int[] newys = new int[poly.npoints + 2];
+		System.arraycopy(poly.ypoints, 0, newys, 1, poly.npoints);
+		newxs[0] = points.get(0).x;
+		newxs[newxs.length - 1] = points.get(points.size() - 1).x;
+		newys[0] =  points.get(0).y;
+		newys[newys.length - 1] = points.get(points.size() - 1).y;
 
 
-		pgr = new PolygonRoi(newxs, newys, polygon.npoints + 2, Roi.POLYLINE);
-
+		pgr = new PolygonRoi(newxs, newys, poly.npoints + 2, Roi.POLYLINE);
 		if (lineCollides(pgr, this.rois)) {
 			return false;
 		}
 
-		polygon = pgr.getPolygon();
+		poly = pgr.getPolygon();
 		this.currentlyCreating = new PolarizedPolygonROI(name, pgr, 
-				createHalfRegion(polygon.xpoints, polygon.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))); 
-
-
-
-
+				createHalfRegion(poly.xpoints, poly.ypoints, new Point(0, 0, false), new Point(0, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, drawImage.getHeight() - 1, false), new Point(drawImage.getWidth() - 1, 0, false))); 
+		
 		this.points.clear();
 		this.cache.clear();
 
 		return true;
+
 	}
 
 	public void clearPoints() {
@@ -377,9 +404,24 @@ public class ROIEditableImage implements Serializable {
 		this.points.clear();
 	}
 
-	public void removeROI(PolarizedPolygonROI obj) {
+	public void removeROI(PolarizedPolygonROI line) {
 		this.cache.clear();
-		this.rois.remove(obj);
+		this.rois.remove(line);
+
+		Iterator<Entry<Tag, PolarizedPolygonROI>> itr = this.tags.entrySet().iterator();
+		boolean addRef = false;
+		while (itr.hasNext()) {
+			Entry<Tag, PolarizedPolygonROI> entry = itr.next();
+			if (entry.getValue().equals(line)) {
+				if (entry.getKey().equals(Tag.REF_PERCMIG)) {
+					addRef = true;
+				}
+				itr.remove();
+			}
+		}
+		if (addRef && !this.rois.isEmpty()) {
+			this.tags.put(Tag.REF_PERCMIG, this.rois.get(0));
+		}
 	}
 
 	public boolean hasPoints() {
@@ -401,45 +443,44 @@ public class ROIEditableImage implements Serializable {
 
 	public void createAndSaveNewImages() {
 
-		//TODO fix
-
 		Map<ImagePlus, Object[]> ipToDrawROIS = new HashMap<ImagePlus, Object[]>();
 
-		for (Channel chan : this.ic.getRunConfig().channelMap.values()) {
-			if (this.ic.getRunConfig().channelsToProcess.contains(chan)) {
+		RunConfiguration rc = this.ic.getRunConfig();
+		for (Channel chan : this.ic.getRunConfig().channelMan.getChannels()) {
+			if (rc.channelMan.isProcessChannel(chan)) {
 
 
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDots, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedDots, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, true, false, false), new Object[] {chan, OutputOption.RoiDrawProcessedDots});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsNoNum, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedDotsNoNum, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, false, true, false, false), new Object[] {chan, OutputOption.RoiDrawProcessedDotsNoNum});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedDotsObjects, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, true, true, false), new Object[] {chan, OutputOption.RoiDrawProcessedDotsObjects});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedDotsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedDotsOriginal, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, true, false, true), new Object[] {chan, OutputOption.RoiDrawProcessedDotsOriginal});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedFull, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedFull, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, true, true, true), new Object[] {chan, OutputOption.RoiDrawProcessedFull});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedObjects, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, false, true, false), new Object[] {chan, OutputOption.RoiDrawProcessedObjects});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawProcessedObjectsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.RoiDrawProcessedObjectsOriginal, chan)) {
 					ipToDrawROIS.put(getImgWithDots(chan, true, false, true, true), new Object[] {chan, OutputOption.RoiDrawProcessedObjectsOriginal});
 				}	
 
 			}
 
-			if (GUI.outputOptionContainsChannel(OutputOption.RoiDrawFull, chan)) {
+			if (rc.channelMan.hasOutput(OutputOption.RoiDrawFull, chan)) {
 				ipToDrawROIS.put(ic.getImage(OutputOption.MaxedChannel, chan, true), new Object[] {chan, OutputOption.RoiDrawFull});
 			}
 
 		}
 
-		if (GUI.settings.enabledOptions.containsKey(OutputOption.RoiDrawBlank)) {
+		if (rc.channelMan.hasOutput(OutputOption.RoiDrawBlank)) {
 			int[] dim = this.ic.getDimensions();
 			ipToDrawROIS.put(new ImagePlus("BlankROIDraw", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.RoiDrawBlank});
 
@@ -449,12 +490,88 @@ public class ROIEditableImage implements Serializable {
 			ImagePlus roiImg = imgEntry.getKey();
 			roiImg.setProcessor(roiImg.getProcessor().convertToColorProcessor());
 			ImageProcessor ip = roiImg.getProcessor();
+			
+			//ip.setLineWidth(3);
+			double imgSize = Math.max(roiImg.getDimensions()[0], roiImg.getDimensions()[1] );
+			float strokeWidth = ((float) imgSize) / 300.0f;
+			double orthogonalDistanceFromLine = imgSize / 68;
+			Font font = new Font("Arial", Font.BOLD, (int) (imgSize / 50));
 
-			double size = Math.min(roiImg.getDimensions()[0], roiImg.getDimensions()[1] );
+			
+			for (int i = 0; i <= this.rois.size(); i++) {
 
-			ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 50)));
+				PolarizedPolygonROI roiWrapper;
+				PolygonRoi roi;
+				if (i == this.rois.size()) {
+					if (this.currentlyCreating != null) {
+						roiWrapper = this.currentlyCreating;
+						roi = this.currentlyCreating.get();
+					} else {
+						break;
+					}
+				} else {
+					roiWrapper = this.rois.get(i);
+					roi = roiWrapper.get();
+				}
 
-			for (PolarizedPolygonROI roiWrapper : this.rois) {
+				roi.setStrokeColor(Color.GREEN);
+				roi.setStrokeWidth(strokeWidth);
+				ip.drawOverlay(new Overlay(roi));
+				
+				int middleY = roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)];
+				middleY= Math.min(middleY, roiImg.getDimensions()[1] - 1 - (ip.getFontMetrics().getHeight()/ 2));
+				middleY= Math.max(middleY, 0 + (ip.getFontMetrics().getHeight() / 2));
+				int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+				middleX= Math.min(middleX, roiImg.getDimensions()[0] - 1 - (ip.getFontMetrics().stringWidth(roiWrapper.getName())/ 2));
+				middleX= Math.max(middleX, 0 + (ip.getFontMetrics().stringWidth(roiWrapper.getName()) / 2));
+				
+				ip.drawString(""); // TODO remove
+				
+				ip.setColor(Color.YELLOW);
+				if(roiWrapper.positiveRegionIsSet()) {
+					if (roi.getPolygon().npoints > 12) {
+						int polySize = (int) (roi.getPolygon().npoints / 6.0);
+
+						Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
+						posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, orthogonalDistanceFromLine));
+						posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, orthogonalDistanceFromLine));
+						posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, orthogonalDistanceFromLine));
+						posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, orthogonalDistanceFromLine));
+
+						for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
+
+							int[] val = en.getValue();
+							if (val == null)
+								continue;
+
+							try {
+								boolean firstIsPositive = ic.isWithinImage(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
+								if (firstIsPositive) {
+									Toolbox.drawString(ip, font, "+", val[0], val[1], Color.YELLOW, null);
+									Toolbox.drawString(ip, font, "-", val[2], val[3], Color.YELLOW, null);
+
+								} else {
+									Toolbox.drawString(ip, font, "-", val[0], val[1], Color.YELLOW, null);
+									Toolbox.drawString(ip, font, "+", val[2], val[3], Color.YELLOW, null);
+									
+
+								}
+							} catch (Exception e) {
+								// out of bounds;
+								continue;
+							}
+						}
+
+
+					}
+				}
+				
+				Toolbox.drawStringWithBorderBox(ip, font, roiWrapper.getName(), middleX, middleY, Color.RED, Color.BLACK, Color.YELLOW);
+
+			}
+
+
+			/*for (PolarizedPolygonROI roiWrapper : this.rois) {
 				PolygonRoi roi = roiWrapper.get();
 				roi.setFillColor(Color.GREEN);
 
@@ -500,7 +617,7 @@ public class ROIEditableImage implements Serializable {
 
 				}
 
-			}
+			}*/
 
 			roiImg.updateImage();
 			if (imgEntry.getValue()[0] == null) {
@@ -518,16 +635,15 @@ public class ROIEditableImage implements Serializable {
 
 			String output = "";
 			String comma = "";
-			for (Entry<Tag, PolarizedPolygonROI> en : this.tags.entrySet()) {
-				if (en.getValue().equals(roi)) {
+			for (Tag tag : Tag.values()) {
+				if (this.tags.containsKey(tag) && this.tags.get(tag).equals(roi)) {
 					if (includeHTMLFontTag) {
-						output = output.concat(comma).concat("<font color='").concat(en.getKey().getHTMLColor()).concat("'>").concat(en.getKey().getAbbrev()).concat("</font>");
+						output = output.concat(comma).concat("<font color='").concat(tag.getHTMLColor()).concat("'>").concat(tag.getAbbrev()).concat("</font>");
 					} else {
-						output = output.concat(comma).concat(en.getKey().getAbbrev());
+						output = output.concat(comma).concat(tag.getAbbrev());
 					}
 					comma = ", ";
 				}
-
 			}
 
 			return output;
@@ -555,53 +671,59 @@ public class ROIEditableImage implements Serializable {
 	}
 
 	public void promptUserForTag(PolarizedPolygonROI roi) {
+		this.selectionStateData.setTagsEdited();
 		List<Tag> options = new ArrayList<Tag>();
 		if (!this.tags.containsKey(Tag.REF_PERCMIG) || !this.tags.get(Tag.REF_PERCMIG).equals(roi)) {
 			options.add(Tag.REF_PERCMIG);
 		}
 		if (GUI.settings.calculateBins) {
-			if (!this.tags.containsKey(Tag.BIN1)) {
+
+			if (!this.tags.containsKey(Tag.BIN1) || !this.tags.get(Tag.BIN1).equals(roi)) {
 				options.add(Tag.BIN1);
-			} else if (!this.tags.containsKey(Tag.BIN2)) {
-				options.add(Tag.BIN2);
-			} else {
-				if (!this.tags.get(Tag.BIN1).equals(roi)) {
-					options.add(Tag.BIN1);
-				}
-				if (!this.tags.get(Tag.BIN2).equals(roi)) {
-					options.add(Tag.BIN2);
-				}
 			}
+
+			if (!this.tags.containsKey(Tag.BIN2) || !this.tags.get(Tag.BIN2).equals(roi)) {
+				options.add(Tag.BIN2);
+			}
+
 		}
 
 		if (options.isEmpty()) {
-			JOptionPane.showMessageDialog(this.gui.getPanelOptions().getRawPanel(), "No tag options available.", "Apply Tags", JOptionPane.WARNING_MESSAGE);
+			GUI.displayMessage("No tag options available.", "Apply Tags", this.gui.getPanelDisplay().getRawPanel(), JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-
-		Tag result = (Tag) JOptionPane.showInputDialog(this.gui.getPanelOptions().getRawPanel(), "Select a tag to add.", "Apply Tags", JOptionPane.QUESTION_MESSAGE, null, options.toArray(new Tag[options.size()]), null);
-		if (result == null)
+		List<Tag> selected = this.multiSelectPopup.getUserInput(this.gui.getPanelOptions().getRawPanel(), "Select tags:", options, new HashSet<Tag>());
+		if (selected == null || selected.isEmpty())
 			return;
 
-		if ((result == Tag.BIN1 && this.tags.containsKey(Tag.BIN2) && this.tags.get(Tag.BIN2).equals(roi)) ||
-				(result == Tag.BIN2 && this.tags.containsKey(Tag.BIN1) && this.tags.get(Tag.BIN1).equals(roi))) {
-			PolarizedPolygonROI roi1 = this.tags.remove(Tag.BIN1);
-			PolarizedPolygonROI roi2 = this.tags.remove(Tag.BIN2);
-			if (roi2 != null) {
-				this.tags.put(Tag.BIN1, roi2);
+		if (selected.contains(Tag.BIN1)) {
+			if (selected.contains(Tag.BIN2)) {
+				GUI.displayMessage("An ROI cannot be assigned as start and end of binning", "Tag Select Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
+				return;
 			}
-			if (roi1 != null) {
-				this.tags.put(Tag.BIN2, roi1);
+			if (this.tags.containsKey(Tag.BIN2) && this.tags.get(Tag.BIN2).equals(roi)) {
+				this.tags.remove(Tag.BIN2);
 			}
+			this.tags.put(Tag.BIN1, roi);
+
+		} else if (selected.contains(Tag.BIN2)) {
+			if (this.tags.containsKey(Tag.BIN1) && this.tags.get(Tag.BIN1).equals(roi)) {
+				this.tags.remove(Tag.BIN1);
+			}
+			this.tags.put(Tag.BIN2, roi);
+
 		}
 
-		this.tags.put(result, roi);
+		if (selected.contains(Tag.REF_PERCMIG)) {
+			this.tags.put(Tag.REF_PERCMIG, roi);
+		}
+
 	} 
 
 	public ImagePlus getImgWithDots(Channel chan, boolean includeTextOnDots, boolean dots, boolean mask, boolean original){
 
-		int newFontSize = Custome3DObjectCounter.opResultFontSize;
-		int newDotSize = Custome3DObjectCounter.opResultDotsSize;
+		int newFontSize = Custom3DObjectCounter.opResultFontSize;
+		int newDotSize = Custom3DObjectCounter.opResultDotsSize;
 
 		ImagePlus stack = null;
 		if (mask) {
@@ -627,9 +749,9 @@ public class ROIEditableImage implements Serializable {
 			// Color processor
 		}
 
-		if (!this.objData.isEmpty() && this.objData.containsKey(chan.toReadableString())) {
+		if (!this.objData.isEmpty() && this.objData.containsKey(chan)) {
 
-			List<Point> chanPoints = this.objData.get(chan.toReadableString());
+			List<Point> chanPoints = this.objData.get(chan);
 			if (dots) {
 				ImageProcessor ip = stack.getProcessor().duplicate();
 
@@ -695,15 +817,26 @@ public class ROIEditableImage implements Serializable {
 	public Map<String, ResultsTable> processMigration(Logger progress, List<Analyzer.Calculation> calculations) {		
 
 		Map<String, ResultsTable> map = new HashMap<String, ResultsTable>();
-		for (Entry<String, List<Point>> en : this.objData.entrySet()) {
-			map.put(en.getKey(), calculateDistances(en.getValue(), Channel.parse(en.getKey()), progress, calculations));
+		for (Entry<Channel, List<Point>> en : this.objData.entrySet()) {
+			map.put(en.getKey().getName(), calculateDistances(en.getValue(), en.getKey(), progress, calculations));
 		}
 
 		if (GUI.settings.calculateBins) {
 			ResultsTable rt = processBins(progress);
-			if (rt != null) {
-				map.put("BINS", rt);
+			if (map.containsKey("BINS")) {
+				int i = 1;
+				for (i = 1; i <= Integer.MAX_VALUE; i++) {
+					if (!map.containsKey("BINS_" + i)) {
+						map.put("BINS_" + i, rt);
+						break;
+					}
+				}
+			} else {
+				if (rt != null) {
+					map.put("BINS", rt);
+				}
 			}
+
 		}
 
 
@@ -725,7 +858,8 @@ public class ROIEditableImage implements Serializable {
 
 
 		} catch (BinnedRegionMod.MalformedBinException e1) {
-			JOptionPane.showMessageDialog(this.gui.getComponent(), "There was an error processing bins. This is likely due to misshapen bin lines. Bin data will be neglected.", "Bin error", JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("There was an error processing bins. This is likely due to misshapen bin lines. Bin data will be neglected.", 
+					"Bin Error", this.gui.getComponent(), JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
 
@@ -733,41 +867,42 @@ public class ROIEditableImage implements Serializable {
 
 		Map<ImagePlus, Object[]> ipToDrawBINS = new HashMap<ImagePlus, Object[]>();
 
-		for (Channel chan : this.ic.getRunConfig().channelMap.values()) {
-			if (this.ic.getRunConfig().channelsToProcess.contains(chan)) {
+		RunConfiguration rc = this.ic.getRunConfig();
+		for (Channel chan : this.ic.getRunConfig().channelMan.getChannels()) {
+			if (rc.channelMan.isProcessChannel(chan)) {
 
 
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDots, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedDots, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, true, false, false), new Object[] {chan, OutputOption.BinDrawProcessedDots});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsNoNum, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedDotsNoNum, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, false, true, false, false), new Object[] {chan, OutputOption.BinDrawProcessedDotsNoNum});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedDotsObjects, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, true, true, false), new Object[] {chan, OutputOption.BinDrawProcessedDotsObjects});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedDotsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedDotsOriginal, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, true, false, true), new Object[] {chan, OutputOption.BinDrawProcessedDotsOriginal});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedFull, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedFull, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, true, true, true), new Object[] {chan, OutputOption.BinDrawProcessedFull});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedObjects, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedObjects, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, false, true, false), new Object[] {chan, OutputOption.BinDrawProcessedObjects});
 				}
-				if (GUI.outputOptionContainsChannel(OutputOption.BinDrawProcessedObjectsOriginal, chan)) {
+				if (rc.channelMan.hasOutput(OutputOption.BinDrawProcessedObjectsOriginal, chan)) {
 					ipToDrawBINS.put(getImgWithDots(chan, true, false, true, true), new Object[] {chan, OutputOption.BinDrawProcessedObjectsOriginal});
 				}	
 
 			}
 
-			if (GUI.outputOptionContainsChannel(OutputOption.BinDrawFull, chan)) {
+			if (rc.channelMan.hasOutput(OutputOption.BinDrawFull, chan)) {
 				ipToDrawBINS.put(ic.getImage(OutputOption.MaxedChannel, chan, true), new Object[] {chan, OutputOption.BinDrawFull});
 			}
 
 		}
 
-		if (GUI.settings.enabledOptions.containsKey(OutputOption.BinDrawBlank)) {
+		if (rc.channelMan.hasOutput(OutputOption.BinDrawBlank)) {
 			int[] dim = this.ic.getDimensions();
 			ipToDrawBINS.put(new ImagePlus("BlankBINDraw", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.BinDrawBlank});
 
@@ -791,7 +926,7 @@ public class ROIEditableImage implements Serializable {
 		logger.setCurrentTaskComplete();
 
 		if (binnedRegion.binLinesOverlap()) {
-			JOptionPane.showMessageDialog(this.gui.getComponent(), "There was an error processing bins. Bin lines overlap.", "Bin error", JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("There was an error processing bins. Bin lines overlap.", "Bin error",this.gui.getComponent(), JOptionPane.ERROR_MESSAGE);
 			return null;
 		}
 
@@ -799,35 +934,36 @@ public class ROIEditableImage implements Serializable {
 		LinkedHashMap<Integer, Map<Channel, Integer>> pointsBinned = new LinkedHashMap<Integer, Map<Channel, Integer>>();
 		HashMap<Channel, Integer> totalNumCells = new HashMap<Channel,Integer>();
 
+		List<Channel> processChans = getRunConfig().channelMan.getProcessChannels();
 		for (int i = 1; i <= GUI.settings.numberOfBins; i++) {
 			pointsBinned.put(i, new HashMap<Channel, Integer>());
 
-			for (Channel chan : getRunConfig().channelsToProcess) {
+			for (Channel chan : processChans) {
 				pointsBinned.get(i).put(chan, 0);
 			}
 		}
 		pointsBinned.put(-1, new HashMap<Channel, Integer>());
-		for (String string : this.objData.keySet()) {
-			pointsBinned.get(-1).put(Channel.parse(string), 0);
+		for (Channel chan : this.objData.keySet()) {
+			pointsBinned.get(-1).put(chan, 0);
 		}
 
 
 		ResultsTable rt = new ResultsTable();
 		rt.setHeading(0, "Bin");
 		int counter = 1;
-		for (Channel chan : getRunConfig().channelsToProcess) {
-			rt.setHeading(counter, chan.toReadableString() + " Cells (Num)");
-			rt.setHeading(counter + 1, chan.toReadableString() + " Cells (%)");
+		for (Channel chan : processChans) {
+			rt.setHeading(counter, chan.getName() + " Cells (Num)");
+			rt.setHeading(counter + 1, chan.getName() + " Cells (%)");
 
 			counter = counter + 2;
 		}
 
 		logger.setCurrentTask("Binning points... ");
 
-		for (Channel chan : getRunConfig().channelsToProcess) {
+		for (Channel chan : processChans) {
 			Iterator<Point> ptsItr = this
 					.objData
-					.get(chan.name())
+					.get(chan)
 					.iterator();
 
 			while (ptsItr.hasNext()) {
@@ -868,7 +1004,7 @@ public class ROIEditableImage implements Serializable {
 			rt.incrementCounter();
 			rt.addValue(0, binCounts.getKey());
 			counter = 1;
-			for (Channel chan : getRunConfig().channelsToProcess) {
+			for (Channel chan : processChans) {
 				int numCellsInBin = binCounts.getValue().get(chan);
 				int numCellsTotal = totalNumCells.get(chan);
 				double percent = (((int) ((((double) numCellsInBin) / numCellsTotal) * 10000)) / 100.0);
@@ -1026,7 +1162,7 @@ public class ROIEditableImage implements Serializable {
 			return newTable;
 		} catch (Exception e) {
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(this.gui.getComponent(), "<html>SHOW THIS TO JUSTIN:<br><br> " + StringUtils.join(e.getStackTrace(), "<br>") + "</html>", "Error", JOptionPane.ERROR_MESSAGE);
+			GUI.displayMessage("<html>SHOW THIS TO JUSTIN:<br><br> " + StringUtils.join(e.getStackTrace(), "<br>") + "</html>", "Error",this.gui.getComponent(),  JOptionPane.ERROR_MESSAGE);
 		}
 
 
@@ -1096,6 +1232,7 @@ public class ROIEditableImage implements Serializable {
 		Point currentPoint = new Point(xPts[xPts.length - 1], yPts[yPts.length - 1], null);
 		while (continueAdding) {
 			Point nextP = _addAnotherPoint(stopPoint, currentPoint, upperLeft, lowerLeft, lowerRight, upperRight);
+
 			if (nextP == null) {
 				xPtsAdd.add(stopPoint.x);
 				yPtsAdd.add(stopPoint.y);
@@ -1183,9 +1320,10 @@ public class ROIEditableImage implements Serializable {
 
 	private int[] _getOrthogonalPointsFromPolyLine(Polygon polygon, int pos, double distance) {
 
+		// Basically need to find points for constructing a line.
 		int minPos = Math.max(0, pos - 5);
 		int maxPos = Math.min(polygon.npoints - 1, pos + 5);
-
+		
 		if (minPos == maxPos)
 			return null;
 
@@ -1263,11 +1401,11 @@ public class ROIEditableImage implements Serializable {
 		// initialize transient vars
 		this.cache = new HashMap<Channel, BufferedImage>();
 		this.selectingPositive = false;
-
+		this.multiSelectPopup = new MultiSelectPopup<Tag>();
 		// read objects
 		stream.defaultReadObject();
 		this.gui = GUI.SINGLETON;
-		
+
 		if (!GUI.settings.calculateBins) {
 			this.tags.remove(Tag.BIN1);
 			this.tags.remove(Tag.BIN2);
@@ -1296,7 +1434,7 @@ public class ROIEditableImage implements Serializable {
 
 			FileInputStream fileInput = new FileInputStream(serialize); 
 			ObjectInputStream in = new ObjectInputStream(fileInput); 
-		
+
 
 			ROIEditableImage loadedROIImage = (ROIEditableImage) in.readObject(); 
 			//this.gui.getPanelDisplay().setImage(object1.get, zoom, clickX, clickY);
@@ -1311,17 +1449,37 @@ public class ROIEditableImage implements Serializable {
 		}
 	}
 
+	public static class ROISelectMeta implements Serializable {
+
+		private static final long serialVersionUID = -7227819070476401649L;
+		private boolean tagsEdited = false;
+
+		public ROISelectMeta() {
+		}
+
+		public void setTagsEdited() {
+			this.tagsEdited = true;
+		}
+
+		public boolean haveTagsBeenEdited() {
+			return this.tagsEdited;
+		}
+
+	}
+
 }
-enum Tag {
-	REF_PERCMIG("Percent Migration Reference", "R", "red"), BIN1( "Binning Start", "B1", "blue"), BIN2("Binning End", "B2", "blue");
+enum Tag implements Displayable {
+	REF_PERCMIG("Percent Migration Reference", "R", Color.RED), BIN1( "Binning Start", "B1", Color.BLUE), BIN2("Binning End", "B2", Color.BLUE);
 
 	private String msg;
 	private String abbrev;
+	private Color color;
 	private String htmlColor;
-	private Tag(String message, String abbrev, String htmlColor) {
+	private Tag(String message, String abbrev, Color color) {
 		this.msg = message;
 		this.abbrev = abbrev;
-		this.htmlColor = htmlColor;
+		this.color = color;
+		this.htmlColor = "rgb(" + color.getRed() + "," + color.getGreen() + "," + color.getBlue()+ ")";
 	}
 
 	public String getMsg() {
@@ -1337,7 +1495,22 @@ enum Tag {
 	}
 
 	public String toString() {
-		return "<html>" + this.msg + " (<font color='"+htmlColor+"'>" + this.abbrev + "</font>)</html>";
+		return this.msg;
+	}
+
+	@Override
+	public String getListDisplayText() {
+		return this.msg + " (" + this.abbrev + ")";
+	}
+
+	@Override
+	public Color getListDisplayColor() {
+		return this.color;
+	}
+
+	@Override
+	public Font getListDisplayFont() {
+		return GUI.smallBoldFont;
 	}
 }
 

@@ -55,6 +55,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.awt.event.ActionEvent;
 
+/**
+ * The primary point of application launch. The user may then select a program to continue. This menu can
+ * be returned to later, so it is NOT disposed of. All subsequent programs are created via workers in this
+ * class.
+ * 
+ * @author Justin Carrington
+ */
 public class MainFrame extends JFrame {
 
 	/**
@@ -70,6 +77,8 @@ public class MainFrame extends JFrame {
 
 	/**
 	 * Launch the application.
+	 * 
+	 * @param args launch parameters, we ignore
 	 */
 	public static void main(String[] args) {
 
@@ -94,6 +103,8 @@ public class MainFrame extends JFrame {
 	 */
 	public MainFrame() {
 		setTitle("The TRON Machine");
+
+
 
 		wf = new WaitingFrame();
 
@@ -148,7 +159,7 @@ public class MainFrame extends JFrame {
 
 												} catch (final Exception e) {
 													e.printStackTrace();
-													JOptionPane.showMessageDialog(null, "Initialization error. Contact Justin Carrington at the Dent Research Lab.", "Startup Error", JOptionPane.ERROR_MESSAGE);;
+													GUI.displayMessage("Initialization error.", "Startup Error", null, JOptionPane.ERROR_MESSAGE);
 													wf.disappear();
 													System.exit(0);
 												}
@@ -209,17 +220,25 @@ public class MainFrame extends JFrame {
 
 
 	}
-
+	
+	/**
+	 * Re-displays the main menu, if returned to from another program.
+	 */
 	public void reshow() {
 		setVisible(true);
 	}
 }
 
+/**
+ * Intended only for local use. See description for {@link MainFrame}
+ * 
+ * @author Justin Carrington
+ */
 class MySwingWorker extends SwingWorker<GUI, String> {
 
 	private MainFrame mf;
 
-	public MySwingWorker(MainFrame mf) {
+	protected MySwingWorker(MainFrame mf) {
 		this.mf = mf;
 	}
 

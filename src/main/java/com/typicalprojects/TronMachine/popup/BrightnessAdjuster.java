@@ -36,8 +36,8 @@ import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -105,7 +105,7 @@ public class BrightnessAdjuster extends JFrame {
 		setAlwaysOnTop(true);
 		
 		JLabel lblInstructions = new JLabel("Adjust Minimum and Maximum Brightness");
-		lblInstructions.setFont(new Font("PingFang TC", Font.BOLD, 14));
+		lblInstructions.setFont(GUI.mediumBoldFont);
 		
 		JLabel lblMin = new JLabel("Minimum:");
 		lblMin.setFont(GUI.smallPlainFont);

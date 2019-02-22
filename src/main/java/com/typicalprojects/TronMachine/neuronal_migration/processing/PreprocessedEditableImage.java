@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
-import com.typicalprojects.TronMachine.util.ImageContainer.Channel;
 import com.typicalprojects.TronMachine.util.ResultsTable;
 
 import ij.ImagePlus;
@@ -46,14 +46,20 @@ public class PreprocessedEditableImage implements Serializable {
 		return ic.getChannelOrig(chan, false).getStackSize();
 	}
 	
-	public void setSliceRegion(int lowSlice, int highSlice) {
+	public void setSliceRegion(int lowSlice, int highSlice) throws IllegalArgumentException, NullPointerException {
 
 		Map<Channel, ImagePlus> originals = this.ic.getOriginals();
 		if (originals == null)
-			throw new NullPointerException();
-
+			throw new NullPointerException("Could not obtain originals");
+		
+		if (!isValidSliceSelection(lowSlice, highSlice))
+			throw new IllegalArgumentException("Illegal slice selection");
+		
 		for (Entry<Channel, ImagePlus> en : originals.entrySet()) {
 			ImageStack is = en.getValue().getStack().duplicate();
+			if (is.getSize() < highSlice)
+				throw new IllegalArgumentException();
+			
 			for (int s = (is.getSize() - highSlice); s > 0; s--) {
 				is.deleteLastSlice();
 			}
@@ -64,6 +70,20 @@ public class PreprocessedEditableImage implements Serializable {
 			en.setValue(new ImagePlus(en.getValue().getTitle(), is));
 		}
 
+	}
+	
+	public boolean isValidSliceSelection(int lowSlice, int highSlice) {
+		Map<Channel, ImagePlus> originals = this.ic.getOriginals();
+		if (originals == null)
+			throw new NullPointerException();
+		
+		for (ImagePlus ip : originals.values()) {
+			if (ip.getStack().getSize() < highSlice)
+				return false;
+		}
+		
+		return true;
+		
 	}
 	
 	public ObjectEditableImage convertToObjectEditableImage(Map<String, ResultsTable> objectResultMaps) {

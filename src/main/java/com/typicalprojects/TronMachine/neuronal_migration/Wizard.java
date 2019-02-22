@@ -87,6 +87,7 @@ public class Wizard {
 			break;
 		case SELECT_OB:
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_OBJECTS);
+			
 			gui.getPanelDisplay().setDisplayState(false, "Image opening...");
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
 			gui.getPanelOptions().startImageObjectSelecting();
@@ -152,7 +153,7 @@ public class Wizard {
 			setStatus(Status.PROCESSING_ROI);
 			break;
 		case PROCESSING_ROI:
-			JOptionPane.showMessageDialog(this.gui.getComponent(), "Processing Complete.", "Done", JOptionPane.INFORMATION_MESSAGE);
+			GUI.displayMessage("Processing Complete.", "Done", this.gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
 			setStatus(Status.SELECT_FILES);
 			break;
 		}
