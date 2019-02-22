@@ -69,6 +69,7 @@ public class Wizard {
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, null);
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_FILE); // THIS LAST
 			gui.getLogPanel().setDisplayState(false);
+			
 			break;
 		case SELECT_SLICES:
 			this.gui.setMenuItemsEnabledDuringRun(false);
@@ -154,6 +155,7 @@ public class Wizard {
 			break;
 		case PROCESSING_ROI:
 			GUI.displayMessage("Processing Complete.", "Done", this.gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
+			gui.getPanelOptions().printListSizes();
 			setStatus(Status.SELECT_FILES);
 			break;
 		}

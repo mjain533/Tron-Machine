@@ -1623,6 +1623,17 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			this.distBtnAddROI.doClick();
 		}
 	}
+	
+	public void printListSizes() {
+		System.out.println(this.imagesForROICreation.size());
+		System.out.println(this.imagesForROIAnalysis.size());
+		System.out.println(this.imagesForObjectSelection.size());
+		System.out.println(this.imagesForObjectAnalysis.size());
+		System.out.println(this.imagesForSliceSelection.size());
+
+
+
+	}
 
 
 	/**
