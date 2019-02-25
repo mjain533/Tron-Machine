@@ -485,9 +485,15 @@ public class ROIEditableImage implements Serializable {
 			ipToDrawROIS.put(new ImagePlus("BlankROIDraw", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.RoiDrawBlank});
 
 		}
+		if (rc.channelMan.hasOutput(OutputOption.RoiDrawMinBlank)) {
+			int[] dim = this.ic.getDimensions();
+			ipToDrawROIS.put(new ImagePlus("BlankROIDrawMin", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.RoiDrawMinBlank});
+
+		}
 
 		for (Entry<ImagePlus, Object[]> imgEntry : ipToDrawROIS.entrySet()) {
 			ImagePlus roiImg = imgEntry.getKey();
+			OutputOption op = (OutputOption) imgEntry.getValue()[1];
 			roiImg.setProcessor(roiImg.getProcessor().convertToColorProcessor());
 			ImageProcessor ip = roiImg.getProcessor();
 			
@@ -513,10 +519,20 @@ public class ROIEditableImage implements Serializable {
 					roiWrapper = this.rois.get(i);
 					roi = roiWrapper.get();
 				}
-
-				roi.setStrokeColor(Color.GREEN);
+				
 				roi.setStrokeWidth(strokeWidth);
-				ip.drawOverlay(new Overlay(roi));
+				if (op.equals(OutputOption.RoiDrawMinBlank)) {
+					roi.setStrokeColor(Color.WHITE);
+					ip.setColor(Color.WHITE);
+					ip.drawOverlay(new Overlay(roi));
+					continue;
+				} else {
+					roi.setStrokeColor(Color.GREEN);
+					ip.setColor(Color.GREEN);
+					ip.drawOverlay(new Overlay(roi));
+				}
+				
+				
 				
 				int middleY = roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)];
 				middleY= Math.min(middleY, roiImg.getDimensions()[1] - 1 - (ip.getFontMetrics().getHeight()/ 2));
@@ -525,7 +541,6 @@ public class ROIEditableImage implements Serializable {
 				middleX= Math.min(middleX, roiImg.getDimensions()[0] - 1 - (ip.getFontMetrics().stringWidth(roiWrapper.getName())/ 2));
 				middleX= Math.max(middleX, 0 + (ip.getFontMetrics().stringWidth(roiWrapper.getName()) / 2));
 				
-				ip.drawString(""); // TODO remove
 				
 				ip.setColor(Color.YELLOW);
 				if(roiWrapper.positiveRegionIsSet()) {
@@ -570,60 +585,11 @@ public class ROIEditableImage implements Serializable {
 
 			}
 
-
-			/*for (PolarizedPolygonROI roiWrapper : this.rois) {
-				PolygonRoi roi = roiWrapper.get();
-				roi.setFillColor(Color.GREEN);
-
-
-				roi.setStrokeWidth(size / 300.0);
-				ip.drawOverlay(new Overlay(roi));
-				int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
-				middleY= Math.min(middleY, roiImg.getDimensions()[1] - 4);
-				int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
-				ip.setColor(Color.RED);
-				ip.drawString(roiWrapper.getName(), middleX, middleY, Color.BLACK);
-				ip.setColor(Color.GREEN);
-				if (roi.getPolygon().npoints > 12) {
-					int polySize = (int) (roi.getPolygon().npoints / 6.0);
-
-					Map<Integer, int[]> posNegLabels = new HashMap<Integer, int[]>();
-					posNegLabels.put(polySize, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize, 15));
-					posNegLabels.put(polySize*2, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*2, 15));
-					posNegLabels.put(polySize*4, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*4, 15));
-					posNegLabels.put(polySize*5, this._getOrthogonalPointsFromPolyLine(roi.getPolygon(), polySize*5, 15));
-
-					for (Entry<Integer, int[]> en : posNegLabels.entrySet()) {
-
-						int[] val = en.getValue();
-						if (val == null)
-							continue;
-
-						try {
-							if (roiWrapper.isPositive(val[0], val[1])) {
-
-								ip.drawString("+", val[0]-6, val[1]+13);
-								ip.drawString("–", val[2]-5, val[3]+11);
-							} else {
-								ip.drawString("–", val[0]-5, val[1]+11);
-								ip.drawString("+", val[2]-6, val[3]+13);
-
-							}
-						} catch (Exception e) {
-							// out of bounds;
-							continue;
-						}
-					}
-
-				}
-
-			}*/
-
 			roiImg.updateImage();
 			if (imgEntry.getValue()[0] == null) {
-				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg);
+				this.ic.saveSupplementalImage(op, roiImg);
 			} else {
-				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], roiImg, (Channel) imgEntry.getValue()[0]);
+				this.ic.saveSupplementalImage(op, roiImg, (Channel) imgEntry.getValue()[0]);
 
 			}
 		}
@@ -907,17 +873,25 @@ public class ROIEditableImage implements Serializable {
 			ipToDrawBINS.put(new ImagePlus("BlankBINDraw", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.BinDrawBlank});
 
 		}
+		
+		if (rc.channelMan.hasOutput(OutputOption.BinDrawMinBlank)) {
+			int[] dim = this.ic.getDimensions();
+			System.out.println("CAlled");
+			ipToDrawBINS.put(new ImagePlus("BlankBINDrawMin", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.BinDrawMinBlank});
+
+		}
 
 
 		for (Entry<ImagePlus, Object[]> imgEntry : ipToDrawBINS.entrySet()) {
 			ImagePlus imgToDrawBinLines = imgEntry.getKey();
 			imgToDrawBinLines.setProcessor(imgToDrawBinLines.getProcessor().convertToColorProcessor());
-			binnedRegion.drawBinLines(imgToDrawBinLines.getProcessor());
+			OutputOption op = (OutputOption) imgEntry.getValue()[1];
+			binnedRegion.drawBinLines(imgToDrawBinLines.getProcessor(), !op.equals(OutputOption.BinDrawMinBlank));
 			imgToDrawBinLines.updateImage();
 			if (imgEntry.getValue()[0] == null) {
-				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], imgToDrawBinLines);
+				this.ic.saveSupplementalImage(op, imgToDrawBinLines);
 			} else {
-				this.ic.saveSupplementalImage((OutputOption) imgEntry.getValue()[1], imgToDrawBinLines, (Channel) imgEntry.getValue()[0]);
+				this.ic.saveSupplementalImage(op, imgToDrawBinLines, (Channel) imgEntry.getValue()[0]);
 
 			}
 

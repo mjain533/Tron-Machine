@@ -50,9 +50,9 @@ public class Wizard {
 		setStatus(Status.SELECT_FILES);
 	}
 	
-	private void setStatus(Status status) {
+	@SuppressWarnings("unchecked")
+	private void setStatus(Status status, Object... input) {
 		this.status = status;
-		
 		switch(status) {
 		case SETUP:
 			gui.getInstructionPanel().setInstruction(Instruction.SETUP);
@@ -69,7 +69,6 @@ public class Wizard {
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, null);
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_FILE); // THIS LAST
 			gui.getLogPanel().setDisplayState(false);
-			
 			break;
 		case SELECT_SLICES:
 			this.gui.setMenuItemsEnabledDuringRun(false);
@@ -91,7 +90,8 @@ public class Wizard {
 			
 			gui.getPanelDisplay().setDisplayState(false, "Image opening...");
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
-			gui.getPanelOptions().startImageObjectSelecting();
+			if (!gui.getPanelOptions().startImageObjectSelecting((List<File>) input[0]))
+				cancel();
 			//gui.getPanelDisplay().setDisplayState(PnlDisplay.s, disabledMsg);
 			break;
 		case SELECT_ROI:
@@ -99,7 +99,8 @@ public class Wizard {
 			gui.getInstructionPanel().setInstruction(Instruction.SELECT_ROI);
 			gui.getPanelDisplay().setDisplayState(false, "Image opening...");
 			gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
-			gui.getPanelOptions().startImageROISelecting();
+			if (!gui.getPanelOptions().startImageROISelecting((List<File>) input[0]))
+				cancel();
 			break;
 		case PROCESSING_ROI:
 			gui.getInstructionPanel().setInstruction(Instruction.PROCESSING_OBJECTS);
@@ -110,15 +111,14 @@ public class Wizard {
 		}
 	}
 	
-	public synchronized void cancel() {
+	public void cancel() {
 		if (!this.status.equals(Status.SELECT_FILES)) {
 			gui.getInstructionPanel().setInstruction(Instruction.CANCELING);
-			this.gui.getPanelOptions().cancelNeuronProcessing();
+
 			this.gui.getSelectFilesPanel().cancelOpening();
 			setStatus(Status.SELECT_FILES);
 			gui.getLogger().setCurrentTask("Run canceled.");
 		} else {
-			this.gui.getPanelOptions().cancelNeuronProcessing();
 			this.gui.getSelectFilesPanel().cancelOpening();
 			setStatus(Status.SELECT_FILES);
 		}
@@ -126,7 +126,7 @@ public class Wizard {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public synchronized void nextState(Object... input) {
+	public void nextState(Object... input) {
 		
 		switch (this.status) {
 		case SETUP:
@@ -143,11 +143,10 @@ public class Wizard {
 			System.gc();
 			break;
 		case PROCESSING_OBJECTS:
-			gui.getPanelOptions().setImagesForObjSelection((List<File>) input[0]);
-			setStatus(Status.SELECT_OB);
+			setStatus(Status.SELECT_OB, input);
 			break;
 		case SELECT_OB:
-			setStatus(Status.SELECT_ROI);
+			setStatus(Status.SELECT_ROI, input);
 			break;
 		case SELECT_ROI:
 			System.gc();
@@ -155,7 +154,6 @@ public class Wizard {
 			break;
 		case PROCESSING_ROI:
 			GUI.displayMessage("Processing Complete.", "Done", this.gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
-			gui.getPanelOptions().printListSizes();
 			setStatus(Status.SELECT_FILES);
 			break;
 		}
@@ -168,7 +166,6 @@ public class Wizard {
 		for (FileContainer fc : fcs) {
 			files.add(fc.file);
 		}
-		gui.getPanelOptions().setImagesForObjSelection(files);
 		gui.getSelectFilesPanel().setFileList(fcs);
 		gui.setMenuItemsEnabledDuringRun(false);
 		gui.getInstructionPanel().setInstruction(Instruction.SELECT_OBJECTS);
@@ -179,7 +176,7 @@ public class Wizard {
 		GUI.dateString = dateFormat.format(date);
 		gui.getPanelDisplay().setDisplayState(false, "Image opening...");
 		gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
-		gui.getPanelOptions().startImageObjectSelecting();
+		gui.getPanelOptions().startImageObjectSelecting(files);
 		
 	}
 	
@@ -189,7 +186,6 @@ public class Wizard {
 		for (FileContainer fc : fcs) {
 			files.add(fc.file);
 		}
-		gui.getPanelOptions().setImagesForROISelection(files);
 		gui.getSelectFilesPanel().setFileList(fcs);
 		gui.setMenuItemsEnabledDuringRun(false);
 		gui.getInstructionPanel().setInstruction(Instruction.SELECT_ROI);
@@ -200,7 +196,7 @@ public class Wizard {
 		GUI.dateString = dateFormat.format(date);
 		gui.getPanelDisplay().setDisplayState(false, "Image opening...");
 		gui.getPanelOptions().setDisplayState(PnlOptions.STATE_DISABLED, "Image opening...");
-		gui.getPanelOptions().startImageROISelecting();
+		gui.getPanelOptions().startImageROISelecting(files);
 		
 	}
 	

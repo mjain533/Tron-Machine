@@ -156,7 +156,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private List<File> imagesForObjectSelection = new LinkedList<File>();
 	private List<File> imagesForROICreation = new LinkedList<File>();
 	private List<File> imagesForROIAnalysis = new LinkedList<File>();
-	private List<ImagePhantom> imagesForSliceSelection = null;
+	private List<ImagePhantom> imagesForSliceSelection = new LinkedList<ImagePhantom>();
 	private int currentState = STATE_DISABLED;
 	private NeuronProcessor neuronProcessor;
 	private RoiProcessor roiProcessor;
@@ -398,7 +398,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						if (currWorker != null && !nextPreprocessedImage(lower, higher, sliceChkApplyToAll.isSelected())) {
 							sliceChkApplyToAll.setSelected(false);
 							gui.getWizard().nextState();
-							imagesForSliceSelection = null;
+							imagesForSliceSelection.clear();
 						}
 
 						sliceBtnNext.setEnabled(true);
@@ -558,45 +558,10 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.objBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				currWorker = new Thread(new Runnable() {
-					public void run(){
-						try {
-							objBtnNext.setEnabled(false);
-							objTxtRemove.setEnabled(false);
-
-
-							Channel chan = imageCurrentlyObjEditing.getSelectionStateMeta().getChannelNotLookedAt();
-							if (chan != null) {
-
-
-								if (!GUI.confirmWithUser("You have not yet looked at the "+ chan.getName() + 
-										" channel yet. Are you sure you want to continue?", 
-										"Confirm Skip Channel", 
-										gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
-									objBtnNext.setEnabled(true);
-									objTxtRemove.setEnabled(true);
-									return;
-
-								}
-							}
-
-							if (currWorker != null && !nextObjImage()) {
-
-								gui.getWizard().nextState();
-
-							}
-
-							objBtnNext.setEnabled(true);
-							objTxtRemove.setEnabled(true);
-						} catch (Exception ex) {
-							ex.printStackTrace();
-							objBtnNext.setEnabled(true);
-						}
-					}
-				});
-				currWorker.setDaemon(true);
-				currWorker.start();
+				
+				nextObjImage();
+				
+				
 
 			}
 		});
@@ -781,7 +746,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 					}
 					
-					System.out.println(status);
 					
 					ImageContainer ic = imageCurrentlyROIEditing.getContainer();
 					RunConfiguration runConfig = ic.getRunConfig();
@@ -973,64 +937,129 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * First saves the current object selection. Then opens the next. If it fails, it will skip the image and
 	 * immediately open the next image.
 	 * 
-	 * @return true if there are more images to be processed, false if finished.
 	 */
-	private synchronized boolean nextObjImage() {
+	private synchronized void nextObjImage() {
 		
-		setDisplayState(STATE_DISABLED, "Please wait...");
-		this.gui.getPanelDisplay().setDisplayState(false, "Pleast wait...");
 
-		int status = _nextObjImageHelper();
-
-		if (status == 1)
-			return false; // no more images
-		else if (status == 2) {
-
-			do {
-
-				status = _nextObjImageHelper();
-
-			} while (status == 2);
-
-			if (status == 1)
-				return false;
-		} else if (status != 3)
-			throw new RuntimeException(); // shouldn't occur, a safety measure.
+		objBtnNext.setEnabled(false);
+		objTxtRemove.setEnabled(false);
+		objBtnRemove.setEnabled(false);
+		objChkDots.setEnabled(false);
+		objChkOriginal.setEnabled(false);
+		objChkMask.setEnabled(false);
 		
-		ImageContainer ic = imageCurrentlyObjEditing.getContainer();
+		boolean cancelNext = false;
+		
+		if (this.imageCurrentlyObjEditing != null) {
+			Channel chan = imageCurrentlyObjEditing.getSelectionStateMeta().getChannelNotLookedAt();
+			if (chan != null) {
 
-		this.gui.getPanelDisplay().setSliceSlider(false, -1, -1);
-		List<Channel> chans = new ArrayList<Channel>();
-		int processedInsertIndex = 0;
-		for (Channel chan : ic.getRunConfig().channelMan.getOrderedChannels()) {
+				if (!GUI.confirmWithUser("You have not yet looked at the "+ chan.getName() + 
+						" channel yet. Are you sure you want to continue?", 
+						"Confirm Skip Channel", 
+						gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
+					cancelNext = true;
 
-			if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
-				chans.add(processedInsertIndex, chan); // Add to beginning
-				processedInsertIndex++;
-			} else {
-				chans.add(chan); // Add to end
+				}
 			}
 		}
+		
+		if (cancelNext) {
+			objBtnNext.setEnabled(true);
+			objTxtRemove.setEnabled(true);
+			objBtnRemove.setEnabled(true);
+			objChkDots.setEnabled(true);
+			objChkOriginal.setEnabled(true);
+			objChkMask.setEnabled(true);
+			return;
+			
+		}
+		
 
-		this.gui.getPanelDisplay().setChannelSlider(true, chans);
-		this.gui.getPanelDisplay().setImage(this.imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
-		this.objTxtCurrDisp.setText(ic.getImageTitle());
-		this.objTxtRemove.setText("");
-		this.objBtnNext.setEnabled(true);
-		this.objBtnRemove.setEnabled(true);
-		this.objChkDots.setEnabled(true);
-		this.objChkDots.setSelected(true);
-		this.objChkOriginal.setEnabled(true);
-		this.objChkOriginal.setSelected(true);
-		this.objChkMask.setEnabled(true);
-		this.objChkMask.setSelected(true);
+		
+		currWorker = new Thread(new Runnable() {
+			public void run(){
+				try {
+					
+					if (currWorker == null)
+						return;
+					
+					setDisplayState(STATE_DISABLED, "Please wait...");
+					gui.getPanelDisplay().setDisplayState(false, "Pleast wait...");
+					
+					int status = _nextObjImageHelper();
+					
+					boolean goToNextState = false;
+					if (status == 1)
+						goToNextState = true; // no more images
+					else if (status == 2) {
+
+						do {
+
+							status = _nextObjImageHelper();
+
+						} while (status == 2);
+
+						if (status == 1) {
+							goToNextState = true;
+						}
+					} else if (status != 3)
+						throw new RuntimeException(); // shouldn't occur, a safety measure.
+					
+					if (currWorker == null)
+						return;
+					
+					if (goToNextState) {
+						System.out.println("Go to next");
+						gui.getWizard().nextState(imagesForROICreation);
+						return;
+
+					}
+					
+					ImageContainer ic = imageCurrentlyObjEditing.getContainer();
+
+					gui.getPanelDisplay().setSliceSlider(false, -1, -1);
+					List<Channel> chans = new ArrayList<Channel>();
+					int processedInsertIndex = 0;
+					for (Channel chan : ic.getRunConfig().channelMan.getOrderedChannels()) {
+
+						if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
+							chans.add(processedInsertIndex, chan); // Add to beginning
+							processedInsertIndex++;
+						} else {
+							chans.add(chan); // Add to end
+						}
+					}
+
+					gui.getPanelDisplay().setChannelSlider(true, chans);
+					gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+					objTxtCurrDisp.setText(ic.getImageTitle());
+					objTxtRemove.setText("");
+					objBtnNext.setEnabled(true);
+					objBtnRemove.setEnabled(true);
+					objChkDots.setEnabled(true);
+					objChkDots.setSelected(true);
+					objChkOriginal.setEnabled(true);
+					objChkOriginal.setSelected(true);
+					objChkMask.setEnabled(true);
+					objChkMask.setSelected(true);
 
 
-		this.imageCurrentlyObjEditing.getSelectionStateMeta().lookAt(this.gui.getPanelDisplay().getSliderSelectedChannel());
-		setDisplayState(STATE_OBJ, null);
-		this.gui.getPanelDisplay().setDisplayState(true, null);
-		this.gui.getLogger().setCurrentTaskComplete();
-		return true;
+					imageCurrentlyObjEditing.getSelectionStateMeta().lookAt(gui.getPanelDisplay().getSliderSelectedChannel());
+					setDisplayState(STATE_OBJ, null);
+					gui.getPanelDisplay().setDisplayState(true, null);
+					gui.getLogger().setCurrentTaskComplete();
+
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					objBtnNext.setEnabled(true);
+				}
+			}
+		});
+		currWorker.setDaemon(true);
+		currWorker.start();
+		
+
 	}
 	
 	/**
@@ -1088,6 +1117,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			this.gui.getLogger().setCurrentTaskCompleteWithError();
 			GUI.displayMessage("The saved Object state couldn't be opened because the Channel Setup does not match the current Channel Setup "
 					+ "in the Preferences. To fix this, use the Templates option in the Preferences to load the Channel Setup from a run.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			imageCurrentlyObjEditing = null;
 			return 2;
 		} else {
 			this.gui.getLogger().setCurrentTaskComplete();
@@ -1140,6 +1170,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			GUI.displayMessage("The saved ROI state couldn't be opened because the Channel Setup does not match the current Channel Setup "
 					+ "in the Preferences. To fix this, use the Templates option in the Preferences to load the Channel Setup from a run.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
 			GUI.displayMessage("There was an error opening saved ROI state.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
+			imageCurrentlyROIEditing = null;
 			return 2;
 		} else {
 			this.gui.getLogger().setCurrentTaskComplete();
@@ -1158,32 +1189,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	public synchronized void setImagesForSliceSelection(List<ImagePhantom> images) {
 		this.imagesForSliceSelection = images;
 	}
-
-	/**
-	 * Sets the images which will be displayed for object selection. This does NOT begin object selection.
-	 * To do that, use {@link #startImageObjectSelecting()}
-	 * 
-	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
-	 */
-	public synchronized void setImagesForObjSelection(List<File> images) {
-
-		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			this.imagesForObjectSelection = images;
-		}
-	}
-	
-	/**
-	 * Sets the images which will be displayed for ROI selection. This does NOT begin ROI selection.
-	 * To do that, use {@link #startAnalyzingROIs()}
-	 * 
-	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
-	 */
-	public synchronized void setImagesForROISelection(List<File> images) {
-
-		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			this.imagesForROICreation = images;
-		}
-	}
 	
 	/**
 	 * Begins slice selection
@@ -1197,7 +1202,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * Begins processing image object by creating a worker.
 	 */
 	public synchronized void startProcessingImageObjects() {
-
+		
+		if (this.imagesForObjectAnalysis.isEmpty()) {
+			this.gui.getWizard().cancel();
+			return;
+		}
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.neuronProcessor = new NeuronProcessor(new ArrayList<File>(this.imagesForObjectAnalysis), this.gui.getLogger(),this.gui.getWizard());
 			this.imagesForObjectAnalysis.clear();
@@ -1210,7 +1219,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * Starts processing ORIS by creating a worker.
 	 */
 	public synchronized void startAnalyzingROIs() {
-
+		
+		if (this.imagesForROIAnalysis.isEmpty()) {
+			this.gui.getWizard().cancel();
+			return;
+		}
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
 			this.roiProcessor = new RoiProcessor(new ArrayList<File>(this.imagesForROIAnalysis), this.gui.getLogger(),this.gui.getWizard());
 			this.imagesForROIAnalysis.clear();
@@ -1221,20 +1234,39 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	
 	/**
 	 * Starts image object selection by user.
+	 * 
+	 * @param files image serialization files designating images for object selection
+	 * @return true if there were images to start processing
 	 */
-	public synchronized void startImageObjectSelecting() {
-		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) 
+	public synchronized boolean startImageObjectSelecting(List<File> files) {
+		
+		if (files.isEmpty()) {
+			return false;
+		}
+		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
+			this.imagesForObjectSelection = files;
 			nextObjImage();
+		}
+		return true;
 
 	}
 	
 	/**
 	 * Starts ROI selection by user.
+	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
+	 * @return true if there were images to start processing
 	 */
-	public synchronized void startImageROISelecting() {
-		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
-			nextROIImage();
+	public synchronized boolean startImageROISelecting(List<File> images) {
+		if (images.isEmpty()) {
+			System.out.println("Decision to cancel");
+			return false;
 		}
+		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
+			this.imagesForROICreation = images;
+			nextROIImage();
+
+		}
+		return true;
 
 	}
 	
@@ -1540,7 +1572,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	public void cancelNeuronProcessing() {
 		
 		if (this.currWorker != null) {
-			this.currWorker.interrupt();
 			this.currWorker = null; // should stop the thread, because these are always made daemon
 		}
 		
@@ -1557,6 +1588,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		this.imageCurrentlyROIEditing = null;
 		this.imagesForObjectAnalysis = new LinkedList<File>();
 		this.imagesForObjectSelection = new LinkedList<File>();
+		this.imagesForROIAnalysis = new LinkedList<File>();
 		this.imagesForROICreation = new LinkedList<File>();
 		this.imagesForSliceSelection = new LinkedList<ImagePhantom>();
 
@@ -1622,17 +1654,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		if (this.distBtnAddROI.isEnabled()) {
 			this.distBtnAddROI.doClick();
 		}
-	}
-	
-	public void printListSizes() {
-		System.out.println(this.imagesForROICreation.size());
-		System.out.println(this.imagesForROIAnalysis.size());
-		System.out.println(this.imagesForObjectSelection.size());
-		System.out.println(this.imagesForObjectAnalysis.size());
-		System.out.println(this.imagesForSliceSelection.size());
-
-
-
 	}
 
 

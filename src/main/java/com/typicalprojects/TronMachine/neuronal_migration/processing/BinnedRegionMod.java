@@ -414,47 +414,74 @@ public class BinnedRegionMod {
 	}
 	
 
-	public void drawBinLines(ImageProcessor ip) {
+	public void drawBinLines(ImageProcessor ip, boolean includeText) {
 		double size = Math.min(dimensions[0], dimensions[1] );
 
 		ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 50)));
 
-		PolygonRoi roi = firstLine.get();
-		roi.setFillColor(Color.GREEN);
+		
+		int middleY = 0;
+		int middleX = 0;
+		
+		if (includeText) {
+			PolygonRoi roi = firstLine.get();
+			ip.setColor(Color.GREEN);
+			roi.setFillColor(Color.GREEN);
+			roi.setStrokeColor(Color.GREEN);
+			roi.setStrokeWidth(size / 300.0);		
+			ip.drawOverlay(new Overlay(roi));
+			middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
+			middleY= Math.min(middleY, dimensions[1] - 4);
+			middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+			ip.setColor(Color.RED);
+			ip.drawString(firstLine.getName(), middleX, middleY, Color.BLACK);
+			
+			roi = lastLine.get();
+			roi.setFillColor(Color.GREEN);
+			roi.setStrokeColor(Color.GREEN);
 
+			roi.setStrokeWidth(size / 300.0);
+			ip.drawOverlay(new Overlay(roi));
+			middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 8, 10);
+			middleY= Math.min(middleY, dimensions[1] - 4);
+			middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
+			ip.setColor(Color.RED);
+			ip.drawString(lastLine.getName(), middleX, middleY, Color.BLACK);	
+		} else {
+			PolygonRoi roi = firstLine.get();
+			ip.setColor(Color.WHITE);
+			roi.setFillColor(Color.WHITE);
+			roi.setStrokeColor(Color.WHITE);
+			roi.setStrokeWidth(size / 300.0);		
+			ip.drawOverlay(new Overlay(roi));
+			roi = lastLine.get();
+			roi.setFillColor(Color.WHITE);
+			roi.setStrokeColor(Color.WHITE);
+			roi.setStrokeWidth(size / 300.0);	
+			ip.drawOverlay(new Overlay(roi));
 
-		roi.setStrokeWidth(size / 300.0);		
-		ip.drawOverlay(new Overlay(roi));
-		int middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 3, 10);
-		middleY= Math.min(middleY, dimensions[1] - 4);
-		int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
-		ip.setColor(Color.RED);
-		ip.drawString(firstLine.getName(), middleX, middleY, Color.BLACK);
+		}
 
-		roi = lastLine.get();
-		roi.setFillColor(Color.GREEN);
+		
 
-		roi.setStrokeWidth(size / 300.0);
-		ip.drawOverlay(new Overlay(roi));
-		middleY = Math.max(roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)] + 8, 10);
-		middleY= Math.min(middleY, dimensions[1] - 4);
-		middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
-		ip.setColor(Color.RED);
-		ip.drawString(lastLine.getName(), middleX, middleY, Color.BLACK);		
+			
 		
 		///
-		ip.setColor(Color.GREEN);
+		if (includeText) {
+			ip.setColor(Color.GREEN);
+		} else {
+			ip.setColor(Color.WHITE);
+		}
 		for (int i = 1 ; i < binLines.size() - 1; i++) {
 			for (int j = 0; j < this.binLines.get(i).xPts.length; j++) {
 				ip.drawPixel(this.binLines.get(i).xPts[j], this.binLines.get(i).yPts[j]);
 			}
 
 		}
-		ip.setColor(Color.RED);
-		ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 70)));
 		
-		
-		if (GUI.settings.drawBinLabels) {
+		if (GUI.settings.drawBinLabels && includeText) {
+			ip.setColor(Color.RED);
+			ip.setFont(new Font("Arial", Font.BOLD, (int) (size / 70)));
 			for (int i = 1; i < this.binLines.size(); i++) {
 				BinLine binline1 = this.binLines.get(i - 1);
 				BinLine binline2 = this.binLines.get(i);
