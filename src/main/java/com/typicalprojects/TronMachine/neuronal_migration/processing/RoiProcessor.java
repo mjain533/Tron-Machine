@@ -9,6 +9,7 @@ import javax.swing.JOptionPane;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard;
+import com.typicalprojects.TronMachine.util.Analyzer;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.ResultsTable;
 

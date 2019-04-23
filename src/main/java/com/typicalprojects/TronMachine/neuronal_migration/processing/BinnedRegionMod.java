@@ -38,11 +38,12 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.Analyzer.Calculation;
+import com.typicalprojects.TronMachine.util.Analyzer;
 import com.typicalprojects.TronMachine.util.CircularListIterator;
 import com.typicalprojects.TronMachine.util.Logger;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
+import com.typicalprojects.TronMachine.util.Analyzer.Calculation;
 
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;

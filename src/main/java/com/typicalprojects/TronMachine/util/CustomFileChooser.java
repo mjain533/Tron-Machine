@@ -3,7 +3,6 @@ package com.typicalprojects.TronMachine.util;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,9 +78,7 @@ public class CustomFileChooser {
 		Component[] c = parent.getComponents();
 		for(int j = 0; j < c.length; j++) {
 			if(unpack(c[j]).equals("MetalFileChooserUI$3")) {
-				//System.out.println("MetalFileChooserUI$3 = " + c[j]);
-				//System.out.println("MetalFileChooserUI$3 parent = " +
-				//                    unpack(c[j].getParent()));
+
 				if(hide) 
 					c[j].getParent().setVisible(false);
 				else {    // disable
@@ -127,8 +124,14 @@ public class CustomFileChooser {
 				public void valueChanged(ListSelectionEvent e) {
 					if (!e.getValueIsAdjusting()) {
 						File file = list.getSelectedValue();
-						// You might like to check to see if the file still exists...
-						fileChooser.setSelectedFile(file);
+
+						if (file != null && file.exists()) {
+							if (file.isDirectory()) {
+								fileChooser.setCurrentDirectory(file);
+							} else {
+								fileChooser.setCurrentDirectory(file.getParentFile());
+							}
+						}
 					}
 				}
 			});
@@ -215,7 +218,7 @@ public class CustomFileChooser {
 					File file = (File) value;
 					Icon ico = FileSystemView.getFileSystemView().getSystemIcon(file);
 					setIcon(ico);
-					setToolTipText(file.getParent());
+					setToolTipText(file.getPath());
 					setText(file.getName());
 				}
 				return this;
@@ -237,15 +240,19 @@ public class CustomFileChooser {
 		this.recentFileList.clearList();
 
 		if (recents != null) {
-			for (File file : recents) {
-				this.recentFileList.add(file);
+			for (int i = recents.size() - 1; i >=0 ; i--) {
+				this.recentFileList.add(recents.get(i));
 			}
 		}
 		Action detailss = fileChooser.getActionMap().get("viewTypeDetails");
 		if (detailss != null) {
+			
 			detailss.actionPerformed(null);
 		}
 		List<File> selected = null;
+		if (!recents.isEmpty()) {
+			fileChooser.setCurrentDirectory(recents.get(0));
+		}
 		if (fileChooser.showOpenDialog(relative) == JFileChooser.APPROVE_OPTION) {
 			if (fileChooser.isMultiSelectionEnabled()) {
 				selected = Arrays.asList(fileChooser.getSelectedFiles());
@@ -256,11 +263,21 @@ public class CustomFileChooser {
 		}
 		
 		if (selected != null && !selected.isEmpty()) {
-			newRecents.add(selected.get(0).getParentFile());
-			for (int i = 0; i < recentFileList.getListSize() && i < 5; i++) {
+			if (selected.get(0).isDirectory()) {
+				newRecents.add(selected.get(0));
+			} else {
+				newRecents.add(selected.get(0).getParentFile());
+			}
+			int amountLeft = 10;
+			
+			for (int i = 0; i < recentFileList.getListSize(); i++) {
+				if (amountLeft < 1) {
+					break;
+				}
 				File fileRecent = recentFileList.getItemAt(i);
 				if (fileRecent.exists() && !newRecents.contains(fileRecent)) {
 					newRecents.add(recentFileList.getItemAt(i));
+					amountLeft--;
 				}
 			}
 		}

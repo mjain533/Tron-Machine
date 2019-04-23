@@ -50,18 +50,44 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
+/**
+ * Basically a wrapper of an Excel workbook that allows reading and writing to the notebook in a less
+ * tedius way. The excel files are generated as the output of the TRON machine.
+ * 
+ * @author Justin Carrington
+ *
+ */
 public class AdvancedWorkbook {
 
 	private XSSFWorkbook workbook;
 
+	/**
+	 * Construct a new workbook by creating an excel workbook object.
+	 */
 	public AdvancedWorkbook() {
 		workbook = new XSSFWorkbook();
 	}
 
+	/**
+	 * Creates a new workbook by loading an excel workbook object from an existing excel file sheet on the
+	 * user's file system.
+	 * 
+	 * @param file	The .xlsx file (excel file) to load the Excel workbook object from
+	 * @throws InvalidFormatException The CSV file is not correctly formatted like an excel file.
+	 * @throws IOException Any read errors that while loading the excel sheet.
+	 */
 	public AdvancedWorkbook(File file) throws InvalidFormatException, IOException {
 		workbook = new XSSFWorkbook(file);
 	}
 
+	/**
+	 * Creates an excel sheet from a given table of results from the neuron object counter. Basically just
+	 * dumps the results table into an excel sheet. The ResultsTable MUST have headings set for every column
+	 * or this method will fail.
+	 * 
+	 * @param name	The name of the excel sheet to be added to the current workbook
+	 * @param table	The table form which to draw data
+	 */	
 	public void addSheetFromNeuronCounterResultTable(String name, ResultsTable table){
 
 		try {
@@ -100,12 +126,23 @@ public class AdvancedWorkbook {
 		}
 
 	}
-
+	
+	/**
+	 * @param name the unique name of a sheet within this workbook.
+	 * @return the sheet in question. Null if the sheet does not exist.
+	 */
 	public XSSFSheet getSheet(String name) {
 
 		return workbook.getSheet(name);
 	}
-
+	
+	/**
+	 * Pulls the data that was saved from the neuron counter specifically.
+	 * 
+	 * @param chanManager	The channel manager which was used at the time of save, which is necessary because
+	 * 						otherwise we would not know the title of the sheet which contains the data.
+	 * @return Data from neuron counter.
+	 */
 	public LinkedHashMap<String, Map<Channel, double[]>> pullNeuronCounterData(ChannelManager chanManager) {
 
 
@@ -153,7 +190,13 @@ public class AdvancedWorkbook {
 
 		return newOutput;
 	}
-
+	
+	/**
+	 * Saves the virtual excel sheet to an actual file on the user's system.
+	 * 
+	 * @param saveFile the File to save to. If the file does not yet exist, it will first be created.
+	 * @return true if the save was successful, false if there was an error during saving.
+	 */
 	public boolean save(File saveFile) {
 		try {
 			saveFile.createNewFile();
@@ -165,67 +208,17 @@ public class AdvancedWorkbook {
 			return false;
 		}
 	}
-
-	/*public void writeSummaryStatsSheets(List<String> denseDataMapNames, List<Map<Channel, LinkedHashMap<String, double[]>>> denseDataMap) throws Exception {
-
-		XSSFSheet summarySheet = workbook.createSheet("SUMMARY");
-
-		int offset = 0;
-		XSSFFont boldFont = new XSSFFont(workbook.getFontAt((short)0).getCTFont());
-		boldFont.setBold(true);
-
-
-		for (int i = 0; i < denseDataMapNames.size(); i++) {
-
-			String name = denseDataMapNames.get(i);
-			int numChans = denseDataMap.get(0).size();
-			//setup
-			summarySheet.addMergedRegion(new CellRangeAddress(0,0,offset + 0, offset + (numChans * 3)));
-			Cell titleCell = _getCell(summarySheet, 0, offset + 0);
-			_setTextCenteredAndFont(titleCell, boldFont, name);
-
-			Map<Channel, LinkedHashMap<String, double[]>> summaryContent = denseDataMap.get(i);
-			_getCell(summarySheet, 2, offset + 0).setCellValue(new XSSFRichTextString("File Name"));;
-
-			int chanTitleOffset = 1;
-			for (Channel chan : Channel.values()) {
-				LinkedHashMap<String, double[]> chanSummary = summaryContent.get(chan);
-				if (chanSummary == null)
-					continue;
-
-				summarySheet.addMergedRegion(new CellRangeAddress(1, 1, offset + chanTitleOffset, offset + chanTitleOffset + 2));
-
-				Cell chanTitleCell = _getCell(summarySheet, 1, offset + chanTitleOffset);
-				_setTextCenteredAndFont(chanTitleCell, boldFont, chan.name());
-				_getCell(summarySheet, 2, offset + chanTitleOffset).setCellValue(new XSSFRichTextString("Mean"));
-				_getCell(summarySheet, 2, offset + chanTitleOffset + 1).setCellValue(new XSSFRichTextString("SD"));
-				_getCell(summarySheet, 2, offset + chanTitleOffset + 2).setCellValue(new XSSFRichTextString("N"));
-
-				int rowCounter = 3;
-				for (Entry<String, double[]> en : chanSummary.entrySet()) {
-					_getCell(summarySheet, rowCounter, offset).setCellValue(new XSSFRichTextString(en.getKey()));
-					_getCell(summarySheet, rowCounter, offset + chanTitleOffset).setCellValue(en.getValue()[0]);
-					_getCell(summarySheet, rowCounter, offset + chanTitleOffset + 1).setCellValue(en.getValue()[1]);
-					_getCell(summarySheet, rowCounter, offset + chanTitleOffset + 2).setCellValue((int) en.getValue()[2]);
-					rowCounter++;
-				}
-
-				chanTitleOffset = chanTitleOffset + 3;
-			}
-
-
-			offset = offset + (3 * numChans) + 3;
-		}
-
-	}*/
-
+	
+	/**
+	 * Writes some simple summary data based on an input excel file.
+	 * 
+	 * @param denseDataMap	Data map which is returned after calculation of distances of neuron migration.
+	 * @param chanMap		The mapping of data
+	 * @throws Exception		If tehre are any errors in writing.
+	 */
 	public void writeSummaryStatsSheets(Map<Channel, LinkedHashMap<String, double[]>> denseDataMap, ChannelManager chanMap) throws Exception {
 
 		XSSFSheet summarySheet = workbook.createSheet("SUMMARY");
-
-		//XSSFFont boldFont = new XSSFFont(workbook.getFontAt((short)0).getCTFont());
-		//boldFont.setBold(true);
-
 
 
 		//setup
@@ -272,8 +265,17 @@ public class AdvancedWorkbook {
 		cell.setCellValue(content);
 
 	}
-
-	public Cell _getCell(XSSFSheet sheet, int rowNum, int colNum) {
+	
+	/**
+	 * Helper method in order to retrieve a cell (i.e. just returns the cell, but if it does not exist yet,
+	 * first creates the cell.
+	 * 
+	 * @param sheet	The sheet in question
+	 * @param rowNum	Row in question
+	 * @param colNum	ObjectColumn in question
+	 * @return XSSF cell
+	 */
+	private Cell _getCell(XSSFSheet sheet, int rowNum, int colNum) {
 		Row row = sheet.getRow(rowNum);
 		if (row == null)
 			row = sheet.createRow(rowNum);

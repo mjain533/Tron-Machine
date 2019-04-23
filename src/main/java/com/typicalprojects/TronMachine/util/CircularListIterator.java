@@ -27,6 +27,15 @@ package com.typicalprojects.TronMachine.util;
 
 import java.util.List;
 
+/**
+ * This is a PSEUDO-iterator, it does NOT follow the implementation conventions of a typical iterator and is
+ * merely used as a utility for circling around image corners and points during ROI creation in the TRON
+ * machine.
+ * 
+ * @author Justin Carrington
+ *
+ * @param <K> The object type which will be iterated on.
+ */
 public class CircularListIterator<K> {
 	
 	private int startPosition;
@@ -34,6 +43,14 @@ public class CircularListIterator<K> {
 	private int currPosition;
 	private List<K> list;
 	
+	/**
+	 * Constructs a new iterator from the given position in a specific direction.
+	 * 
+	 * @param list				The list to iterate over, which is NEVER modified by this object.
+	 * @param startPosition		The start position in the list. Must be a valid position.
+	 * @param forwardDirection	true if the iterator should move forward (go up indices and then wrap around
+	 *  to the 0th index, false for reverse)
+	 */
 	public CircularListIterator(List<K> list, int startPosition, boolean forwardDirection) {
 		this.list = list;
 		this.startPosition = startPosition;
@@ -41,6 +58,9 @@ public class CircularListIterator<K> {
 		this.forwardDirection = forwardDirection;
 	}
 	
+	/**
+	 * @return next item in the list. Returns null if there is no next item.
+	 */
 	public K next() {
 		
 		if (currPosition == -1)
@@ -70,10 +90,12 @@ public class CircularListIterator<K> {
 		
 	}
 	
+	/**
+	 * @return true if there are more items available (i.e. the iterator has not covered every item in the
+	 * list with the {@link #next()} call.
+	 */
 	public boolean hasNext() {
 		return this.currPosition != -1;
 	}
-	
-	
 	
 }

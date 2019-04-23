@@ -45,7 +45,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.typicalprojects.TronMachine.neuronal_migration.processing.Custom3DCounter.Column;
+import javax.swing.JOptionPane;
+
+import com.typicalprojects.TronMachine.neuronal_migration.processing.CounterHelper.ObjectColumn;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
@@ -53,6 +55,7 @@ import com.typicalprojects.TronMachine.util.Zoom;
 import com.typicalprojects.TronMachine.util.ResultsTable;
 import com.typicalprojects.TronMachine.neuronal_migration.*;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
+import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayPage;
 
 import java.util.Set;
 
@@ -68,12 +71,18 @@ public class ObjectEditableImage implements Serializable{
 	private static final long serialVersionUID = -5899135921935041272L; // for serialization
 	private ImageContainer ic;
 	private Map<Channel, List<Point>> points = new HashMap<Channel, List<Point>>();
-	private int dotSize = Custom3DObjectCounter.opResultDotsSize;
-	private int fontSize = Custom3DObjectCounter.opResultFontSize;
+	private int dotSize = ObjectCounter.opResultDotsSize;
+	private int fontSize = ObjectCounter.opResultFontSize;
 	private transient Zoom zoom = Zoom.ZOOM_100;
 	private transient boolean creatingDeletionZone = false;
 	private transient List<Point> deletionZone = new ArrayList<Point>();
 	private transient OBJSelectMeta selectionStateData = null;
+	
+	private transient Channel postProcessChan1 = null;
+	private transient Channel postProcessChan2 = null;
+	private transient Map<String, PostProcessImage> postProcessImages = null;
+	private transient boolean postObjDots = false;
+	private transient boolean postObjMaxed = true;
 	
 	private transient boolean mask = true;
 	private transient boolean original = true;
@@ -97,13 +106,27 @@ public class ObjectEditableImage implements Serializable{
 			Channel chan = ic.getRunConfig().channelMan.parse(en.getKey());
 			if (chan == null)
 				continue;
-			double[] xCoords = rt.getColumnAsDoubles(Column.X.getColumnNum());
-			double[] yCoords = rt.getColumnAsDoubles(Column.Y.getColumnNum());
+			double[] xCoords = rt.getColumnAsDoubles(ObjectColumn.X.getColumnNum());
+			double[] yCoords = rt.getColumnAsDoubles(ObjectColumn.Y.getColumnNum());
+			double[] zCoords = null;
+			
+			if (rt.columnExists(ObjectColumn.Z.getColumnNum())) { // Older serializations may not include Z values
+				zCoords = rt.getColumnAsDoubles(ObjectColumn.Z.getColumnNum());
+			}
+			
 			List<Point> chanPoints = points.get(chan);
 			if (xCoords != null && yCoords != null) {
-				for (int i = 0; i < xCoords.length; i++) {
-					chanPoints.add(new Point(Math.round((float) xCoords[i]), Math.round((float) yCoords[i]), true));
+				
+				if (zCoords == null) {
+					for (int i = 0; i < xCoords.length; i++) {
+						chanPoints.add(new Point(Math.round((float) xCoords[i]), Math.round((float) yCoords[i]), true));
+					}
+				} else {
+					for (int i = 0; i < xCoords.length; i++) {
+						chanPoints.add(new Point(Math.round((float) xCoords[i]), Math.round((float) yCoords[i]), Math.round((float) zCoords[i]), true));
+					}
 				}
+				
 			}
 			
 		}
@@ -338,7 +361,7 @@ public class ObjectEditableImage implements Serializable{
 		for (Entry<Channel, List<Point>> en : this.points.entrySet()) {
 			ResultsTable rt = new ResultsTable();
 			rt.setHeading(0, "ID");
-			for (Column col : Column.values()) {
+			for (ObjectColumn col : ObjectColumn.values()) {
 				rt.setHeading(col.getColumnNum() + 1, col.getTitle());
 			}
 
@@ -346,8 +369,8 @@ public class ObjectEditableImage implements Serializable{
 			for (Point p : en.getValue()) {
 				rt.incrementCounter();
 				rt.setValue("ID", counter, counter + 1);
-				rt.setValue(Column.X.getTitle(), counter, p.x);
-				rt.setValue(Column.Y.getTitle(), counter, p.y);
+				rt.setValue(ObjectColumn.X.getTitle(), counter, p.x);
+				rt.setValue(ObjectColumn.Y.getTitle(), counter, p.y);
 
 				counter++;
 			}
@@ -555,8 +578,96 @@ public class ObjectEditableImage implements Serializable{
 		this.dots = dots;
 
 		this.imagePnl.setImage(this.getImgWithDots(channelToDisplayAfterUpdate).getBufferedImage(), -1, -1, zoom);
-
 		
+	}
+	
+	public boolean checkPostObjectImages() {
+		if (getRunConfig().channelMan.getChannels().size() < 3) {
+			boolean resourcesPostProcess = true; // whether the proper resources exist for post-processing
+			for (Channel chan : getRunConfig().channelMan.getProcessChannels()) {
+				if (!this.ic.containsImage(OutputOption.Channel, chan) ||
+						!this.ic.containsImage(OutputOption.ProcessedObjectsStack, chan))
+					resourcesPostProcess = false;
+			}
+			
+			if (resourcesPostProcess) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			GUI.displayMessage("Cannot perform post-object processing on this image. You "
+					+ "have more than 2 channels selected for object (neuron) identification. "
+					+ "Post-object processing is currently only supported for comparing two "
+					+ "channels which had object processing.", "Post-Processing Error", gui.getPanelDisplay().getRawPanel(), JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+	}
+	
+	public List<PostProcessImage> createPostObjectImages() {
+		
+		List<PostProcessImage> imagesList = new ArrayList<PostProcessImage>();
+		
+		StackOverlapper overlapper = new StackOverlapper();
+		List<Channel> processChans = getRunConfig().channelMan.getProcessChannels();
+		
+		if (processChans.get(0).getName().equalsIgnoreCase("green") || processChans.get(1).getName().equals("red")) {
+			this.postProcessChan1 = processChans.get(0);
+			this.postProcessChan1 = processChans.get(1);
+		} else {
+			this.postProcessChan1 = processChans.get(1);
+			this.postProcessChan1 = processChans.get(0);
+		}
+		
+		overlapper.setImageStacks(this.ic.getImage(OutputOption.Channel, this.postProcessChan1, false), 
+				this.ic.getImage(OutputOption.Channel, this.postProcessChan2, false));
+		
+		overlapper.createOverlapPredictionStack();
+		ImagePlus stack = overlapper.getResult();
+		overlapper.maxProjectResult();
+		imagesList.add(new PostProcessImage("Predicted Overlaps", stack, overlapper.getResult(), "PrOv"));
+		overlapper.createOverlapPredictionStack();
+		stack = overlapper.getResult();
+		overlapper.maxProjectResult();
+		imagesList.add(new PostProcessImage("Gradiated (Raw) Overlap", stack, overlapper.getResult(), "RawOv"));
+		overlapper.mergeGreenRedInputs();
+		stack = overlapper.getResult();
+		overlapper.maxProjectResult();
+		imagesList.add(new PostProcessImage("Original Channels Merge", stack, overlapper.getResult(), "Orig"));
+		stack = null;
+		
+		overlapper.setImageStacks(this.ic.getImage(OutputOption.ProcessedObjectsStack, this.postProcessChan1, false), 
+				this.ic.getImage(OutputOption.ProcessedObjectsStack, this.postProcessChan2, false));
+		overlapper.mergeGreenRedInputs();
+		stack = overlapper.getResult();
+		overlapper.maxProjectResult();
+		imagesList.add(2, new PostProcessImage("TRON Objects Merge", stack, overlapper.getResult(), "Obj"));
+
+		for (PostProcessImage ppi : imagesList) {
+			this.postProcessImages.put(ppi.getDisplayAbbrev(), ppi);
+		}
+		
+		postObjDots = false;
+		postObjMaxed = true;
+		
+		return imagesList;
+	}
+	
+	public void setDisplayPostObjectDots(boolean displayDots) {
+		this.postObjDots = displayDots;
+		
+		// TODO: need to cause re-display
+	}
+	
+	public void setDisplayPostObjectMax(boolean displayMax) {
+		postObjMaxed = displayMax;
+		
+		// TODO: need to cause re-display AND update options panels
+	}
+	
+	public void getPostObjectImage(String abbrev) {
+		
+		PostProcessImage ppi = this.postProcessImages.get(abbrev);
 		
 	}
 	
@@ -652,6 +763,47 @@ public class ObjectEditableImage implements Serializable{
 				return null;
 			
 			return this.channelsToLookAt.iterator().next();
+		}
+		
+	}
+	
+	public static class PostProcessImage implements PnlDisplayPage {
+
+		private ImagePlus ip;
+		private ImagePlus ipMaxed;
+		private String title;
+		private String abbrev;
+		
+		private PostProcessImage(String title, ImagePlus ipStack, ImagePlus ipMaxed, String abbreviation) {
+			this.title = title;
+			this.ip = ipStack;
+			this.ipMaxed = ipMaxed;
+			this.abbrev = abbreviation;
+		}
+		
+		public String getDisplayAbbrev() {
+			return abbrev;
+		}
+		
+		public ImagePlus getImageStack() {
+			return this.ip;
+		}
+		
+		public ImagePlus getImageMaxed() {
+			return this.ip;
+		}
+		
+		public String getTitle(boolean max) {
+			if (!max) {
+				return this.title;
+
+			} else {
+				return this.title.concat(" (Max Z-Project)");
+			}
+		}
+		
+		public boolean isStack() {
+			return this.ip.isStack();
 		}
 		
 	}

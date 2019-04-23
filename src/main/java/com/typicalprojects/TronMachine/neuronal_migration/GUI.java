@@ -42,7 +42,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -53,26 +52,19 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Properties;
 import java.awt.event.ActionListener;
 import java.awt.Dimension;
-import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Desktop;
 
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileSystemView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -87,23 +79,22 @@ import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster;
 import com.typicalprojects.TronMachine.util.Logger;
-import com.typicalprojects.TronMachine.util.Toolbox;
 
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JSeparator;
 
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.AbstractListModel;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
-import javax.swing.Icon;
-import javax.swing.JFileChooser;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.ListSelectionModel;
 
+/**
+ * Main GUI component of TRON machine. Contains the main JFrame. Also has helper methods which are accessed
+ * by many other classes in the TRON machine. The GUI is built at startup.
+ * 
+ * @author Justin Carrington
+ */
 public class GUI  {
 
 
@@ -120,12 +111,19 @@ public class GUI  {
 	public static final Font extraSmallPlainFont = new Font("PingFang TC", Font.PLAIN, 10);
 	/** PingFangTC, bold, size 10 **/
 	public static final Font extraSmallBoldFont = new Font("PingFang TC", Font.BOLD, 10);
-
 	
+	/** Background color of a panel of the GUI when it is disabled **/
+	public static final Color colorPnlDisabled = new Color(169, 169, 169);
+	/** Background color of a panel of the GUI when it is enabled **/
+	public static final Color colorPnlEnabled = new Color(220, 220, 220);
 
-
+	/** 
+	 * The string representing the current date. It is in the form dd-MM-yyyy HH-mm-ss. Used for creating 
+	 * output files.	
+	 */
 	public static String dateString = null;
-
+	
+	/** Main settings object, loaded from the settings file (YAML) stored within the neuronal migration resources folder **/
 	public static Settings settings = null;
 
 
@@ -135,21 +133,40 @@ public class GUI  {
 	private PnlDisplay pnlDisplay;
 	private PnlOptions pnlOptions;
 
+	/** Used for advancing from one step to another in the TRON machine. **/
 	private volatile Wizard wizard;
-	private JMenuItem mntmPreferences;
+	
+	private JMenuItem menuItemPreferences;
 	private JMenuItem mntmBrightnessAdj;
+	private JMenuItem menuItemItmdProcessingGUI;
 
+	/** Popup which allows modification of preferences (basically modifies the settings object in this class **/
 	private Preferences prefs;
+	
+	/** Popup which allows beginning processing from an intermediate processing state in the TRON machine **/
 	private IntermediateProcessingGUI itmdProcessingGUI;
 	private BrightnessAdjuster brightnessAdjuster;
+	
+	/** Has author names, version number, copyright, and whether there are updates. Displayed at bottom of GUI **/
 	private volatile JLabel lblAttributes = null;
-	private JMenuItem mntmItmdProcessingGUI;
+	
+	/** There should only ever be ONE GUI object, never multiple. SO store it as a SINGLETON so it can be accessed publicly **/
 	public static GUI SINGLETON = null;
 
 	/**
-	 * Create the application.
-	 * @throws IOException 
-	 * @throws FormatException 
+	 * Constructs the GUI frame. Does the following:
+	 * <ul>
+	 * <li>Turn off the press-and-hold feature on Mac (i.e. holding down a key to show accents, etc) as 
+	 * this is a known bug that affects repeated key strokes in Java, such as for moving around images</li>
+	 * <li>Load settings, saving any updates if need be.</li>
+	 * <li>Set the current run date. For each subsequent run of TRON machine, this should be re-set.</li>
+	 * <li>Call {@link #initialize()} to finish setup, constructing all panels and initializing the TRON machine.</li>
+	 * </ul>
+	 * 
+	 * @param parent			The parent MainFrame which created the GUI. This reference is used in case the
+	 *  user returns to the main menu.
+	 * @throws IOException	Can be throw for many reasons. Can be thrown if settings can't be written, or 
+	 * there was an error writing them, for instance.
 	 */
 	public GUI(MainFrame parent) throws IOException {
 
@@ -188,100 +205,9 @@ public class GUI  {
 
 	}
 	
-	public class RectentFileList extends JPanel {
-
-        private final JList<File> list;
-        private final FileListModel listModel;
-        private final JFileChooser fileChooser;
-
-        public RectentFileList(JFileChooser chooser) {
-            fileChooser = chooser;
-            listModel = new FileListModel();
-            list = new JList<File>(listModel);
-            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            list.setCellRenderer(new FileListCellRenderer());
-
-            setLayout(new BorderLayout());
-            add(new JScrollPane(list));
-
-            list.addListSelectionListener(new ListSelectionListener() {
-                @Override
-                public void valueChanged(ListSelectionEvent e) {
-                    if (!e.getValueIsAdjusting()) {
-                        File file = list.getSelectedValue();
-                        // You might like to check to see if the file still exists...
-                        fileChooser.setSelectedFile(file);
-                    }
-                }
-            });
-        }
-
-        public void clearList() {
-            listModel.clear();
-        }
-
-        public void add(File file) {
-            listModel.add(file);
-        }
-
-        public class FileListModel extends AbstractListModel<File> {
-
-            private List<File> files;
-
-            public FileListModel() {
-                files = new ArrayList<File>();
-            }
-
-            public void add(File file) {
-                if (!files.contains(file)) {
-                    if (files.isEmpty()) {
-                        files.add(file);
-                    } else {
-                        files.add(0, file);
-                    }
-                    fireIntervalAdded(this, 0, 0);
-                }
-            }
-
-            public void clear() {
-                int size = files.size() - 1;
-                if (size >= 0) {
-                    files.clear();
-                    fireIntervalRemoved(this, 0, size);
-                }
-            }
-
-            @Override
-            public int getSize() {
-                return files.size();
-            }
-
-            @Override
-            public File getElementAt(int index) {
-                return files.get(index);
-            }
-        }
-
-        public class FileListCellRenderer extends DefaultListCellRenderer {
-
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof File) {
-                    File file = (File) value;
-                    Icon ico = FileSystemView.getFileSystemView().getSystemIcon(file);
-                    setIcon(ico);
-                    setToolTipText(file.getParent());
-                    setText(file.getName());
-                }
-                return this;
-            }
-
-        }
-
-    }
-  
-
+	/**
+	 * Sets this frame visible by repainting it on the screen.
+	 */
 	public void show() {
 
 		this.quantFrame.setVisible(true);
@@ -289,7 +215,8 @@ public class GUI  {
 	}
 
 	/**
-	 * Initialize the contents of the frame.
+	 * Initialize the contents of the frame. Performs quite a few operations, initializing all fields and
+	 * variables in every panel, and preparing the TRON machine for its first run.
 	 */
 	private void initialize() {
 		quantFrame = new JFrame();
@@ -314,13 +241,33 @@ public class GUI  {
 		});
 
 		setUIFont(smallBoldFont);
-
+		
+		// Create the menu bar at the top:
+		
 		JMenuBar menuBar = new JMenuBar();
 		quantFrame.setJMenuBar(menuBar);
 
-		JMenu mnFile = new JMenu("File");
-		mnFile.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnFile);
+		JMenu menuFile = new JMenu("File");
+		menuFile.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
+		
+		JMenu menuOptions = new JMenu("Options");
+		menuOptions.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
+		
+		JMenu menuProcess = new JMenu("Process");
+		menuProcess.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
+		
+		JMenu menuNavigation = new JMenu("Navigation");
+		menuNavigation.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
+		
+		JMenu menuHelp = new JMenu("Help");
+		menuHelp.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
+		
+		menuBar.add(menuFile);
+		menuBar.add(menuOptions);
+		menuBar.add(menuProcess);
+		menuBar.add(menuNavigation);
+		menuBar.add(menuHelp);
+
 
 		JMenuItem mntmExit = new JMenuItem("Exit");
 		mntmExit.addActionListener(new ActionListener() {
@@ -334,9 +281,9 @@ public class GUI  {
 			}
 		});
 
-		mntmPreferences = new JMenuItem("Preferences");
+		menuItemPreferences = new JMenuItem("Preferences");
 		prefs = new Preferences(this);
-		mntmPreferences.addActionListener(new ActionListener() {
+		menuItemPreferences.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 				EventQueue.invokeLater(new Runnable() {
@@ -352,18 +299,15 @@ public class GUI  {
 
 			}
 		});
-		mntmPreferences.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		mnFile.add(mntmPreferences);
+		menuItemPreferences.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menuFile.add(menuItemPreferences);
 
 		JSeparator separator = new JSeparator();
-		mnFile.add(separator);
+		menuFile.add(separator);
 		mntmExit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		//mntmExit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, 0));
-		mnFile.add(mntmExit);
+		menuFile.add(mntmExit);
 
-		JMenu mnOptions = new JMenu("Options");
-		mnOptions.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnOptions);
+
 		mntmBrightnessAdj = new JMenuItem("Adjust Brightness");
 		mntmBrightnessAdj.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -381,17 +325,12 @@ public class GUI  {
 			}
 		});
 		mntmBrightnessAdj.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-		mnOptions.add(mntmBrightnessAdj);
-
-		JMenu mnProcess = new JMenu("Process");
-		mnProcess.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnProcess);
-
+		menuOptions.add(mntmBrightnessAdj);
 
 		this.itmdProcessingGUI = new IntermediateProcessingGUI(this);
-		this.mntmItmdProcessingGUI = new JMenuItem("Process from Intermediates");
-		mnProcess.add(this.mntmItmdProcessingGUI);
-		this.mntmItmdProcessingGUI.addActionListener(new ActionListener() {
+		this.menuItemItmdProcessingGUI = new JMenuItem("Process from Intermediates");
+		menuProcess.add(this.menuItemItmdProcessingGUI);
+		this.menuItemItmdProcessingGUI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 				EventQueue.invokeLater(new Runnable() {
@@ -408,17 +347,13 @@ public class GUI  {
 
 			}
 		});
-		mntmItmdProcessingGUI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menuItemItmdProcessingGUI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
 
-		JMenu mnNavigation = new JMenu("Navigation");
-		mnNavigation.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnNavigation);
-
-		JMenuItem mntmBackToMain = new JMenuItem("Back to Main Menu...");
-		mnNavigation.add(mntmBackToMain);
+		JMenuItem menuItemBackToMain = new JMenuItem("Back to Main Menu...");
+		menuNavigation.add(menuItemBackToMain);
 		quantFrame.getContentPane().setLayout(new BorderLayout(0, 0));
-		mntmBackToMain.addActionListener(new ActionListener() {
+		menuItemBackToMain.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
 				EventQueue.invokeLater(new Runnable() {
@@ -435,28 +370,11 @@ public class GUI  {
 
 			}
 		});
-		mntmBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+		menuItemBackToMain.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 
-
-		final Properties properties = new Properties();
-		try {
-			properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
-		} catch (IOException e1) {
-			// shouldn't happen
-			e1.printStackTrace();
-		}
-		final String currentVersion = properties.getProperty("version");
-		lblAttributes = new JLabel("Developed by J. Carrington, R. Taylor, K. Taylor, and E. Dent. Copyright 2018. Version "+ currentVersion+".");
-		lblAttributes.setFont(smallBoldFont);
-		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
-		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
-
-		JMenu mnHelp = new JMenu("Help");
-		mnHelp.setFont(smallBoldFont.deriveFont(Font.BOLD, 16));
-		menuBar.add(mnHelp);
 
 		JMenuItem mntmQuickStart = new JMenuItem("Quick Start Quide");
-		mnHelp.add(mntmQuickStart);
+		menuHelp.add(mntmQuickStart);
 
 		mntmQuickStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -475,7 +393,7 @@ public class GUI  {
 		});
 
 		JMenuItem mntmDocuments = new JMenuItem("Documentation");
-		mnHelp.add(mntmDocuments);
+		menuHelp.add(mntmDocuments);
 
 		mntmDocuments.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -492,38 +410,54 @@ public class GUI  {
 
 			}
 		});
+		
+		// Create GUI frame:
+		
+		final Properties properties = new Properties();
+		try {
+			properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
+		} catch (IOException e1) {
+			// shouldn't happen
+			e1.printStackTrace();
+		}
+		final String currentVersion = properties.getProperty("version");
+		lblAttributes = new JLabel("Developed by J. Carrington, R. Taylor, K. Taylor, and E. Dent. Copyright 2018. Version "+ currentVersion+".");
+		lblAttributes.setFont(smallBoldFont);
+		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
+		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
 
 
-		// main content area
+		// main content of frame
 		JPanel pnlCONTENT = new JPanel();
 		quantFrame.getContentPane().add(pnlCONTENT, BorderLayout.CENTER);
 
 
-		//Instructions
+		// Instructions panel
 		pnlInstructions = new PnlInstructions();
 
-		// Select Files
+		// Select Files panel
 		pnlSelectFiles = new PnlSelectFiles(this);
 
-		// Log
-		pnlLog = new PnlLog(this);
+		// Log panel
+		pnlLog = new PnlLog();
 
+		// Options panel
 		pnlOptions = new PnlOptions(this);
 		this.brightnessAdjuster = new BrightnessAdjuster(pnlOptions);
 
-		// Display
+		// Display panel
 		pnlDisplay = new PnlDisplay(this, pnlOptions);
 
-		// Options
-
+		// Create the wizard used to advaned between steps of the TRON machine
 		wizard = new Wizard(this);
-
-		GroupLayout gl_pnlCONTENT = new GroupLayout(pnlCONTENT);
-		gl_pnlCONTENT.setHorizontalGroup(
-				gl_pnlCONTENT.createParallelGroup(Alignment.LEADING)
-				.addGroup(gl_pnlCONTENT.createSequentialGroup()
+		
+		// Create the layout for the main frame
+		GroupLayout layout = new GroupLayout(pnlCONTENT);
+		layout.setHorizontalGroup(
+				layout.createParallelGroup(Alignment.LEADING)
+				.addGroup(layout.createSequentialGroup()
 						.addContainerGap()
-						.addGroup(gl_pnlCONTENT.createParallelGroup(Alignment.LEADING)
+						.addGroup(layout.createParallelGroup(Alignment.LEADING)
 								.addComponent(pnlOptions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 335, GroupLayout.PREFERRED_SIZE) // added
 								.addComponent(pnlLog.getRawPanel(), GroupLayout.PREFERRED_SIZE, 335, GroupLayout.PREFERRED_SIZE)
 								.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, 335, GroupLayout.PREFERRED_SIZE)
@@ -532,13 +466,13 @@ public class GUI  {
 						.addComponent(pnlDisplay.getRawPanel(), GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
 						.addContainerGap())
 				);
-		gl_pnlCONTENT.setVerticalGroup(
-				gl_pnlCONTENT.createParallelGroup(Alignment.TRAILING)
-				.addGroup(gl_pnlCONTENT.createSequentialGroup()
+		layout.setVerticalGroup(
+				layout.createParallelGroup(Alignment.TRAILING)
+				.addGroup(layout.createSequentialGroup()
 						.addContainerGap()
-						.addGroup(gl_pnlCONTENT.createParallelGroup(Alignment.LEADING)
+						.addGroup(layout.createParallelGroup(Alignment.LEADING)
 								.addComponent(pnlDisplay.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addGroup(gl_pnlCONTENT.createSequentialGroup()
+								.addGroup(layout.createSequentialGroup()
 										.addComponent(pnlInstructions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
 										.addPreferredGap(ComponentPlacement.RELATED)
 										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/270, GroupLayout.PREFERRED_SIZE)
@@ -551,9 +485,11 @@ public class GUI  {
 				);
 
 
-		pnlCONTENT.setLayout(gl_pnlCONTENT);
+		pnlCONTENT.setLayout(layout);
 
 		setUIFont(smallBoldFont);
+		
+		// Create the thread for determining if there are updates available.
 		Thread updateRetrieveThread = new Thread(new Runnable() {
 			public void run(){
 				try {
@@ -599,7 +535,11 @@ public class GUI  {
 
 	}
 
-	public static void setUIFont (java.awt.Font f){
+	/**
+	 * Sets the font for all components of the TRON machine so everything matches.
+	 * @param f the font to set.
+	 */
+	private void setUIFont (java.awt.Font f){
 		java.util.Enumeration<Object> keys = UIManager.getLookAndFeelDefaults().keys();
 		while (keys.hasMoreElements()) {
 			Object key = keys.nextElement();
@@ -608,74 +548,130 @@ public class GUI  {
 				UIManager.put (key, f);
 		}
 	}
-
+	
+	/**
+	 * Sets options disabled and focus off, used for when a popup is displayed so that the user cannot mess
+	 * with this frame while using the popup.
+	 */
 	public void unfocusTemporarily() {
 		quantFrame.setFocusable(false);
 		quantFrame.setEnabled(false);
 	}
-
+	
+	/**
+	 * Called after a called to {@link #unfocusTemporarily()}, putting focus back on the GUI frame instead of
+	 * a popup.
+	 */
 	public void refocus() {
 		quantFrame.setFocusable(true);
 		quantFrame.setEnabled(true);
 	}
 
+	/**
+	 * Quit the program. Basically just calls the standard System.exit() method, first re-writing apple settings
+	 * for Mac users so that they can use the hold feature for keys to bring up special characters
+	 */
 	public void doExit() {
 		try {
 			Runtime.getRuntime().exec("defaults write -g ApplePressAndHoldEnabled -bool true");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// do nothing in this instance
 			e.printStackTrace();
 		}
 		System.exit(0);
 	}
 
+	/**
+	 * @return instructions panel of the GUI
+	 */
 	public PnlInstructions getInstructionPanel() {
 		return this.pnlInstructions;
 	}
 
+	/**
+	 * @return file select panel of the GUI
+	 */
 	public PnlSelectFiles getSelectFilesPanel() {
 		return this.pnlSelectFiles;
 	}
 
+	/**
+	 * @return display panel of the GUI
+	 */
 	public PnlDisplay getPanelDisplay() {
 		return this.pnlDisplay;
 	}
 
+	/**
+	 * @return options panel of the GUI
+	 */
 	public PnlOptions getPanelOptions() {
 		return this.pnlOptions;
 	}
 
+	/**
+	 * @return raw panel behind the GUI component
+	 */
 	public JFrame getComponent() {
 		return this.quantFrame;
 	}
 
+	/**
+	 * @return Logger, which is the log panel of the GUI component
+	 */
 	public Logger getLogger() {
 		return this.pnlLog;
 	}
 
+	/**
+	 * @return loggin panel of the GUI
+	 */
 	public PnlLog getLogPanel() {
 		return this.pnlLog;
 	}
 
+	/**
+	 * @return Wizard used for advancing between steps of the TRON machine
+	 */
 	public Wizard getWizard() {
 		return this.wizard;
 	}
 
+	/**
+	 * @return pop-up for controlling brightness of a channel during ROI selection
+	 */
 	public BrightnessAdjuster getBrightnessAdjuster() {
 		return this.brightnessAdjuster;
 	}
-
+	
+	/**
+	 * @param enabled true if the brightness pop-up should be accessible. Only should be made available during
+	 * the ROI selection phase of the TRON machine processing.
+	 */
 	public void setBrightnessAdjustOptionEnabled(boolean enabled) {
 		this.mntmBrightnessAdj.setEnabled(enabled);
 
 	}
 
+	/**
+	 * Sets the state of various items. For instance, whether preferences should be enabled. Does NOT
+	 * disable the Preferences option in the menu bar, but does not allow the user to change any settings
+	 * in the settings pages.
+	 * 
+	 * @param enabled true if should be enabled.
+	 */
 	public void setMenuItemsEnabledDuringRun(boolean enabled) {
 		this.prefs.setEnabled(enabled);
 		this.prefs.resetPreferences(enabled);
-		this.mntmItmdProcessingGUI.setEnabled(enabled);
+		this.menuItemItmdProcessingGUI.setEnabled(enabled);
 	}
 
+	/**
+	 * Opens a web-page in the user's default browser.
+	 * 
+	 * @param uri	The URI to navigate to.
+	 * @return		true if opening the web page was successful.
+	 */
 	private static boolean openWebpage(URI uri) {
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
 		if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
@@ -689,6 +685,12 @@ public class GUI  {
 		return false;
 	}
 
+	/**
+	 * Opens a web-page in the user's defualt browser.
+	 * 
+	 * @param url	The URl to navigate to.
+	 * @return		true if opening the web page was successful.
+	 */
 	public static boolean openWebpage(URL url) {
 		try {
 			return openWebpage(url.toURI());
@@ -707,8 +709,17 @@ public class GUI  {
 		}
 		return sb.toString();
 	}
-
-	public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+	
+	/**
+	 * Helper method used for reading information from URL. Used in determining if there is a newer version
+	 * of the TRON machine available.
+	 * 
+	 * @param url	The URL for requesting JSON
+	 * @return	JSON output retrieved from URL
+	 * @throws IOException	If could not establish a connection
+	 * @throws JSONException	If JSON syntax is malformed.
+	 */
+	private static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
 		InputStream is = new URL(url).openStream();
 		try {
 			BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
@@ -719,15 +730,19 @@ public class GUI  {
 			is.close();
 		}
 	}
-
+	
 	/**
-	 * @return dimensions of current screen. [width, height]
+	 * Brings up a pop-up which asks the user to confirm something. The popup has a fixed max width of 300
+	 * pixels.
+	 * 
+	 * @param msg			Message to ask user
+	 * @param title			Title of the pop-up
+	 * @param relative		The component on which the pop-up should be centered. If null is passed, then
+	 * 						it will be placed in the screen's center.
+	 * @param joptionMsgType	The message type, which should be one of the JOptionPane settings.
+	 * @return true if the user confirmed the message. False otherwise (including if the user pressed the "x"
+	 *  on the pop-up window.
 	 */
-	public int[] updateResolution() {
-		DisplayMode mode = this.quantFrame.getGraphicsConfiguration().getDevice().getDisplayMode();
-		return new int[] {mode.getWidth(), mode.getHeight()};
-	}
-
 	public static boolean confirmWithUser(String msg, String title, Component relative, int joptionMsgType){
 		String string;
 		JLabel label = new JLabel(msg);
@@ -741,6 +756,15 @@ public class GUI  {
 		return JOptionPane.showConfirmDialog(relative, string, title, JOptionPane.YES_NO_OPTION, joptionMsgType) == JOptionPane.YES_OPTION;
 	}
 
+	/**
+	 * Sends a simple message to the user with an 'OK' button.
+	 * 
+	 * @param msg				The message to send the user
+	 * @param title				Title at the top of the message pop-up
+	 * @param relative			The component on which the pop-up should be centered. If null is passed, then
+	 * 							it will be placed in the screen's center.
+	 * @param joptionpaneMsgType	The message type, which should be one of the JOptionPane settings.
+	 */
 	public static void displayMessage(String msg, String title, Component relative, int joptionpaneMsgType) {
 		String string;
 		JLabel label = new JLabel(msg);
@@ -757,6 +781,12 @@ public class GUI  {
 
 	}
 	
+	/**
+	 * Creates the text for a tooltip. This is useful because it enforces a max size for the tooltip display.
+	 * 
+	 * @param text	The text for the tooltip
+	 * @return string of text for the tooltip, with formatting included (i.e. html tags)
+	 */
 	public static String getTooltipText(String text) {
 		JLabel label = new JLabel(text);
 		if (label.getPreferredSize().width > 200) {
@@ -767,7 +797,16 @@ public class GUI  {
 		return text;
 
 	}
-
+	
+	/**
+	 * Uses a pop-up to get input from the user.
+	 * 
+	 * @param msg		Them message displayed to the user when prompting them for input.
+	 * @param title		The title of the input pop-up
+	 * @param relative	The component on which the pop-up should be centered. If null is passed, then
+	 * 					it will be placed in the screen's center.
+	 * @return the input that the user entered.
+	 */
 	public static String getInput(String msg, String title, Component relative) {
 		String string;
 		JLabel label = new JLabel(msg);

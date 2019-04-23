@@ -41,17 +41,27 @@ import javax.swing.text.BadLocationException;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.util.Logger;
 
+/**
+ * The panel used to display the log of all operations. Regularly cleared so it does not get too long.
+ * On the left side of the GUI.
+ * 
+ * @author Justin Carrington
+ */
 public class PnlLog implements Logger {
 
 	private JPanel rawPanel;
 	private volatile JTextArea textLog;
 	private volatile JScrollPane spLog;
 
-	private volatile String task;
+	private volatile String task; // task currently being displayed
 	private JLabel lblLog;
 	private JLabel lblDisabled = new JLabel("");
+	private final int maxLineCount = 400; // The maximum amount of lines allowed in the log before clearing
 
-	public PnlLog(GUI gui) {
+	/**
+	 * Constructs the log panel for the GUI.
+	 */
+	public PnlLog() {
 
 
 		rawPanel = new JPanel();
@@ -73,42 +83,11 @@ public class PnlLog implements Logger {
 
 	}
 
+	/**
+	 * @return raw JPanel representing this object, which is wrapped within this object.
+	 */
 	public JPanel getRawPanel(){ 
 		return this.rawPanel;
-	}
-
-	public synchronized void applyProgress(String oldTask, String task, int progressSoFar, int totalProgress) {
-
-		if (textLog.getLineCount() > 300) {
-			try {
-				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
-			} catch (BadLocationException e) {
-				// won't happen
-			}
-
-		}
-		String progressPart = "";
-		if (oldTask != null && oldTask.equals(task) && totalProgress != -1) {
-			progressPart = " ("+ progressSoFar + "/" + totalProgress +")";
-			String currText = textLog.getText();
-
-			String newText = task + progressPart + currText.substring(currText.indexOf('\n'));
-			textLog.setText(newText);
-			spLog.getVerticalScrollBar().setValue(0);
-			return;
-		}
-		if (progressSoFar <= totalProgress && progressSoFar != -1 && totalProgress != -1) {
-			progressPart = " ("+ progressSoFar + "/" + totalProgress +")";
-		}
-
-		if (textLog.getText().equals("")) {
-			textLog.setText(task + progressPart);
-		} else {
-			textLog.setText(task + progressPart + "\n" + textLog.getText());
-
-		}
-		spLog.getVerticalScrollBar().setValue(0);
-
 	}
 
 	@Override
@@ -124,7 +103,7 @@ public class PnlLog implements Logger {
 		if (!newTask.endsWith("."))
 			task = task + ".";
 		
-		if (textLog.getLineCount() > 400) {
+		if (textLog.getLineCount() > maxLineCount) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
@@ -148,7 +127,7 @@ public class PnlLog implements Logger {
 			return;
 
 
-		if (textLog.getLineCount() > 300) {
+		if (textLog.getLineCount() > maxLineCount) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
@@ -176,7 +155,7 @@ public class PnlLog implements Logger {
 			return;
 
 
-		if (textLog.getLineCount() > 300) {
+		if (textLog.getLineCount() > maxLineCount) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
@@ -206,7 +185,7 @@ public class PnlLog implements Logger {
 		if (task == null)
 			return;
 
-		if (textLog.getLineCount() > 300) {
+		if (textLog.getLineCount() > maxLineCount) {
 			try {
 				textLog.replaceRange("", textLog.getLineEndOffset(textLog.getLineCount() - 5), textLog.getLineEndOffset(textLog.getLineCount() - 1));
 			} catch (BadLocationException e) {
@@ -226,12 +205,18 @@ public class PnlLog implements Logger {
 		};
 		SwingUtilities.invokeLater(run);*/
 	}
-
+	
+	/**
+	 * Sets whether this panel is enabled (only enabled during a run). Basically whether or not the panel
+	 * will be displayed to the user.
+	 * 
+	 * @param enabled true if enabled.
+	 */
 	public void setDisplayState(boolean enabled) {
 
 		this.rawPanel.removeAll();
 		if (enabled) {
-			this.rawPanel.setBackground(PnlDisplay.colorEnabled);
+			this.rawPanel.setBackground(GUI.colorPnlEnabled);
 			GroupLayout gl_pnlLog = new GroupLayout(rawPanel);
 			gl_pnlLog.setHorizontalGroup(
 					gl_pnlLog.createParallelGroup(Alignment.LEADING)
@@ -257,7 +242,7 @@ public class PnlLog implements Logger {
 
 			lblDisabled = new JLabel("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
 			lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
-			this.rawPanel.setBackground(PnlDisplay.colorDisabled);
+			this.rawPanel.setBackground(GUI.colorPnlDisabled);
 			this.rawPanel.updateUI();
 			this.rawPanel.setLayout(new BorderLayout(0,0));
 			this.rawPanel.add(lblDisabled, BorderLayout.CENTER);

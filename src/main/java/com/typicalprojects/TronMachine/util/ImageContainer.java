@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import java.util.Scanner;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
@@ -49,6 +49,7 @@ import com.typicalprojects.TronMachine.neuronal_migration.OutputParams;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.io.FileInfo;
 import ij.io.FileSaver;
@@ -79,6 +80,35 @@ public class ImageContainer implements Serializable {
 	private transient File imageFile;
 	private int[] dimensions;
 	private RunConfiguration runConfig;
+	
+	private static IndexColorModel fireLUT = null;
+	
+	static {
+		
+		FileInfo fi = new FileInfo();
+		fi.reds = new byte[256]; 
+		fi.greens = new byte[256]; 
+		fi.blues = new byte[256];
+		
+		Scanner scanner = new Scanner(ImageContainer.class.getResourceAsStream("/LUT.txt"));
+		while (scanner.hasNext()) {
+			String line = scanner.nextLine();
+			String[] pieces = line.split("\\t");
+			
+			int index = Integer.parseInt(pieces[0]);
+			fi.reds[index] = (byte) Integer.parseInt(pieces[1]);
+			fi.greens[index] = (byte) Integer.parseInt(pieces[2]);
+			fi.blues[index] = (byte) Integer.parseInt(pieces[3]);
+
+		}
+		
+		fi.lutSize = 256;
+		fi.fileName = "OverlapLUT";
+
+		fireLUT = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
+		
+		scanner.close();
+	}
 
 	public ImageContainer(String title, File imageFile, File outputLocation, String timeOfRun, RunConfiguration runConfig) throws ImageOpenException {
 
@@ -120,11 +150,15 @@ public class ImageContainer implements Serializable {
 					ip.setProcessor(ip.getProcessor().convertToShortProcessor());
 					ip.setTitle(this.title + " Chan-" + chanEn.getKey().getAbbrev());
 					if (this.dimensions == null) this.dimensions = ip.getDimensions();
-					if (GUI.settings.enforceLUTs) {
+					/*if (GUI.settings.enforceLUTs) {
 						applyLUT(ip, chanEn.getKey().getImgColor());
 					} else {
 						applyLUT(ip, new Color(255, 255, 255));
-					}
+					}*/
+					
+					//TODO: change back
+					
+					applyInfernoLUT(ip);
 					origImages.put(chanEn.getKey(), ip);
 				} else {
 					throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
@@ -161,7 +195,7 @@ public class ImageContainer implements Serializable {
 		return this.dimensions;
 	}
 	
-	public boolean isWithinImage(int x, int y) {
+	public boolean isWithinImageBounds(int x, int y) {
 		return (x >= 0 && y >= 0 && x < this.dimensions[0] && y < this.dimensions[1]);
 	}
 
@@ -179,19 +213,25 @@ public class ImageContainer implements Serializable {
 	/**
 	 * Adds an image to this image container (does not save it)
 	 * 
-	 * @param option
-	 * @param chan
-	 * @param image
+	 * @param option		The type of image
+	 * @param chan		The channel for the image, of null if the image type does not require a channel designation
+	 * @param image		The image to add to this {@link ImageContainer}
 	 */
 	public void addImage(OutputOption option, Channel chan, ImagePlus image) {
 
 		if (!this.images.containsKey(option))
 			this.images.put(option, new HashMap<Channel, ImagePlus>());
+		
+		if (chan == null) {
+			this.images.get(option).put(null, image);
+		} else {
+			this.images.get(option).put(chan, image);
+		}
 
-		this.images.get(option).put(chan, image);
 	}
 	
 	/**
+	 * Gets the original stack image for a specific channel
 	 * 
 	 * @throws NullPointerException if channel doesn't exist or originals aren't open.
 	 */
@@ -226,31 +266,103 @@ public class ImageContainer implements Serializable {
 	}
 	
 	/**
+	 * Tests if an image was saved to the file system
+	 * 
+	 * @param option		The type of image
+	 * @param chan		The channel of the image (or null if the type of image doesn't require a channel designation)
+	 * @return			true if the image was saved in the current intermediate files directory
+	 */
+	public boolean imageWasSaved(OutputOption option, Channel chan) {
+		
+		String queueTitle = this.title.concat(chan != null ? " Chan-" + chan.getAbbrev() : "");
+		if (option != OutputOption.Channel) {
+			queueTitle = queueTitle.concat(" ").concat(option.getImageSuffix());
+		}
+		queueTitle = queueTitle.concat(".tiff");
+
+		return new File(this.getIntermediateFilesDirectory() + File.separator + queueTitle).exists();
+	}
+	
+	/**
+	 * Tests if this {@link ImageContainer} contains a specific image. It may be useful to test if the
+	 * specified image is contained before trying to open specified image, because opening an already-opened
+	 * image is a waste of resources and time.
+	 * 
+	 * @param option		The image type
+	 * @param chan		Channel designation required by the image option, if a channel designation is required.
+	 * @return true if the image is contained within this {@link ImageContainer}
+	 */
+	public boolean containsImage(OutputOption option, Channel chan) {
+		
+		if (this.images.get(option) == null)
+			return false;
+		
+		if (option.getRestrictedOption() == OutputOption.NO_CHANS) {
+			return this.images.get(option).get(null) != null;
+		} else {
+			return this.images.get(option).get(chan) != null;
+		}
+		
+	}
+	
+	
+	/**
 	 * Removes the original images from this image container, optionally saving. If originals are not part of
 	 * this IC, then do nothing.
 	 * 
 	 * @param save if should save the tiff stacks while at it.
+	 * @throws UnopenedException if the original image tiff stacks were not open
 	 */
-	public void removeOriginal(Channel chan, boolean save) {
+	public void removeOriginalFromIC(Channel chan, boolean save) {
+		
+		if (save) saveOriginal(chan);
 		
 		Map<Channel, ImagePlus> originals = this.images.get(OutputOption.Channel);
 		if (originals == null || !originals.containsKey(chan))
-			return;
-		if (save) {
-			
-			ImagePlus orig = originals.get(chan);
-			if (orig.isStack()) {
-				new FileSaver(orig).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
-
-			} else {
-				new FileSaver(orig).saveAsTiff(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
-
-			}
-
-		}
+			throw new UnopenedException("Original Images Not Open");
 		originals.remove(chan);
 		if (originals.isEmpty())
 			this.images.remove(OutputOption.Channel);
+	}
+	
+	/**
+	 * Removes an image from the {@link ImageContainer}.
+	 * 
+	 * @param output		The type of image to remove
+	 * @param chan		The channel of the image to remove, or null to remove all images for this image type.
+	 */
+	public void removeImageFromIC(OutputOption output, Channel chan) {
+		
+		if (output.getRestrictedOption() == OutputOption.NO_CHANS) {
+			this.images.remove(output);
+		} else if (chan == null){
+			this.images.remove(output);
+		} else if (this.images.get(output) != null) {
+			this.images.get(output).remove(chan);
+		}
+
+	}
+	
+	/**
+	 * Saves the original images to the intermediate files folder
+	 * 
+	 * @param chan	The channel to save
+	 * @throws UnopenedException if the original images are not opened in this ImageContainer at this point
+	 */
+	public void saveOriginal(Channel chan) {
+		
+		Map<Channel, ImagePlus> originals = this.images.get(OutputOption.Channel);
+		if (originals == null || !originals.containsKey(chan))
+			throw new UnopenedException("Original Images Not Open");
+		
+		ImagePlus orig = originals.get(chan);
+		if (orig.isStack()) {
+			new FileSaver(orig).saveAsTiffStack(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
+
+		} else {
+			new FileSaver(orig).saveAsTiff(this.getIntermediateFilesDirectory() + File.separator + this.title + " Chan-" + chan.getAbbrev() + ".tiff");
+
+		}
 	}
 	
 	// TOOD: make sure that the logging is okay. Stopped using open() from ImagePhantom, which normally does some logging,
@@ -276,13 +388,27 @@ public class ImageContainer implements Serializable {
 		}
 
 	}
-
+	
+	/**
+	 * Retrives an image from this {@link ImageContainer}
+	 * 
+	 * @param it			The type of image type
+	 * @param chan		The channel for this image, if the image type requires a channel designation
+	 * @param duplicate	true if the image should be duplicated or if the original image in this {@link ImageContainer} should be used.
+	 * @return the query image
+	 */
 	public ImagePlus getImage(OutputOption it, Channel chan, boolean duplicate) {
 		Map<Channel, ImagePlus> ips = this.images.get(it);
 
 		if (ips == null)
 			throw new UnopenedException();
-		ImagePlus ip = ips.get(chan);
+		ImagePlus ip = null;
+		
+		if (it.getRestrictedOption() == OutputOption.NO_CHANS) {
+			ip = ips.get(null);
+		} else {
+			ip = ips.get(chan);
+		}
 		if (ip == null)
 			throw new UnopenedException();
 
@@ -549,6 +675,14 @@ public class ImageContainer implements Serializable {
 	public class UnopenedException extends RuntimeException {
 
 		private static final long serialVersionUID = 6071333983874153209L;
+		
+		public UnopenedException(){
+			super();
+		}
+		
+		public UnopenedException(String message) {
+			super(message);
+		}
 
 	}
 
@@ -693,6 +827,21 @@ public class ImageContainer implements Serializable {
 			imp.getStack().setColorModel(cm);
 		imp.updateImage();
 	}
+	
+	public static void applyInfernoLUT(ImagePlus imp) {
+		
+		if (imp.getBitDepth() != 8) {
+			IJ.run(imp, "8-bit", "stack");
+
+		}
+		ImageProcessor ip = imp.getChannelProcessor();
+		ip.setColorModel(fireLUT);
+		if (imp.getStackSize()>1)
+			imp.getStack().setColorModel(fireLUT);
+		imp.updateImage();
+	}
+	
+	
 
 	public void saveCurrentState(File fileName) throws IOException {
 		FileOutputStream fileStream = new FileOutputStream(fileName); 

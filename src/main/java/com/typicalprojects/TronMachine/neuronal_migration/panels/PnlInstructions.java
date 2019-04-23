@@ -37,6 +37,12 @@ import javax.swing.border.TitledBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 
+/**
+ * The panel used to display instructions.
+ * On the top side of the GUI.
+ * 
+ * @author Justin Carrington
+ */
 public class PnlInstructions {
 	
 	private JLabel currInstructions;

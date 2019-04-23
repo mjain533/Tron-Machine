@@ -26,14 +26,11 @@
 package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.MouseInfo;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -41,7 +38,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.swing.GroupLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -58,7 +54,6 @@ import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
-import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Toolbox;
@@ -66,11 +61,18 @@ import com.typicalprojects.TronMachine.util.Zoom;
 
 import ij.ImagePlus;
 
+/**
+ * <p>The panel used to display the image being worked with. The display panel actually has an {@link ImagePanel}
+ * contained within, and this is where the image is displayed. The Image Panel will be the size of the image,
+ * whereas this Image Panel will dynamically resize as the user resizes the TRON machine window.</p>
+ * 
+ * <p>The only panel located on the right side of the GUI.</p>
+ * 
+ * @author Justin Carrington
+ */
 public class PnlDisplay  {
 
 	private JLabel lblDisabled;
-	public static Color colorDisabled = new Color(169, 169, 169);
-	public static Color colorEnabled = new Color(220, 220, 220);
 
 	private JPanel rawPanel;	
 	private Cursor cursor;
@@ -78,15 +80,15 @@ public class PnlDisplay  {
 	private ImagePanel pnlImage;
 
 	private JSlider sldrSlice;
-	private JSlider sldrChan;
-	private List<Channel> chanSelection = null;
-	private JLabel lblChanNum;
+	private JSlider sldrPage;
+	private List<? extends PnlDisplayPage> pageOptions = null;
+	private JLabel lblPageNum;
 	private JLabel lblSliceNum;
-	private JLabel lblChanSlider;
-	private JPanel pnlSliderChan;
+	private JLabel lblPageSlider;
+	private JPanel pnlSliderPage;
 	private JComponent pnlSliderSlice;
 	private int lastSelectedSlice;
-	private Channel lastSelectedChan;
+	private PnlDisplayPage lastSelectedPage;
 
 	private PnlDisplayFeedbackReceiver outputHandler;
 	private boolean changing = false;
@@ -109,7 +111,7 @@ public class PnlDisplay  {
 
 
 		pnlSliderSlice = new JPanel();
-		pnlSliderSlice.setBackground(colorEnabled);
+		pnlSliderSlice.setBackground(GUI.colorPnlEnabled);
 		pnlSliderSlice.setLayout(null);
 
 		JLabel lblSliceSlider = new JLabel("Slice");
@@ -124,7 +126,7 @@ public class PnlDisplay  {
 		sldrSlice.setBounds(0, 23, 35, 190);
 		pnlSliderSlice.add(sldrSlice);
 		sldrSlice.setFocusable(false);
-		sldrSlice.setBackground(colorEnabled);
+		sldrSlice.setBackground(GUI.colorPnlEnabled);
 
 
 		lblSliceNum = new JLabel("10");
@@ -136,33 +138,33 @@ public class PnlDisplay  {
 
 
 
-		pnlSliderChan = new JPanel();
-		pnlSliderChan.setBackground(colorEnabled);
-		pnlSliderChan.setLayout(null);
+		pnlSliderPage = new JPanel();
+		pnlSliderPage.setBackground(GUI.colorPnlEnabled);
+		pnlSliderPage.setLayout(null);
 
-		lblChanSlider = new JLabel("Chan");
-		lblChanSlider.setHorizontalTextPosition(SwingConstants.CENTER);
-		lblChanSlider.setHorizontalAlignment(SwingConstants.CENTER);
-		lblChanSlider.setBounds(0, 0, 35, 25);
-		pnlSliderChan.add(lblChanSlider);
+		lblPageSlider = new JLabel("Chan");
+		lblPageSlider.setHorizontalTextPosition(SwingConstants.CENTER);
+		lblPageSlider.setHorizontalAlignment(SwingConstants.CENTER);
+		lblPageSlider.setBounds(0, 0, 35, 25);
+		pnlSliderPage.add(lblPageSlider);
 
-		sldrChan = new JSlider();
-		sldrChan.setBounds(0, 23, 35, 190);
-		sldrChan.setInverted(true);
-		sldrChan.setOrientation(SwingConstants.VERTICAL);
-		sldrChan.setFocusable(false);
-		sldrChan.setBackground(colorEnabled);
-		pnlSliderChan.add(sldrChan);
+		sldrPage = new JSlider();
+		sldrPage.setBounds(0, 23, 35, 190);
+		sldrPage.setInverted(true);
+		sldrPage.setOrientation(SwingConstants.VERTICAL);
+		sldrPage.setFocusable(false);
+		sldrPage.setBackground(GUI.colorPnlEnabled);
+		pnlSliderPage.add(sldrPage);
 
-		lblChanNum = new JLabel("10");
-		lblChanNum.setHorizontalTextPosition(SwingConstants.CENTER);
-		lblChanNum.setHorizontalAlignment(SwingConstants.CENTER);
-		lblChanNum.setBounds(0, 225, 35, 19);
+		lblPageNum = new JLabel("10");
+		lblPageNum.setHorizontalTextPosition(SwingConstants.CENTER);
+		lblPageNum.setHorizontalAlignment(SwingConstants.CENTER);
+		lblPageNum.setBounds(0, 225, 35, 19);
 
-		pnlSliderChan.add(lblChanNum);
+		pnlSliderPage.add(lblPageNum);
 
 		pnlImage = new ImagePanel();
-		pnlImage.setBackground(colorEnabled);
+		pnlImage.setBackground(GUI.colorPnlEnabled);
 		//pnlImage.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 
 
@@ -185,18 +187,18 @@ public class PnlDisplay  {
 				outputHandler.sliderSliceChanged(getSliderSelectedSlice());
 			}
 		});
-		this.sldrChan.addChangeListener(new ChangeListener() {
+		this.sldrPage.addChangeListener(new ChangeListener() {
 
 			public void stateChanged(ChangeEvent e) {
 				if (changing) return;
 
-				Channel chan = getSliderSelectedChannel();
-				if (chan == lastSelectedChan)
+				PnlDisplayPage page = getSliderSelectedPage();
+				if (page == lastSelectedPage)
 					return;
 
-				lastSelectedChan = chan;
-				lblChanNum.setText(chan.getAbbrev() + "");
-				outputHandler.sliderChanChanged(chan);
+				lastSelectedPage = page;
+				lblPageNum.setText(page.getDisplayAbbrev() + "");
+				outputHandler.sliderPageChanged(page);
 
 
 			}
@@ -220,7 +222,9 @@ public class PnlDisplay  {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei == null)
 									break;
-								if (!oei.getRunConfig().channelMan.isProcessChannel(getSliderSelectedChannel()))
+								
+								Channel chan = (Channel) getSliderSelectedPage();
+								if (!oei.getRunConfig().channelMan.isProcessChannel(chan))
 									break;
 
 								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
@@ -236,7 +240,7 @@ public class PnlDisplay  {
 
 										oei.setZoom(zoom);
 
-										pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
+										pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
 
 									}
 								}
@@ -248,7 +252,9 @@ public class PnlDisplay  {
 							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
 								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 								if (oei != null) {
-									if (!oei.getRunConfig().channelMan.isProcessChannel(getSliderSelectedChannel()))
+									Channel chan = (Channel) getSliderSelectedPage();
+
+									if (!oei.getRunConfig().channelMan.isProcessChannel(chan))
 										break;
 									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
 									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
@@ -258,9 +264,9 @@ public class PnlDisplay  {
 										Zoom zoom = oei.getPreviousZoomLevel();
 										oei.setZoom(zoom);
 										if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
-											pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
+											pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
 										} else {
-											pnlImage.setImage(oei.getImgWithDots(getSliderSelectedChannel()).getBufferedImage(), -1, -1, zoom);
+											pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
 										}
 
 									}
@@ -363,12 +369,12 @@ public class PnlDisplay  {
 						ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
 						
 						if (oei != null) {
-							Channel chan = getSliderSelectedChannel();
+							Channel chan = (Channel) getSliderSelectedPage();
 							if (oei.getRunConfig().channelMan.isProcessChannel(chan)) {
 								Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
-								Point closest = oei.getNearestPoint(getSliderSelectedChannel(), p);
+								Point closest = oei.getNearestPoint(chan, p);
 								if (closest != null) {
-									oei.removePoint(getSliderSelectedChannel(), closest);
+									oei.removePoint(chan, closest);
 								}
 							}
 							
@@ -413,14 +419,14 @@ public class PnlDisplay  {
 
 		this.rawPanel.removeAll();
 		if (enabled) {
-			this.rawPanel.setBackground(colorEnabled);
+			this.rawPanel.setBackground(GUI.colorPnlEnabled);
 			GroupLayout gl_panel = new GroupLayout(this.rawPanel);
 			gl_panel.setHorizontalGroup(
 					gl_panel.createParallelGroup(Alignment.LEADING)
 					.addGroup(gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-									.addComponent(pnlSliderChan, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE)
+									.addComponent(pnlSliderPage, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE)
 									.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE))
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
@@ -435,7 +441,7 @@ public class PnlDisplay  {
 									.addGroup(gl_panel.createSequentialGroup()
 											.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 247, GroupLayout.PREFERRED_SIZE)
 											.addPreferredGap(ComponentPlacement.RELATED, 95, Short.MAX_VALUE)
-											.addComponent(pnlSliderChan, GroupLayout.PREFERRED_SIZE, 247, GroupLayout.PREFERRED_SIZE)))
+											.addComponent(pnlSliderPage, GroupLayout.PREFERRED_SIZE, 247, GroupLayout.PREFERRED_SIZE)))
 							.addContainerGap())
 					);
 
@@ -446,7 +452,7 @@ public class PnlDisplay  {
 				this.lblDisabled.setText(disabledMessage);
 			else
 				this.lblDisabled.setText("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface to the left.</p></body></html>");
-			this.rawPanel.setBackground(colorDisabled);
+			this.rawPanel.setBackground(GUI.colorPnlDisabled);
 			this.rawPanel.updateUI();
 			this.rawPanel.setLayout(new BorderLayout(0,0));
 			this.rawPanel.add(lblDisabled, BorderLayout.CENTER);
@@ -507,29 +513,30 @@ public class PnlDisplay  {
 		changing = false;
 	}
 
-	public void setChannelSlider(boolean enabled, List<Channel> chans) {
+	public void setPageSlider(boolean enabled, List<? extends PnlDisplayPage> displayPages, String pagesLabel) {
 		changing = true;
+		this.lblPageSlider.setText(pagesLabel);
 		if (enabled) {
-			this.chanSelection = chans;
-			this.sldrChan.setMinimum(0);
-			this.sldrChan.setMaximum(chans.size()-1);
-			this.sldrChan.setValue(0);
-			this.lastSelectedChan = chans.get(0);
+			this.pageOptions = displayPages;
+			this.sldrPage.setMinimum(0);
+			this.sldrPage.setMaximum(displayPages.size()-1);
+			this.sldrPage.setValue(0);
+			this.lastSelectedPage = displayPages.get(0);
 
-			this.lblChanNum.setText(chans.get(0).getAbbrev() + "");
-			this.sldrChan.setEnabled(true);
+			this.lblPageNum.setText(displayPages.get(0).getDisplayAbbrev() + "");
+			this.sldrPage.setEnabled(true);
 
 		} else {
-			this.chanSelection = null;
-			this.sldrChan.setMinimum(1);
-			this.sldrChan.setMaximum(2);
-			this.lastSelectedChan = null;
-			this.sldrChan.setValue(1);
-			this.lblChanNum.setText("--");
-			this.sldrChan.setEnabled(false);
+			this.pageOptions = null;
+			this.sldrPage.setMinimum(1);
+			this.sldrPage.setMaximum(2);
+			this.lastSelectedPage = null;
+			this.sldrPage.setValue(1);
+			this.lblPageNum.setText("--");
+			this.sldrPage.setEnabled(false);
 		}
-		this.sldrChan.setMinorTickSpacing(1);
-		this.sldrChan.setSnapToTicks(true);
+		this.sldrPage.setMinorTickSpacing(1);
+		this.sldrPage.setSnapToTicks(true);
 		changing = false;
 
 	}
@@ -555,16 +562,30 @@ public class PnlDisplay  {
 		return this.sldrSlice.isEnabled();
 	}
 
-	public Channel getSliderSelectedChannel() {
-		if (this.chanSelection == null) return null;
-		return this.chanSelection.get(this.sldrChan.getValue()); 
+	public PnlDisplayPage getSliderSelectedPage() {
+		if (this.pageOptions == null) return null;
+		return this.pageOptions.get(this.sldrPage.getValue()); 
+	}
+	
+	public Channel getSliderSelectedPageAsChannel() {
+		try {
+			return (Channel) getSliderSelectedPage();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	public interface PnlDisplayPage {
+		
+		public String getDisplayAbbrev();
+		
 	}
 
 	public interface PnlDisplayFeedbackReceiver {
 
 		public void sliderSliceChanged(int slice);
 
-		public void sliderChanChanged(Channel chan);
+		public void sliderPageChanged(PnlDisplayPage chan);
 
 		public void mouseClickOnImage(Point p);
 

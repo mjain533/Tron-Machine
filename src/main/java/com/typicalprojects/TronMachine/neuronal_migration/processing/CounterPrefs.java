@@ -25,7 +25,7 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration.processing;
 
-public class Custom3DObjectCounterStats {
+public class CounterPrefs {
 	
 	public boolean calcVolume = false; 
 	public boolean calcSurface = false; 
@@ -44,13 +44,13 @@ public class Custom3DObjectCounterStats {
 	public boolean calcCOM = true;
 	public boolean calcBB = false;
 	
-	public Custom3DObjectCounterStats() {
+	public CounterPrefs() {
 		
 	}
 	
-	public Custom3DObjectCounterStats copyOf() {
+	public CounterPrefs copyOf() {
 		try {
-			return (Custom3DObjectCounterStats) this.clone();
+			return (CounterPrefs) this.clone();
 		} catch (CloneNotSupportedException e) {
 			return null;
 			// Will not occur

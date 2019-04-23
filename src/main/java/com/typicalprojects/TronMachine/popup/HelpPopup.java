@@ -33,7 +33,6 @@ import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 
-import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

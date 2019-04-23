@@ -63,9 +63,7 @@ import javax.swing.JColorChooser;
 
 import java.awt.Font;
 import java.awt.Insets;
-import java.awt.Toolkit;
 
-import javax.swing.AbstractButton;
 import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
@@ -94,18 +92,25 @@ import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel
 import com.typicalprojects.TronMachine.neuronal_migration.Preferences.ChannelSettingsHandler;
 import com.typicalprojects.TronMachine.neuronal_migration.Preferences.SettingsPanel;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsManager;
-import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.TronMachine.popup.MultiSelectPopup;
 import com.typicalprojects.TronMachine.util.ColorChooserUI;
 import com.typicalprojects.TronMachine.util.CustomFileChooser;
-import com.typicalprojects.TronMachine.util.FileBrowser;
-import com.typicalprojects.TronMachine.util.FileContainer;
-import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
+
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.SimpleJList.ListDropReceiver;
 
+/**
+ * Creates the popup which allows users to modify preferences. Each settings page within the Preferences
+ * popup is a JPanel, and is created as an additional class declaration in this file. Each of the Preferences
+ * pages implements {@link SettingsPanel}, which has various useful methods.<br><br>
+ * 
+ * There are many checks to ensure correct output. All preferences here are mirrored in the settings file,
+ * stored in the Neuronal_Migration_Resources folder in the same directory as this program.
+ * 
+ * @author Justin Carrington
+ */
 public class Preferences extends JDialog {
 
 	private static final long serialVersionUID = 6738766494677442465L;
@@ -120,10 +125,14 @@ public class Preferences extends JDialog {
 	private GroupLayout gl_contentPane;
 	private SimpleJList<SettingsPanel> menuList;
 	private boolean listSelectionChanging = false;
+	
+	/** Should only ever be one Preferences panel, store here so can retrieve from the classes declared in this file **/
 	public static Preferences SINGLETON_FRAME = null;
 
 	/**
-	 * Create the frame.
+	 * Create the Preferences frame, setting up all the JPanels for each of the Settings Pages.
+	 * 
+	 * @param gui The main {@link GUI} component
 	 */
 	public Preferences(GUI gui) {
 		super(gui.getComponent());
@@ -292,6 +301,10 @@ public class Preferences extends JDialog {
 		}
 	}
 
+	/**
+	 * Remove the Preferences pane by setting it NOT visible, and then refocusing the main GUI. Does not
+	 * destroy the frame, because it is resource-intensive to build.
+	 */
 	public void removeDisplay() {
 
 		setVisible(false);
@@ -311,6 +324,20 @@ public class Preferences extends JDialog {
 		}
 	}
 
+	/**
+	 * Displays the preferences pane by doing the following:<br>
+	 * <ol>
+	 * <li>Removing all error messages</li>
+	 * <li>Set the current page to the first page</li>
+	 * <li>Set the preferences enabled (but if not running, disable the ability to set any options)</li>
+	 * <li>Reset values in all pages</li>
+	 * <li>Pack, set location of pane, and then set visible</li>
+	 * </ol>
+	 * 
+	 * @param parent		The component which the Preferences pane should be centered on
+	 * @param running	Whether the TRON machine is currently running (in which case, option setting will be
+	 * 	disabled)
+	 */
 	public void display(Component parent, boolean running) {
 		removeErrorMessages();
 		setCurrentPage(this.menuList.getElementAt(0));
@@ -322,6 +349,11 @@ public class Preferences extends JDialog {
 	}
 
 
+	/**
+	 * Called whenever the user tries to apply changes in the preferences, such as on close (either via
+	 * cancel or the 'X' in the menu bar). Will try to apply changes, displaying any errors in the process
+	 * and moving the user to the Settings Page with the error.
+	 */
 	public void userTriedToApplyChanges() {
 		removeErrorMessages();
 
@@ -394,6 +426,11 @@ public class Preferences extends JDialog {
 
 	}
 
+	/**
+	 * Resets all preferences pages by using the Settings file.
+	 * 
+	 * @param enabled	Whether the preferences pane should be enabled or disabled after the reset.
+	 */
 	public void resetPreferences(boolean enabled) {
 
 		ChannelManager cmCopy = GUI.settings.channelMan.clone();
@@ -406,26 +443,43 @@ public class Preferences extends JDialog {
 		}
 
 	}
-
+	
+	/**
+	 * Force resets the settings in Preferences
+	 * 
+	 * @param enabled	Whether Settings Pages should be enabled (i.e. TRON machine not running) after reset
+	 */
 	public void invokeReset(boolean enabled) {
 		for (SettingsPanel panel : this.menuList.toList()) {
 			panel.reset(GUI.settings, enabled);
 		}
 	}
-
+	
+	/**
+	 * @return loaded settings pages
+	 */
 	public List<SettingsPanel> getSettingsPages() {
 		return this.menuList.toList();
 	}
 
+	/**
+	 * @return true of Preferences popup is visible
+	 */
 	public boolean isDisplaying() {
 		return this.isVisible();
 	}
-
+	
+	/**
+	 * Displays an error saying there's error in the configuration in the main Preferences popup
+	 */
 	public void displayError() {
 		this.lblCannotEdit.setText("There were errors in your configuration.");
 		this.lblCannotEdit.setVisible(true);
 	}
 
+	/**
+	 * Removes all error messages, from the main Preferences popup AND all of the settings pages.
+	 */
 	public void removeErrorMessages() {
 		if (!this.lblCannotEdit.getText().equals("To make changes you must cancel the current run.")) {
 			this.lblCannotEdit.setVisible(false);
@@ -436,7 +490,6 @@ public class Preferences extends JDialog {
 		}
 
 	}
-
 
 	private void setCurrentPage(SettingsPanel settings) {
 		this.listSelectionChanging = true;
@@ -449,10 +502,27 @@ public class Preferences extends JDialog {
 		this.listSelectionChanging = false;
 
 	}
-
+	
+	/**
+	 * Designates a page in the Preferences, which can be navigated to in the navigation menu on the left
+	 * side of the popup.
+	 */
 	public interface SettingsPanel {
+		
+		/** Remove an error from the page**/
 		public void removeError();
+		
+		/**
+		 * Reset settings in the page
+		 * @param settings	Settings object to grab values from
+		 * @param enabled	True if TRON machine isn't running.
+		 */
 		public void reset(Settings settings, boolean enabled);
+		
+		/**
+		 * Applies all fields in the current page to the settings file.
+		 * @param settings	The settings object to apply values.
+		 */
 		public void applyFields(Settings settings);
 
 		/**
@@ -463,14 +533,45 @@ public class Preferences extends JDialog {
 		 * @return true if all fields have valid values, false otherwise
 		 */
 		public boolean validateFields();
+		
+		/**
+		 * @param error error to display on settings page
+		 */
 		public void displayError(String error);
+		
+		/**
+		 * @return true if there are errors on this page
+		 */
 		public boolean hasErrors();
+		
+		/**
+		 * @return page name
+		 */
 		public String getPageName();
+		
+		/**
+		 * @return JPanel representing the page
+		 */
 		public JPanel getRawComponent();
+		
+		/**
+		 * Update the page, mainly to update the lists by calling their renderers.
+		 */
 		public void update();
 	}
 
+	/**
+	 * Implemented by {@link SettingsPanel} which involve Channel settings.
+	 */
 	public interface ChannelSettingsHandler {
+		/**
+		 * A local copy is kept of all channel configuration so that these values can be changed, while
+		 * retaining the original channel configuration in the Settings for backup in case values are entered
+		 * incorrectly by the user. When setting a local copy, this should be a clone of the original
+		 * ChannelManager object.
+		 * 
+		 * @param cm		ChannelManager copy
+		 */
 		public void setLocalCMCopy(ChannelManager cm);
 	}
 
@@ -1613,6 +1714,8 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 	private JTextField txtUnsharpRadius;
 	private JTextField txtUnsharpWeight;
 	private JTextField txtGaussianSigma;
+	private JCheckBox chkPostProcessObj;
+	private JCheckBox chkPostProcessObjDelete;
 
 	public PnlProcessingOptions() {
 		setPreferredSize(new Dimension(518, 384));
@@ -1621,9 +1724,19 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		pnlProcessingSettings.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlProcessingSettings.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlProcessingSettings.setBackground(new Color(211, 211, 211));
+		
+		JPanel pnlObjectPostProcess = new JPanel();
+		pnlObjectPostProcess.setFont(new Font("Arial", Font.PLAIN, 13));
+		pnlObjectPostProcess.setBorder(new LineBorder(new Color(0, 0, 0)));
+		pnlObjectPostProcess.setBackground(new Color(211, 211, 211));
 
-		JLabel lblProcessingSettings = new JLabel("Parameter Values");
-
+		JLabel lblProcessingSettings = new JLabel("Object Processing Parameter Values");
+		JLabel lblPostProcessingSettings = new JLabel("Object Post-Processing");
+		
+		chkPostProcessObj = new JCheckBox("Enabled object post-processing features");
+		chkPostProcessObjDelete = new JCheckBox("Delete resources of post-processing (recommended)");
+		
+		
 		GroupLayout gl_pnlProcessingSettings = new GroupLayout(pnlProcessingSettings);
 		gl_pnlProcessingSettings.setHorizontalGroup(
 				gl_pnlProcessingSettings.createParallelGroup(Alignment.LEADING)
@@ -1641,6 +1754,24 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 				.addComponent(lblProcessingSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
 				);
 		pnlProcessingSettings.setLayout(gl_pnlProcessingSettings);
+		
+		GroupLayout gl_pnlPostProcessingSettings = new GroupLayout(pnlObjectPostProcess);
+		gl_pnlPostProcessingSettings.setHorizontalGroup(
+				gl_pnlPostProcessingSettings.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGap(0, 494, Short.MAX_VALUE)
+				.addGroup(gl_pnlPostProcessingSettings.createSequentialGroup()
+						.addContainerGap()
+						.addComponent(lblPostProcessingSettings, GroupLayout.DEFAULT_SIZE, 492, Short.MAX_VALUE)
+						.addContainerGap())
+				);
+		gl_pnlPostProcessingSettings.setVerticalGroup(
+				gl_pnlPostProcessingSettings.createParallelGroup(Alignment.LEADING)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addGap(0, 25, Short.MAX_VALUE)
+				.addComponent(lblPostProcessingSettings, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 33, Short.MAX_VALUE)
+				);
+		pnlObjectPostProcess.setLayout(gl_pnlPostProcessingSettings);
 
 		lblError = new JLabel("Error:");
 		lblError.setFont(GUI.mediumBoldFont);
@@ -1677,7 +1808,9 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 								.addComponent(pnlProcessingSettings, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
 								.addComponent(lblError)
-
+								.addComponent(pnlObjectPostProcess, Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 494, GroupLayout.PREFERRED_SIZE)
+								.addComponent(chkPostProcessObj)
+								.addComponent(chkPostProcessObjDelete)
 								.addGroup(groupLayout.createSequentialGroup()
 										.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
 												.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
@@ -1694,24 +1827,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 										.addGap(180))
 
 
-								/*.addGroup(groupLayout.createSequentialGroup()
-							.addComponent(pnlProcessingSettings, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
-							.addContainerGap())
-						.addGroup(groupLayout.createSequentialGroup()
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
-								.addComponent(lblMinimumThreshold, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblUnsharpMaskRadius, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblUnsharpMaskPixel, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
-								.addComponent(lblGaussianBlurSigma, GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE))
-							.addPreferredGap(ComponentPlacement.RELATED)
-							.addGroup(groupLayout.createParallelGroup(Alignment.LEADING, false)
-								.addComponent(txtMinThresh, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtUnsharpWeight, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtUnsharpRadius, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE)
-								.addComponent(txtGaussianSigma, GroupLayout.DEFAULT_SIZE, 42, Short.MAX_VALUE))
-							.addGap(198))
-
-						.addComponent(lblError)*/)
+								)
 
 						.addContainerGap())
 				);
@@ -1736,6 +1852,12 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 						.addGroup(groupLayout.createParallelGroup(Alignment.BASELINE)
 								.addComponent(lblGaussianBlurSigma)
 								.addComponent(txtGaussianSigma, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(pnlObjectPostProcess, GroupLayout.PREFERRED_SIZE, 25, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.UNRELATED)
+						.addComponent(chkPostProcessObj, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+						.addPreferredGap(ComponentPlacement.RELATED)
+						.addComponent(chkPostProcessObjDelete, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 						.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 						.addComponent(lblError)
 						.addContainerGap())
@@ -1761,6 +1883,9 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		this.txtUnsharpRadius.setText(settings.processingUnsharpMaskRadius + "");
 		this.txtUnsharpWeight.setText(settings.processingUnsharpMaskWeight + "");
 		this.txtMinThresh.setText(settings.processingMinThreshold + "");
+		this.chkPostProcessObj.setSelected(settings.processingPostObj);
+		this.chkPostProcessObjDelete.setSelected(settings.processingPostObjDelete);
+
 		for (Component component : this.getComponents()) {
 			component.setEnabled(enabled);
 		}
@@ -1772,6 +1897,8 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		settings.processingUnsharpMaskRadius = Integer.parseInt(this.txtUnsharpRadius.getText());
 		settings.processingUnsharpMaskWeight = Double.parseDouble(this.txtUnsharpWeight.getText());
 		settings.processingGaussianSigma = Double.parseDouble(this.txtGaussianSigma.getText());
+		settings.processingPostObj = this.chkPostProcessObj.isSelected();
+		settings.processingPostObjDelete = this.chkPostProcessObjDelete.isSelected();
 
 	}
 
@@ -2422,9 +2549,16 @@ class PnlOutputOptions extends JPanel implements SettingsPanel, ChannelSettingsH
 					int index = list.locationToIndex(evt.getPoint());
 					if (index > -1) {
 						OutputParams output = list.getElementAt(index);
+						
+						if (output.getOption().getRestrictedOption() == OutputOption.NO_CHANS)
+							return; // don't need to select channels, doesn't make sense for this option
+						
+						System.out.println(output.getContainedChannels().size());
 						List<Channel> newSelected = chanSelectPopup.getUserInput(Preferences.SINGLETON_FRAME, "Select channels:", cmCopy.getOrderedChannels(), output.getContainedChannels());
 						if (newSelected != null) {
+							System.out.println("adding");
 							cmCopy.setOutputParamChannels(output, new HashSet<Channel>(newSelected));
+							System.out.println("test");
 							list.refresh();
 						}
 					}
@@ -2670,10 +2804,10 @@ class PnlOutputOptions extends JPanel implements SettingsPanel, ChannelSettingsH
 class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 
 	private static final long serialVersionUID = -8280614585837669978L;
-	private SimpleJList<String> list;
-	private JButton btnLoadTemplate;
-	private JButton btnNewTemplate;
-	private JButton btnLoadFromRun;
+	private final SimpleJList<String> templateList;
+	private final JButton btnLoadTemplate;
+	private final JButton btnNewTemplate;
+	private final JButton btnLoadFromRun;
 	private boolean shouldUpdate = false;
 	private JLabel lblError;
 	private final Preferences prefs;
@@ -2759,7 +2893,7 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 		btnLoadTemplate = new JButton("Load Selected");
 		btnLoadTemplate.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String value = list.getSelectedValue();
+				String value = templateList.getSelectedValue();
 				if (value == null)
 					return;
 
@@ -2768,8 +2902,8 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 				if (!file.isFile()) {
 					GUI.displayMessage("Error: the template file no longer exists.", 
 							"Settings Template Error", prefs, JOptionPane.ERROR_MESSAGE);
-					list.setSelectedIndex(-1);
-					list.removeItem(value);
+					templateList.setSelectedIndex(-1);
+					templateList.removeItem(value);
 					return;
 				}
 
@@ -2781,7 +2915,7 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 				try {
 					Files.copy(file, new File(SettingsManager.settingsMainPath + File.separator + SettingsManager.settingsFileName));
 				} catch (IOException e1) {
-					GUI.displayMessage("Fatal: an error occurred while writing settings. Please re-run the program.", 
+					GUI.displayMessage("Fatal: an error occurred while writing settings. Please retry.", 
 							"Write Failure", prefs, JOptionPane.ERROR_MESSAGE);
 					e1.printStackTrace();
 					return;
@@ -2863,9 +2997,9 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 						.addContainerGap())
 				);
 
-		list = new SimpleJList<String>(this);
-		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		scrollPane.setViewportView(list);
+		templateList = new SimpleJList<String>(this);
+		templateList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane.setViewportView(templateList);
 		setLayout(groupLayout);
 	}
 
@@ -2875,13 +3009,13 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 	}
 
 	private void refreshTemplatesList() {
-		this.list.clear();
+		this.templateList.clear();
 		File settingsDir = new File(Settings.SettingsManager.settingsMainPath);
 		if (settingsDir.exists() && settingsDir.isDirectory()) {
 			for (File file : settingsDir.listFiles()) {
 				if (file.exists() && file.isFile() && file.getName().startsWith("settingsTemplate")) {
 					String rawName = file.getName().substring(0, file.getName().indexOf(".")).replaceFirst("settingsTemplate", "");
-					this.list.addItem(rawName.replaceAll("_", " "));
+					this.templateList.addItem(rawName.replaceAll("_", " "));
 				}
 			}
 		}
@@ -3000,13 +3134,11 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 				return;
 			}
 		}
-		
-		System.out.println("1");
-		
+				
 		ChannelManager cmToSet = null;
 		
 		if (fileToOpen.getName().equals("postroistate.ser")) {
-			System.out.println("2");
+
 			try {
 				ROIEditableImage roiEditableImage = ROIEditableImage.loadROIEditableImage(fileToOpen);
 				if (roiEditableImage == null)
@@ -3018,7 +3150,7 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 				return;
 			}
 		} else {
-			System.out.println("3");
+
 			try {
 				ObjectEditableImage objEditableImage = ObjectEditableImage.loadObjEditableImage(fileToOpen);
 				if (objEditableImage == null)
@@ -3030,17 +3162,87 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 				return;
 			}
 		}
-		System.out.println("4");
 		
+		String templateName = GUI.getInput("Select a name for this settings template:", "Create Settings Template", prefs);
+
+		if (templateName == null || templateName.isEmpty()) {
+			return;
+		} else if (!StringUtils.isAlphanumericSpace(templateName)) {
+			GUI.displayMessage("The name of a settings template can only contain numbers, letters, and spaces.", 
+					"Settings Tempalte Error", prefs, JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		String fileName = "settingsTemplate" + templateName.replaceAll(" ", "_").trim() + ".yml";
+		File settingsFile = new File(Settings.SettingsManager.settingsMainPath + File.separator + fileName);
+		if (settingsFile.exists()) {
+			GUI.displayMessage("A template with this name already exists.", 
+					"Settings Template Error", prefs, JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+				
 		for (SettingsPanel settingsPanel : prefs.getSettingsPages()) {
 			if (settingsPanel instanceof ChannelSettingsHandler) {
-				System.out.println("5");
 				((ChannelSettingsHandler) settingsPanel).setLocalCMCopy(cmToSet);
 				settingsPanel.reset(GUI.settings, true);
 			}
 		}
+		
+		Object errors = prefs.applyPreferences(fileName);
 
+		if (errors != null) {
 
+			if (errors instanceof SettingsPanel) {
+				displayError("Could not create template – the current configuration has errors.");
+				return;
+			} else {
+				GUI.displayMessage("Could not create template - could not write preferences:<br><br>" + errors.toString(), "I/O Failure", prefs, JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+		}
+
+		refreshTemplatesList();
+		
+
+	}
+	
+	public void _createTemplateFromCurrentConfig() {
+		
+		String name = GUI.getInput("Select a name for this settings template:", "Create Settings Template", prefs);
+
+		if (name == null || name.isEmpty()) {
+			return;
+		} else if (!StringUtils.isAlphanumericSpace(name)) {
+			GUI.displayMessage("The name of a settings template can only contain numbers, letters, and spaces.", 
+					"Settings Tempalte Error", prefs, JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		String fileName = "settingsTemplate" + name.replaceAll(" ", "_").trim() + ".yml";
+		File file = new File(Settings.SettingsManager.settingsMainPath + File.separator + fileName);
+		if (file.exists()) {
+			GUI.displayMessage("A template with this name already exists.", 
+					"Settings Template Error", prefs, JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		Object errors = prefs.applyPreferences(fileName);
+
+		if (errors != null) {
+
+			if (errors instanceof SettingsPanel) {
+				displayError("Could not create template – the current configuration has errors.");
+				return;
+			} else {
+				GUI.displayMessage("Could not create template - could not write preferences:<br><br>" + errors.toString(), "I/O Failure", prefs, JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+		}
+
+		refreshTemplatesList();
+		
 	}
 
 	@Override

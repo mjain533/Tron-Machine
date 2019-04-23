@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.Set;
 
+import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayPage;
 import com.typicalprojects.TronMachine.popup.Displayable;
 
 public class ChannelManager implements Serializable, Cloneable {
@@ -536,7 +537,7 @@ public class ChannelManager implements Serializable, Cloneable {
 	}
 	
 	
-	public static class Channel implements Displayable, Serializable, Cloneable {
+	public static class Channel implements Displayable, Serializable, Cloneable, PnlDisplayPage {
 		
 		private static final long serialVersionUID = -5782207945664373884L;
 		private String name;
@@ -699,6 +700,11 @@ public class ChannelManager implements Serializable, Cloneable {
 				return null;
 			}
 			
+		}
+
+		@Override
+		public String getDisplayAbbrev() {
+			return this.abbrev + "";
 		}
 
 	}

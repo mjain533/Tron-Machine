@@ -42,7 +42,6 @@ import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -57,13 +56,16 @@ import com.typicalprojects.TronMachine.neuronal_migration.Settings;
 import com.typicalprojects.TronMachine.popup.HelpPopup;
 import com.typicalprojects.TronMachine.util.CustomFileChooser;
 import com.typicalprojects.TronMachine.util.DeepDirectoryWalker;
-import com.typicalprojects.TronMachine.util.FileBrowser;
 import com.typicalprojects.TronMachine.util.FileContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.SimpleJList.ListDropReceiver;
-import com.typicalprojects.TronMachine.util.Toolbox;
 
+/**
+ * The panel used for initial file selection. On the left side of the GUI.
+ * 
+ * @author Justin Carrington
+ */
 public class PnlSelectFiles implements ListDropReceiver {
 
 

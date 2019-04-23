@@ -147,7 +147,7 @@ public class ResultsTable implements Serializable {
 		if (column>=maxColumns)
 			addColumns();
 		if (column<0 || column>=maxColumns)
-			throw new IllegalArgumentException("Column out of range");
+			throw new IllegalArgumentException("ObjectColumn out of range");
 		if (counter==0)
 			throw new IllegalArgumentException("Counter==0");
 		if (columns[column]==null) {
@@ -172,7 +172,7 @@ public class ResultsTable implements Serializable {
 	 */
 	public void addValue(String column, double value) {
 		if (column==null)
-			throw new IllegalArgumentException("Column is null");
+			throw new IllegalArgumentException("ObjectColumn is null");
 		int index = getColumnIndex(column);
 		if (index==COLUMN_NOT_FOUND)
 			index = getFreeColumn(column);
@@ -184,7 +184,7 @@ public class ResultsTable implements Serializable {
 		does not exist, it is created.  Counter must be >0. */
 	public void addValue(String column, String value) {
 		if (column==null)
-			throw new IllegalArgumentException("Column is null");
+			throw new IllegalArgumentException("ObjectColumn is null");
 		int index = getColumnIndex(column);
 		if (index==COLUMN_NOT_FOUND)
 			index = getFreeColumn(column);
@@ -352,7 +352,7 @@ public class ResultsTable implements Serializable {
 		if (column>=maxColumns || row>=counter)
 			throw new IllegalArgumentException("Index out of range: "+column+","+row);
 		if (columns[column]==null)
-			throw new IllegalArgumentException("Column not defined: "+column);
+			throw new IllegalArgumentException("ObjectColumn not defined: "+column);
 		return columns[column][row];
 	}
 
@@ -415,7 +415,7 @@ public class ResultsTable implements Serializable {
 		if (column>=maxColumns || row>=counter)
 			throw new IllegalArgumentException("Index out of range: "+column+","+row);
 		if (columns[column]==null)
-			throw new IllegalArgumentException("Column not defined: "+column);
+			throw new IllegalArgumentException("ObjectColumn not defined: "+column);
 		return getValueAsString(column, row);
 	}
 
@@ -436,7 +436,7 @@ public class ResultsTable implements Serializable {
 		window that displays the table.*/
 	public void setValue(String column, int row, double value) {
 		if (column==null)
-			throw new IllegalArgumentException("Column is null");
+			throw new IllegalArgumentException("ObjectColumn is null");
 		int col = getColumnIndex(column);
 		if (col==COLUMN_NOT_FOUND)
 			col = getFreeColumn(column);
@@ -449,7 +449,7 @@ public class ResultsTable implements Serializable {
 		if (column>=maxColumns)
 			addColumns();
 		if (column<0 || column>=maxColumns)
-			throw new IllegalArgumentException("Column out of range");
+			throw new IllegalArgumentException("ObjectColumn out of range");
 		if (row>=counter) {
 			if (row==counter)
 				incrementCounter();
@@ -476,7 +476,7 @@ public class ResultsTable implements Serializable {
 		window that displays the table.*/
 	public void setValue(String column, int row, String value) {
 		if (column==null)
-			throw new IllegalArgumentException("Column is null");
+			throw new IllegalArgumentException("ObjectColumn is null");
 		int col = getColumnIndex(column);
 		if (col==COLUMN_NOT_FOUND)
 			col = getFreeColumn(column);
@@ -703,7 +703,7 @@ public class ResultsTable implements Serializable {
 	 */
 	public void setHeading(int column, String heading) {
 		if ((column<0) || (column>=headings.length))
-			throw new IllegalArgumentException("Column out of range: "+column);
+			throw new IllegalArgumentException("ObjectColumn out of range: "+column);
 		headings[column] = heading;
 		if (columns[column]==null) {
 			columns[column] = new double[maxRows];
@@ -734,7 +734,7 @@ public class ResultsTable implements Serializable {
 
 	public void setDecimalPlaces(int column, int digits) {
 		if ((column<0) || (column>=headings.length))
-			throw new IllegalArgumentException("Column out of range: "+column);
+			throw new IllegalArgumentException("ObjectColumn out of range: "+column);
 		decimalPlaces[column] = (short)digits;
 	}
 

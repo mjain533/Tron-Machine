@@ -54,10 +54,10 @@ import org.apache.commons.lang.StringUtils;
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
 import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.Analyzer.Calculation;
 import com.typicalprojects.TronMachine.popup.Displayable;
 import com.typicalprojects.TronMachine.popup.MultiSelectPopup;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
+import com.typicalprojects.TronMachine.util.Analyzer;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Line;
 import com.typicalprojects.TronMachine.util.Logger;
@@ -65,6 +65,7 @@ import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.ResultsTable;
 import com.typicalprojects.TronMachine.util.Toolbox;
+import com.typicalprojects.TronMachine.util.Analyzer.Calculation;
 
 import ij.ImagePlus;
 import ij.gui.ImageRoi;
@@ -253,7 +254,7 @@ public class ROIEditableImage implements Serializable {
 							continue;
 
 						try {
-							boolean firstIsPositive = ic.isWithinImage(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
+							boolean firstIsPositive = ic.isWithinImageBounds(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
 							if (firstIsPositive) {
 								Toolbox.drawString(ip, font, "+", val[0], val[1], Color.YELLOW, null);
 								Toolbox.drawString(ip, font, "-", val[2], val[3], Color.YELLOW, null);
@@ -560,7 +561,7 @@ public class ROIEditableImage implements Serializable {
 								continue;
 
 							try {
-								boolean firstIsPositive = ic.isWithinImage(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
+								boolean firstIsPositive = ic.isWithinImageBounds(val[0], val[1]) ? roiWrapper.isPositive(val[0], val[1]) : !roiWrapper.isPositive(val[2], val[3]);
 								if (firstIsPositive) {
 									Toolbox.drawString(ip, font, "+", val[0], val[1], Color.YELLOW, null);
 									Toolbox.drawString(ip, font, "-", val[2], val[3], Color.YELLOW, null);
@@ -688,8 +689,8 @@ public class ROIEditableImage implements Serializable {
 
 	public ImagePlus getImgWithDots(Channel chan, boolean includeTextOnDots, boolean dots, boolean mask, boolean original){
 
-		int newFontSize = Custom3DObjectCounter.opResultFontSize;
-		int newDotSize = Custom3DObjectCounter.opResultDotsSize;
+		int newFontSize = ObjectCounter.opResultFontSize;
+		int newDotSize = ObjectCounter.opResultDotsSize;
 
 		ImagePlus stack = null;
 		if (mask) {

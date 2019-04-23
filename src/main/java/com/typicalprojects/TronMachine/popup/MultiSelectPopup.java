@@ -25,6 +25,7 @@ import javax.swing.JList;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.awt.event.ActionEvent;
@@ -165,11 +166,23 @@ public class MultiSelectPopup<K extends Displayable> extends JDialog {
 		this.lblInstructions.setText(instructions);
 		this.cancelled = false;
 		this.lstOptions.setItems(options);
-		for (Displayable option : selected) {
-			this.lstOptions.setSelectedValue(option, false);
+		
+		this.lstOptions.clearSelection();
+		
+		List<Integer> indices = new ArrayList<Integer>();
+		int index = 0;
+		for (K option : options) {
+			if (selected.contains(option)) {
+				indices.add(index);
+			}
+			index++;
 		}
+		this.lstOptions.setSelectedIndices(indices.stream().mapToInt(i -> i).toArray());
+
+		this.lstOptions.refresh();
 		pack();
 		setLocationRelativeTo(relative);
+		this.lstOptions.refresh();
 		setVisible(true);
 		
 		if (cancelled) {
@@ -180,6 +193,7 @@ public class MultiSelectPopup<K extends Displayable> extends JDialog {
 	}
 	
 	public void removeDisplay(boolean cancel) {
+		System.out.println("-2");
 		this.cancelled = cancel;
 		setVisible(false);
 	}

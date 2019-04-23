@@ -64,6 +64,8 @@ public class ImagePanel extends JPanel{
 		
 		if (x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1)) {
 			
+			
+			
 			if (this.zoom != null && this.zoom != Zoom.ZOOM_100) {
 				double modedX = (zoomWidth * ((x - posX) / (double) imgPartWidth)) + zoomX;
 				double modedY = (zoomHeight * ((y - posY) / (double) imgPartHeight)) + zoomY;
@@ -78,6 +80,7 @@ public class ImagePanel extends JPanel{
 				return new Point((int) xImg, (int)yImg, null);
 
 			}
+			
 
 		} else {
 			return null;

@@ -40,16 +40,16 @@ import com.typicalprojects.TronMachine.util.ResultsTable;
 
 
 
-public class Custom3DCounter {
+public class CounterHelper {
 	
-	public enum Column {
+	public enum ObjectColumn {
 		
-		X("X", 0), Y("Y", 1);
+		X("X", 0), Y("Y", 1), Z("Z", 2);
 		
 		private String title;
 		private int colNum;
 		
-		private Column(String title, int colNum) {
+		private ObjectColumn(String title, int colNum) {
 			this.title = title;
 			this.colNum = colNum;
 		}
@@ -85,7 +85,7 @@ public class Custom3DCounter {
 
 	boolean gotCentreOfMass=false, gotCentroid=false, gotSurfList=false, gotSurfCoord=false;
 
-	public Custom3DCounter(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, Logger progressID, NeuronProcessor np) {
+	public CounterHelper(final ImagePlus img, int thr, int minSize, int maxSize, boolean exclude, Logger progressID, NeuronProcessor np) {
 
 		this.thr = thr;
 		this.width=img.getWidth();
@@ -576,13 +576,13 @@ public class Custom3DCounter {
 	 * </ul>
 	 */
 	@SuppressWarnings("deprecation")
-	public ResultsTable createStatisticsTable(Custom3DObjectCounterStats stats){
+	public ResultsTable createStatisticsTable(CounterPrefs stats){
 		//float calXYZ=(float) (cal.pixelWidth*cal.pixelHeight*cal.pixelDepth);
 		//String unit=cal.getUnit();
 
 		//String[] header={"", "Surface ("+unit+"^2)", "Nb of obj. voxels", "Nb of surf. voxels", "IntDen", "Mean", "StdDev", "Median", "Min", "Max", "X", "Y", "Z", "Mean dist. to surf. ("+unit+")", "SD dist. to surf. ("+unit+")", "Median dist. to surf. ("+unit+")", "XM", "YM", "ZM", "BX", "BY", "BZ", "B-width", "B-height", "B-depth"};
 		ResultsTable rt = new ResultsTable();
-		for (Column col : Column.values()) {
+		for (ObjectColumn col : ObjectColumn.values()) {
 			rt.setHeading(col.colNum, col.title);
 		}
 		for (int i=0; i<nbObj; i++){
@@ -594,7 +594,7 @@ public class Custom3DCounter {
 			if (stats.calcNbObjVoxels) rt.setValue("Nb of obj. voxels", i, currObj.size);
 			if (stats.calcNbSurfVoxels) rt.setValue("Nb of surf. voxels", i, currObj.surf_size);
 			if (stats.calcIntegratedDensity) rt.setValue("IntDen", i, currObj.int_dens);*/
-			//if (stats.calcMeanGrayVal) rt.setValue(Column.Grayscale.title, i, currObj.mean_gray);
+			//if (stats.calcMeanGrayVal) rt.setValue(ObjectColumn.Grayscale.title, i, currObj.mean_gray);
 			/*if (stats.calcStDevGrayVal) rt.setValue("StdDev", i, currObj.SD);
 			if (stats.calcMedianGrayVal) rt.setValue("Median", i, currObj.median);
 			if (stats.calcMinGrayVal) rt.setValue("Min", i, currObj.min);
@@ -603,9 +603,11 @@ public class Custom3DCounter {
 
 			if (/*stats.calcCentroid*/true){
 				float[] tmpArray=currObj.centroid;
-				rt.setValue(Column.X.title, i, tmpArray[0]);
-				rt.setValue(Column.Y.title, i, tmpArray[1]);
-				/*if (nbSlices!=1) rt.setValue("Z", i, tmpArray[2]);*/
+				rt.setValue(ObjectColumn.X.title, i, tmpArray[0]);
+				rt.setValue(ObjectColumn.Y.title, i, tmpArray[1]);
+				
+				if (nbSlices!=1) rt.setValue("Z", i, tmpArray[2]);
+				else rt.setValue("Z", i, 0);
 			}
 
 			/*if (stats.calcMeanDistSurf) rt.setValue("Mean dist. to surf. ("+unit+")", i, currObj.mean_dist2surf);

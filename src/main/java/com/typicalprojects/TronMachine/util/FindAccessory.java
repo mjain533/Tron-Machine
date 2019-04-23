@@ -38,12 +38,11 @@ import javax.swing.border.*;
 import java.beans.*;
 
 
-public class FindAccessory	extends		JPanel
-implements	Runnable,
-PropertyChangeListener,
-ActionListener,
-FindProgressCallback
+public class FindAccessory extends JPanel implements	Runnable, PropertyChangeListener, ActionListener, FindProgressCallback
 {
+
+	private static final long serialVersionUID = -7396167150485707733L;
+
 	/**
 	Label for this accessory.
 	 */
@@ -557,7 +556,7 @@ FindProgressCallback
 
 		public void setFindDirectory (File f)
 		{
-			
+
 			if (searchDirectory == null) return;
 			if (f != null) searchDirectory.setText(f.getAbsolutePath());
 			else searchDirectory.setText(null);

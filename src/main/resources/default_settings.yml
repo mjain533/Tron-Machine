@@ -21,6 +21,8 @@ MinimumThreshold: 0
 UnsharpMaskRadius: 20
 UnsharpMaskWeight: 0.8
 GaussianSigma: 0.5
+PostProcessObj: false
+PostProcessObjDeleteInfo: true
 Calibrations:
 - 'Default (one pixel : 1.0 microns)'
 SelectedCalibration: 1
@@ -53,6 +55,7 @@ OutputOptionsDisabled:
 - BinDrawDNoNum()
 - ProcessedD()
 - ProcessedOb()
+- ProcessedObStack()
 - ProcessedDOb()
 - ProcessedDOr()
 - ProcessedObOr()

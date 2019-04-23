@@ -23,16 +23,42 @@
  *     Erik Dent
  *     
  */
-package com.typicalprojects.TronMachine.neuronal_migration.processing;
+package com.typicalprojects.TronMachine.util;
 
 import java.util.Arrays;
 
+/**
+ * Class used for many simple calculation in the TRON machine.
+ * 
+ * @author Justin Carrington
+ *
+ */
 public class Analyzer {
 	
+	/**
+	 * An enumeration with the types of calculations that the analyzer can perform.
+	 * 
+	 * @author Justin Carrington
+	 *
+	 */
 	public enum Calculation {
-		PERCENT_MIGRATION, AVERAGE, NUM, STDEV, SQ_DIST, DIST
+		PERCENT_MIGRATION, 
+		AVERAGE, 
+		NUM, 
+		STDEV, 
+		SQ_DIST, 
+		DIST
 	}
 	
+	/**
+	 * Performs a calculation with the supplied information.
+	 * 
+	 * @param calc		The calculation to perform.
+	 * @param inputs		Inputs required for the calculation.
+	 * @return			The result of the calculation
+	 * @throws ArithmeticException	Any errors during calculation, including if the supplied inputs were
+	 * incorrect.
+	 */
 	public static double calculate(Calculation calc, double... inputs) throws ArithmeticException {
 		
 		switch (calc) {
@@ -40,7 +66,7 @@ public class Analyzer {
 			try {
 				return 100 - (100 * (inputs[0] / (inputs[0] - inputs[1])));
 			} catch (Exception e) {
-				throw new ArithmeticException("Null inputs or divide by zero when calculation percent migration");
+				throw new ArithmeticException("Incorrect inputs or divide by zero when calculating percent migration");
 			}
 		case AVERAGE:
 			try {
@@ -51,6 +77,7 @@ public class Analyzer {
 				}
 				return sum / inputs.length;
 			} catch (Exception e) {
+				throw new ArithmeticException("Incorrect inputs or divide by zero when calculating average");
 			}
 		case NUM:
 			return inputs.length;
@@ -63,19 +90,19 @@ public class Analyzer {
 				}
 				return Math.sqrt((sums / (inputs.length - 1)));
 			} catch (Exception e) {
-				throw new ArithmeticException("Null inputs or divide by zero when calculating average");
+				throw new ArithmeticException("Null inputs or divide by zero when calculating standard deviation");
 			}
 		case SQ_DIST:
 			try {
 				return Math.pow((inputs[0] - inputs[1]), 2) + Math.pow((inputs[2] - inputs[3]), 2);
 			} catch (Exception e) {
-				throw new ArithmeticException("Not enough inputs.");
+				throw new ArithmeticException("Not enough inputs when calculating squared distance.");
 			}
 		case DIST:
 			try {
 				return Math.sqrt(Math.pow((inputs[0] - inputs[1]), 2) + Math.pow((inputs[2] - inputs[3]), 2));
 			} catch (Exception e) {
-				throw new ArithmeticException("Not enough inputs.");
+				throw new ArithmeticException("Not enough inputs when calculating distances.");
 			}
 
 		}

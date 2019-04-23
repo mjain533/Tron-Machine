@@ -25,6 +25,8 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration.processing;
 
+import com.typicalprojects.TronMachine.util.Logger;
+
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 import ij.process.StackConverter;
@@ -46,8 +48,7 @@ public class Thresholder {
 		this.imp = imp;
 	}
 	
-	@SuppressWarnings("unused")
-	public void threshold(int minThreshold) {
+	public int threshold(int minThreshold, Logger log, String taskName) {
 
 		if (imp.getBitDepth()!=8 && imp.getBitDepth()!=16) {
 			throw new IllegalArgumentException();
@@ -55,21 +56,30 @@ public class Thresholder {
 		
 		int stackSize = this.imp.getStackSize();
 
+		int thresh=-1;
 		
 		boolean success = false;
 		if (stackSize>1 && (this.opUseStack || this.opUseHistogram) ) {
 			if (this.opUseHistogram) {// one global histogram
 				Object[] result = execute(minThreshold);
-				if (((Integer) result[0]) != -1 && imp.getBitDepth()==16)
+				if (((Integer) result[0]) != -1 && imp.getBitDepth()==16) {
+					thresh = (int) result[0];
 					new StackConverter(imp).convertToGray8();
+				}
 			}
 			else{ // slice by slice
 				success=true;
+				log.setCurrentTask(taskName);
+
 				for (int k=1; k<=stackSize; k++){
+					log.setCurrentTaskProgress(k, stackSize);
 					imp.setSlice(k);
 					Object[] result = execute(minThreshold);
 					if (((Integer) result[0]) == -1) success = false;// the threshold existed
+					System.out.println("Threshold: " + result[0]);
+					thresh = Math.max(thresh, (int) result[0]);
 				}
+				log.setCurrentTaskComplete();
 				if (success && imp.getBitDepth()==16)
 					new StackConverter(imp).convertToGray8();
 			}
@@ -78,10 +88,13 @@ public class Thresholder {
 		else { //just one slice, leave as it is
 			Object[] result = execute(minThreshold);
 			if(((Integer) result[0]) != -1 && stackSize==1 &&  imp.getBitDepth()==16) {
+				thresh = (int) result[0];
 				imp.setDisplayRange(0, 65535);  
 				imp.setProcessor(null, imp.getProcessor().convertToByte(true));
 			}
 		}
+		
+		return thresh;
 		// 5 - If all went well, show the image:
 		// not needed here as the source image is binarised
 
@@ -153,7 +166,6 @@ public class Thresholder {
 			threshold = IJDefault(data2);
 			
 			
-			
 		}
 		
 
@@ -203,6 +215,77 @@ public class Thresholder {
 		}
 		imp.updateAndDraw();
 		return new Object[] {threshold, imp};
+	}
+	
+	public int getThreshold(int minThreshold) {
+		if (null == imp) return -1;
+		int threshold=-1;
+		int currentSlice = imp.getCurrentSlice();
+		ImageProcessor ip = imp.getProcessor();
+		int xe = ip.getWidth();
+		int ye = ip.getHeight();
+		int x, y, c=0;
+		int b = imp.getBitDepth()==8?255:65535;
+		if (this.opWhiteObjblackBackground){
+			c=b;
+			b=0;
+		}
+		int [] data = (ip.getHistogram());
+		int [] temp = new int [data.length];
+
+		//1 Do it
+		if (imp.getStackSize()==1){
+			ip.snapshot();
+		} else if (this.opUseHistogram){
+
+			temp=data;
+			for(int i=1; i<=imp.getStackSize();i++) {
+
+				if (i==currentSlice)
+					continue;
+				imp.setSliceWithoutUpdate(i);
+				ip = imp.getProcessor();
+				temp= ip.getHistogram();
+				for(int j=0; j<data.length; j++) {
+					data[j]+=temp[j];
+				}
+			}
+			imp.setSliceWithoutUpdate(currentSlice);
+		}
+
+		if (this.opIgnoreBlack) data[0]=0;
+		if (this.opIgnoreWhite) data[data.length - 1]=0;
+
+		// bracket the histogram to the range that holds data to make it quicker
+		int minbin=-1, maxbin=-1;
+		for (int i=0; i<data.length; i++){
+			if (data[i]>0) maxbin = i;
+		}
+		for (int i=data.length-1; i>=0; i--){
+			if (data[i]>0) minbin = i;
+		}
+
+		int [] data2 = new int [(maxbin-minbin)+1];
+		for (int i=minbin; i<=maxbin; i++){
+			data2[i-minbin]= data[i];;
+		}
+
+		if (data2.length < 2){
+			threshold = 0;
+			
+		} else {
+			threshold = IJDefault(data2);
+			
+			
+		}
+		
+
+		threshold+=minbin; // add the offset of the histogram
+
+		if (threshold < minThreshold) {
+			threshold = minThreshold;
+		}
+		return threshold;
 	}
 
 	public static int IJDefault(int [] data ) {

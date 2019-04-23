@@ -111,7 +111,16 @@ public class NeuronProcessor {
 								ic.addImage(OutputOption.MaxedChannel, chan, (ImagePlus) chanProcessed[1]);
 								ic.addImage(OutputOption.ProcessedObjects, chan, (ImagePlus) chanProcessed[2]);
 								
-								tables.put(chan.getName(), (ResultsTable) chanProcessed[3]);
+								if (ic.getRunConfig().channelMan.hasOutput(OutputOption.ProcessedObjectsStack)) {
+									ic.saveSupplementalImage(OutputOption.ProcessedObjectsStack, (ImagePlus) chanProcessed[3], chan);
+								}
+								
+								if (GUI.settings.processingPostObj && ic.getRunConfig().channelMan.getProcessChannels().size() > 1) {
+									((ImagePlus) chanProcessed[3]).show();
+									ic.addImage(OutputOption.ProcessedObjectsStack, chan, (ImagePlus) chanProcessed[3]);
+								}
+								
+								tables.put(chan.getName(), (ResultsTable) chanProcessed[4]);
 								
 							} else {
 								projector.setImage(ic.getChannelOrig(chan, true));
@@ -121,8 +130,16 @@ public class NeuronProcessor {
 
 							}
 							
-							ic.removeOriginal(chan, ic.getRunConfig().channelMan.hasOutput(OutputOption.Channel, chan));
-
+							if (GUI.settings.processingPostObj && ic.getRunConfig().channelMan.getProcessChannels().size() > 1) {
+								if (ic.getRunConfig().channelMan.hasOutput(OutputOption.Channel, chan)) {
+									ic.saveOriginal(chan);
+								}
+								
+							} else {
+								ic.removeOriginalFromIC(chan, ic.getRunConfig().channelMan.hasOutput(OutputOption.Channel, chan));
+							}
+							
+							
 						}
 						
 						
@@ -205,8 +222,7 @@ public class NeuronProcessor {
 		IJ.run(duplicate, "8-bit", "stack");
 		logDone();
 	
-		log("Thresholding...");
-		new Thresholder(duplicate).threshold(GUI.settings.processingMinThreshold);
+		new Thresholder(duplicate).threshold(GUI.settings.processingMinThreshold, progressReporter, "Thresholding (auto)...");
 		logDone();
 		
 		log("Setting binary options...");
@@ -222,7 +238,7 @@ public class NeuronProcessor {
 		logDone();
 
 		log("Counting 3D objects...");
-		Custom3DObjectCounter counter =new Custom3DObjectCounter(duplicate);
+		ObjectCounter counter =new ObjectCounter(duplicate);
 
 		counter.run(progressReporter, this);
 		if (this.cancelled)
@@ -257,7 +273,7 @@ public class NeuronProcessor {
 		System.gc();
 		ImagePlus maxedOriginal = Toolbox.maxProject(originalImg);
 		ImageContainer.applyLUT(maxedOriginal, chan.getImgColor());
-		return new Object[] {impFinal, maxedOriginal, Toolbox.maxProject(counter.getObjectMap()), counter.getStats()};
+		return new Object[] {impFinal, maxedOriginal, Toolbox.maxProject(counter.getObjectMap()), counter.getObjectMap(), counter.getStats()};
 	}
 
 	/**

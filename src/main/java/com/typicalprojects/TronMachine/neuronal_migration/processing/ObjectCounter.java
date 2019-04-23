@@ -30,7 +30,7 @@ import com.typicalprojects.TronMachine.util.ResultsTable;
 
 import ij.ImagePlus;
 
-public class Custom3DObjectCounter {
+public class ObjectCounter {
 
 	private ImagePlus imageStack;
 
@@ -65,7 +65,7 @@ public class Custom3DObjectCounter {
 	public static int opImgCentroidsDispType = NONE;
 	public static int opImgCenterOfMassDispType = NUM_AND_DOTS;
 	
-	public static Custom3DObjectCounterStats statsPrefs = new Custom3DObjectCounterStats();
+	public static CounterPrefs statsPrefs = new CounterPrefs();
 	
 	private ImagePlus objectMap = null;
 	private ImagePlus surfaceMap = null;
@@ -75,7 +75,7 @@ public class Custom3DObjectCounter {
 	private String summary = null;
 	private ResultsTable stats = null;
 		
-	public Custom3DObjectCounter(ImagePlus imageStack) throws IllegalArgumentException {
+	public ObjectCounter(ImagePlus imageStack) throws IllegalArgumentException {
 		if (imageStack.getBitDepth()>16){
 			throw new IllegalArgumentException();
 		}
@@ -87,7 +87,7 @@ public class Custom3DObjectCounter {
 	public void run(Logger progress, NeuronProcessor nc) throws IllegalStateException {
 
 
-		Custom3DCounter OC = new Custom3DCounter(this.imageStack, this.threshold, minSize, maxSize, opExcludeOnEdges, progress, nc);
+		CounterHelper OC = new CounterHelper(this.imageStack, this.threshold, minSize, maxSize, opExcludeOnEdges, progress, nc);
 		
 		if (nc.isCancelled())
 			return;

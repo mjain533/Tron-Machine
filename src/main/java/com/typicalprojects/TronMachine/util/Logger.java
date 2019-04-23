@@ -25,14 +25,37 @@
  */
 package com.typicalprojects.TronMachine.util;
 
+/**
+ * An interface for any panel which allows logging in the TRON machine.
+ * 
+ * @author Justin Carrington
+ */
 public interface Logger {
 	
+	/**
+	 * Sets the current tasking being display by the logger, wiping any current progress on the currently
+	 * displayed task.
+	 * 
+	 * @param task The task to display
+	 */
 	public void setCurrentTask(String task);
 	
+	/**
+	 * Marks the current task as complete. The specific implementation is not specified by this interface.
+	 */
 	public void setCurrentTaskComplete();
 	
+	/**
+	 * Sets the progress for the current task.
+	 * 
+	 * @param progress The progress on the current task
+	 * @param total	   Total progress, presumably more than or equal to the the progress parameter.
+	 */
 	public void setCurrentTaskProgress(int progress, int total);
 	
+	/**
+	 * Marks a task as complete, but complete with an error.
+	 */
 	public void setCurrentTaskCompleteWithError();
 	
 }

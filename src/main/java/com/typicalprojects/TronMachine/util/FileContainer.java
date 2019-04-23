@@ -27,16 +27,39 @@ package com.typicalprojects.TronMachine.util;
 
 import java.io.File;
 
+/**
+ * Simple wrapper class. It's useful so I can control the effects of the {@link #toString()} method, as this
+ * method for File obejcts by default displays the full path.
+ * 
+ * @author Justin Carrington
+ */
 public class FileContainer {
 
+	/**
+	 * The file contained.
+	 */
 	public File file;
+	
+	/**
+	 * Whether the full path of this file should be printed by the {@link #toString()} method.
+	 */
 	public boolean printFullPath;
 
+	/**
+	 * Constructs a new File container.
+	 * 
+	 * @param file			Actual file
+	 * @param printFullPath	True if the full path should be printed by the {@link #toString()} method.
+	 */
 	public FileContainer(File file, boolean printFullPath) {
 		this.file = file;
 		this.printFullPath = printFullPath;
 	}
 
+	/**
+	 * @return the full path of just the file name, as specified during construction of this object.
+	 */
+	@Override
 	public String toString() {
 		if (this.printFullPath)
 			return file.getPath();
@@ -44,6 +67,11 @@ public class FileContainer {
 			return file.getName();
 	}
 	
+	/**
+	 * @return true if this container equals another. This is only true if the paths of the file within each
+	 * file container is equal.
+	 */
+	@Override
 	public boolean equals(Object other) {
 		if (other == null || !(other instanceof FileContainer))
 			return false;

@@ -33,16 +33,23 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+/**
+ * Class which represent the main frame for neurite processing, although this has not been implemented (and
+ * may never be implemented). It was simply a thought experiment that was never finished because of the
+ * complexity of modifying currently available open source software (i.e. Simple Neurite Tracer, an ImageJ
+ * plugin).
+ * 
+ * @author Justin Carrington
+ *
+ */
 public class NeuritesGUI extends JFrame {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6476288844924176771L;
 	private JPanel contentPane;
 
 	/**
-	 * Launch the application.
+	 * Launch the frame directly, for testing purposes only.
+	 * @param args no use
 	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {

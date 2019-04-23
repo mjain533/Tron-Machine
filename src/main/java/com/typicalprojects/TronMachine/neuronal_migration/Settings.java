@@ -45,7 +45,6 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import com.google.common.io.Files;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 
 public class Settings {
@@ -69,6 +68,8 @@ public class Settings {
 	public int processingUnsharpMaskRadius = 20;
 	public double processingUnsharpMaskWeight = 0.8;
 	public double processingGaussianSigma = 0.5;
+	public boolean processingPostObj = false;
+	public boolean processingPostObjDelete = true;
 	public List<String> calibrations = null;
 	public int calibrationNumber = -1;
 	public boolean enforceLUTs = true;
@@ -104,7 +105,8 @@ public class Settings {
 		private static final String keyEnforceLUTs = "EnforceLUTs";
 		private static final String keyOutputOptionsEnabled = "OutputOptionsEnabled";
 		private static final String keyOutputOptionsDisabled = "OutputOptionsDisabled";
-
+		private static final String keyProcessingPostObject = "PostProcessObj";
+		private static final String keyProcessPostObDel = "PostProcessObjDeleteInfo";
 
 
 		public static final String settingsFileName = "settings-v2.yml";
@@ -116,9 +118,6 @@ public class Settings {
 		@SuppressWarnings("unchecked")
 		public static Settings loadSettings(boolean forceLoadDefault) throws FileNotFoundException, SecurityException, IOException {
 
-			//ClassLoader classLoader = Settings.class.getClassLoader();
-			
-			//File defaultSettings = new File(classLoader.getResource("default_settings.yml").getFile());
 			InputStream defaultDataSource = /*new FileInputStream(defaultSettings)*/Settings.class.getClassLoader().getResourceAsStream("default_settings.yml");
 			LinkedHashMap<String, Object> defaultData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor())).load(defaultDataSource);
 
@@ -252,7 +251,9 @@ public class Settings {
 			settings.processingUnsharpMaskRadius = (Integer) dataToParse.get(keyProcessingUnsharpMaskRadius);
 			settings.processingUnsharpMaskWeight = (Double) dataToParse.get(keyProcessingUnsharpMaskWeight);
 			settings.processingGaussianSigma = (Double) dataToParse.get(keyProcessingGaussianSigma);
-
+			settings.processingPostObj = (boolean) dataToParse.get(keyProcessingPostObject);
+			settings.processingPostObjDelete = (boolean) dataToParse.get(keyProcessPostObDel);
+			
 			// Calibrations
 			settings.calibrations = (List<String>) dataToParse.get(keyCalibrations);
 			settings.calibrationNumber = (Integer) dataToParse.get(keySelectedCalibration);
@@ -386,6 +387,8 @@ public class Settings {
 			newSettings.put(keyProcessingUnsharpMaskRadius, settings.processingUnsharpMaskRadius);
 			newSettings.put(keyProcessingUnsharpMaskWeight, settings.processingUnsharpMaskWeight);
 			newSettings.put(keyProcessingGaussianSigma, settings.processingGaussianSigma);
+			newSettings.put(keyProcessingPostObject, settings.processingPostObj);
+			newSettings.put(keyProcessPostObDel, settings.processingPostObjDelete);
 			
 			// Calibration
 			newSettings.put(keyCalibrations, settings.calibrations);
@@ -476,20 +479,7 @@ public class Settings {
 
 		}
 
-		private static boolean _looselyTestEquality(Object object1, Object object2) {
-			if (object1 == null || object2 == null)
-				return false;
-
-			if (object1 instanceof List) {
-				return object2 instanceof List;
-			} else if (object1 instanceof Boolean) {
-				return object2 instanceof Boolean;
-			} else if (object1 instanceof Number) {
-				return object2 instanceof Number;
-			} else {
-				return object2 instanceof String;
-			}
-		}
+		
 
 
 	}

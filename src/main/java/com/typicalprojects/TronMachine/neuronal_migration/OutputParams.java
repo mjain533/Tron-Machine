@@ -94,13 +94,17 @@ public class OutputParams implements Serializable {
 			StringBuilder sb = new StringBuilder();
 			sb.append("<html>");
 			sb.append(option.getDisplay());
-			sb.append(" ( ");
+			if (this.option.getRestrictedOption() == OutputOption.NO_CHANS) {
+				sb.append("</html>");
+				return sb.toString();
+			}
+			sb.append(" (");
 			String delim = "";
 			for (Channel chan : this.includedChannels) {
 				sb.append(delim).append("<font color='").append(chan.getHtmlColor()).append("'>").append(chan.getAbbrev() + "").append("</font>");
 				delim = ",";
 			}
-			sb.append(" )</html>");
+			sb.append(")</html>");
 			return sb.toString();
 		} catch (Exception e) {
 			e.printStackTrace();
