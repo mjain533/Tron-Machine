@@ -184,8 +184,6 @@ public class IntermediateProcessingGUI extends JDialog implements ListDropReceiv
 				} else {
 					selected = fileChooser.open(gui.getComponent(), null);
 				}
-				System.out.println(selected == null);
-				System.out.println(selected.size());
 				processFiles(selected);
 			}
 		});

@@ -72,6 +72,7 @@ import org.json.JSONObject;
 import com.typicalprojects.TronMachine.MainFrame;
 import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsManager;
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
+import com.typicalprojects.TronMachine.neuronal_migration.panels.ImagePanel;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlInstructions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlLog;
@@ -594,7 +595,14 @@ public class GUI  {
 	public PnlSelectFiles getSelectFilesPanel() {
 		return this.pnlSelectFiles;
 	}
-
+	
+	/**
+	 * @return image panel contained within the displayu panel of the GUI
+	 */
+	public ImagePanel getImageDisplay() {
+		return this.pnlDisplay.getImagePanel();
+	}
+	
 	/**
 	 * @return display panel of the GUI
 	 */

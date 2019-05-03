@@ -45,7 +45,9 @@ public class Point implements Serializable{
 	public int y;
 	
 	/** Z-coordinate of this point */
-	public int z;
+	public double z;
+	
+	public int[] additionalData = new int[2];
 	
 	/** true if from object counter, false otherwise. This field can be null, which will happen when not discussing
 	 *  a point from the object selection phase of the TRON machine (i.e. a point on an ROI line).
@@ -66,11 +68,14 @@ public class Point implements Serializable{
 		this.fromObjCounter = fromObjCounter;
 	}
 	
-	public Point(int x, int y, int z, Boolean fromObjCounter) {
-		this.x = x;
-		this.y = y;
+	public Point(int x, int y, double z, Boolean fromObjCounter) {
+		this(x, y, fromObjCounter);
 		this.z = z;
-		this.fromObjCounter = fromObjCounter;
+	}
+	
+	public Point(int x, int y, double z, int[] extraData, Boolean fromObjCounter) {
+		this(x, y, z, fromObjCounter);
+		this.additionalData = extraData;
 	}
 	
 	/**

@@ -86,7 +86,7 @@ public class ROIEditableImage implements Serializable {
 	private transient GUI gui = null;
 
 	private List<PolarizedPolygonROI> rois = new ArrayList<PolarizedPolygonROI>();
-	private transient volatile Map<Channel, BufferedImage> cache = new HashMap<Channel, BufferedImage>();
+	private transient volatile Map<Channel, ImagePlus> cache = new HashMap<Channel, ImagePlus>();
 	private transient boolean selectingPositive = false;
 	private PolarizedPolygonROI currentlyCreating = null;
 	private Map<Tag, PolarizedPolygonROI> tags = new HashMap<Tag, PolarizedPolygonROI>();
@@ -148,7 +148,7 @@ public class ROIEditableImage implements Serializable {
 		ip.updateImage();
 	}
 
-	public BufferedImage getPaintedCopy(Channel channelToDrawROI) {
+	public ImagePlus getPaintedCopy(Channel channelToDrawROI) {
 		
 
 		if (this.cache.containsKey(channelToDrawROI)) {
@@ -160,20 +160,15 @@ public class ROIEditableImage implements Serializable {
 		ImagePlus dup = null;
 
 		if (getRunConfig().channelMan.isProcessChannel(channelToDrawROI)) {
-			dup = new ImagePlus("dup", 
-					this.
-					ic.
-					getImage(OutputOption.ProcessedFull, channelToDrawROI, /*note: changed to false*/true)
-					.getProcessor()
-					.convertToRGB());
+			dup = new ImagePlus("dup", this.ic.getImage(OutputOption.ProcessedFull, channelToDrawROI, true)
+					.getProcessor().convertToRGB());
 		} else {
-			dup = new ImagePlus("dup", this.ic.getImage(OutputOption.MaxedChannel, channelToDrawROI, /*note: changed to false*/true).getProcessor().convertToRGB());
+			dup = new ImagePlus("dup", this.ic.getImage(OutputOption.MaxedChannel, channelToDrawROI, true)
+					.getProcessor().convertToRGB());
 		}
 
-		BufferedImage bi = null;
 
 		ImageProcessor ip = dup.getProcessor();
-		//ip.setLineWidth(3);
 		double imgSize = Math.max(dup.getDimensions()[0], dup.getDimensions()[1] );
 		float strokeWidth = ((float) imgSize) / 300.0f;
 		double orthogonalDistanceFromLine = imgSize / 68;
@@ -233,9 +228,7 @@ public class ROIEditableImage implements Serializable {
 			int middleX = roi.getPolygon().xpoints[(roi.getPolygon().npoints / 2)];
 			middleX= Math.min(middleX, dup.getDimensions()[0] - 1 - (ip.getFontMetrics().stringWidth(roiWrapper.getName())/ 2));
 			middleX= Math.max(middleX, 0 + (ip.getFontMetrics().stringWidth(roiWrapper.getName()) / 2));
-			
-			ip.drawString(""); // TODO remove
-			
+						
 			ip.setColor(Color.YELLOW);
 			if(roiWrapper.positiveRegionIsSet()) {
 				if (roi.getPolygon().npoints > 12) {
@@ -289,14 +282,11 @@ public class ROIEditableImage implements Serializable {
 			whiteOverlay.setOpacity(0.5);
 			ip.drawOverlay(new Overlay(whiteOverlay));
 			dup.updateImage();
-		}
-
-		bi = dup.getBufferedImage();
-		
+		}		
 
 
-		this.cache.put(channelToDrawROI, bi);
-		return bi;
+		this.cache.put(channelToDrawROI, dup);
+		return dup;
 
 
 	}
@@ -877,7 +867,6 @@ public class ROIEditableImage implements Serializable {
 		
 		if (rc.channelMan.hasOutput(OutputOption.BinDrawMinBlank)) {
 			int[] dim = this.ic.getDimensions();
-			System.out.println("CAlled");
 			ipToDrawBINS.put(new ImagePlus("BlankBINDrawMin", new BufferedImage(dim[0], dim[1], BufferedImage.TYPE_INT_RGB)), new Object[] {null, OutputOption.BinDrawMinBlank});
 
 		}
@@ -1374,7 +1363,7 @@ public class ROIEditableImage implements Serializable {
 			throws IOException, ClassNotFoundException {
 
 		// initialize transient vars
-		this.cache = new HashMap<Channel, BufferedImage>();
+		this.cache = new HashMap<Channel, ImagePlus>();
 		this.selectingPositive = false;
 		this.multiSelectPopup = new MultiSelectPopup<Tag>();
 		// read objects

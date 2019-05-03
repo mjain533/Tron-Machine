@@ -44,7 +44,7 @@ public class CounterHelper {
 	
 	public enum ObjectColumn {
 		
-		X("X", 0), Y("Y", 1), Z("Z", 2);
+		X("X", 0), Y("Y", 1), Z("Z", 2), LowBound("MinBound", 3), UpBound("LowBound", 4);
 		
 		private String title;
 		private int colNum;
@@ -606,8 +606,17 @@ public class CounterHelper {
 				rt.setValue(ObjectColumn.X.title, i, tmpArray[0]);
 				rt.setValue(ObjectColumn.Y.title, i, tmpArray[1]);
 				
-				if (nbSlices!=1) rt.setValue("Z", i, tmpArray[2]);
-				else rt.setValue("Z", i, 0);
+				if (nbSlices!=1) {
+					rt.setValue(ObjectColumn.Z.title, i, tmpArray[2]);
+					rt.setValue(ObjectColumn.UpBound.title, i, currObj.bound_cube_BR[2]);
+					rt.setValue(ObjectColumn.LowBound.title, i, currObj.bound_cube_TL[2]);
+				} else {
+					rt.setValue(ObjectColumn.Z.title, i, 0);
+					rt.setValue(ObjectColumn.UpBound.title, i, 0);
+					rt.setValue(ObjectColumn.LowBound.title, i, 0);
+				}
+				
+				
 			}
 
 			/*if (stats.calcMeanDistSurf) rt.setValue("Mean dist. to surf. ("+unit+")", i, currObj.mean_dist2surf);

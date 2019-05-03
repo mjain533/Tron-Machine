@@ -69,8 +69,6 @@ public class ImageContainer implements Serializable {
 	public static final String STATE_OBJ = "postobjstate.ser";
 	public static final String STATE_SLC = "postslicestate.ser";
 
-
-
 	private transient Map<OutputOption, Map<Channel, ImagePlus>> images = new HashMap<OutputOption, Map<Channel, ImagePlus>>();
 
 	private String title;
@@ -150,15 +148,12 @@ public class ImageContainer implements Serializable {
 					ip.setProcessor(ip.getProcessor().convertToShortProcessor());
 					ip.setTitle(this.title + " Chan-" + chanEn.getKey().getAbbrev());
 					if (this.dimensions == null) this.dimensions = ip.getDimensions();
-					/*if (GUI.settings.enforceLUTs) {
+					if (GUI.settings.enforceLUTs) {
 						applyLUT(ip, chanEn.getKey().getImgColor());
 					} else {
 						applyLUT(ip, new Color(255, 255, 255));
-					}*/
+					}
 					
-					//TODO: change back
-					
-					applyInfernoLUT(ip);
 					origImages.put(chanEn.getKey(), ip);
 				} else {
 					throw new ImageOpenException("Incorrect channel configuration. Please use Preferences to specify channel mapping.");
@@ -570,7 +565,7 @@ public class ImageContainer implements Serializable {
 			AdvancedWorkbook aw = new AdvancedWorkbook();
 			List<String> keys = new ArrayList<String>(results.keySet());
 
-			for (Channel chan : this.runConfig.channelMan.getChannels()) {
+			for (Channel chan : this.runConfig.channelMan.getOrderedChannels()) {
 				if (keys.contains(chan.getName())) {
 					aw.addSheetFromNeuronCounterResultTable(chan.getName(), results.get(chan.getName()));
 					keys.remove(chan.getName());

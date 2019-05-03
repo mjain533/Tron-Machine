@@ -1730,12 +1730,13 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		pnlObjectPostProcess.setBorder(new LineBorder(new Color(0, 0, 0)));
 		pnlObjectPostProcess.setBackground(new Color(211, 211, 211));
 
-		JLabel lblProcessingSettings = new JLabel("Object Processing Parameter Values");
-		JLabel lblPostProcessingSettings = new JLabel("Object Post-Processing");
+		JLabel lblProcessingSettings = new JLabel("Neuron Processing Parameter Values");
+		JLabel lblPostProcessingSettings = new JLabel("Neuron Overlap");
 		
-		chkPostProcessObj = new JCheckBox("Enabled object post-processing features");
-		chkPostProcessObjDelete = new JCheckBox("Delete resources of post-processing (recommended)");
-		
+		chkPostProcessObj = new JCheckBox("Enabled overlap detection features");
+		chkPostProcessObjDelete = new JCheckBox("<html>Delete resources of post-processing (recommended--drastically reduces output file size, but then overlap "
+				+ "analysis cannot be performed after the first run, i.e. via Intermediate Processing)</html>");
+		chkPostProcessObjDelete.setVerticalTextPosition(SwingConstants.CENTER);
 		
 		GroupLayout gl_pnlProcessingSettings = new GroupLayout(pnlProcessingSettings);
 		gl_pnlProcessingSettings.setHorizontalGroup(
@@ -2553,12 +2554,9 @@ class PnlOutputOptions extends JPanel implements SettingsPanel, ChannelSettingsH
 						if (output.getOption().getRestrictedOption() == OutputOption.NO_CHANS)
 							return; // don't need to select channels, doesn't make sense for this option
 						
-						System.out.println(output.getContainedChannels().size());
 						List<Channel> newSelected = chanSelectPopup.getUserInput(Preferences.SINGLETON_FRAME, "Select channels:", cmCopy.getOrderedChannels(), output.getContainedChannels());
 						if (newSelected != null) {
-							System.out.println("adding");
 							cmCopy.setOutputParamChannels(output, new HashSet<Channel>(newSelected));
-							System.out.println("test");
 							list.refresh();
 						}
 					}

@@ -27,78 +27,111 @@ package com.typicalprojects.TronMachine.util;
 
 public enum Zoom {
 	
-	ZOOM_100(1), ZOOM_50(2), ZOOM_25(3), ZOOM_17(4);
+	ZOOM_100(1, 1.0), ZOOM_50(2, 0.5), ZOOM_25(3, 0.25), ZOOM_17(4, 0.125);
 	
 	private int level;
+	private double scaleFactor;
 	
-	private Zoom(int level) {
+	private Zoom(int level, double scaleFactor) {
 		this.level = level;
+		this.scaleFactor = scaleFactor;
 	}
 	
-	public static int[] zoomIn(int upperLeftX, int upperLeftY, int xDim, int yDim, int width, int height, int xCenter, int yCenter) {
-		
+	public int[] zoomOut(int currUpperLeftX, int currUpperLeftY, int imageDimensionX, int imageDimensionY, int xCenter, int yCenter) {
 		int[] output = new int[4];
 		
-		output[2] = (int) (width / 2.0);
-		output[3] = (int) (height / 2.0);
+		Zoom newZoom = getPreviousZoomLevel();
+		if (newZoom == Zoom.ZOOM_100) {
+			output[0] = 0;
+			output[1] = 0;
+			output[2] = imageDimensionX;
+			output[3] = imageDimensionY;
+			return output;
+		}
 		
-		double amountToSubtractX = output[2] * ( (xCenter - upperLeftX) / ((double) width));
-		double amountToSubtractY = output[3] * ( (yCenter - upperLeftY) / ((double) height));
-
+		output[2] = (int) Math.round(newZoom.scaleFactor * imageDimensionX); // new zoom width
+		output[3] = (int) Math.round(newZoom.scaleFactor * imageDimensionY); // new zoom height
+		double currentZoomWidth = Math.round(scaleFactor * imageDimensionX);
+		double currentZoomHeight = Math.round(scaleFactor * imageDimensionY);
 		
-		int newUpperLeftX = (int) (xCenter - amountToSubtractX);
-		int newUpperLeftY = (int) (yCenter - amountToSubtractY);
+		int newUpperLeftX;
+		int newUpperLeftY;
+		
+		if (xCenter != -1 && yCenter != -1) {
+			
+			// new width * ratio of mouse in from left of current VIEW (zoom)
+			double amountToSubtractX = output[2] * ( (xCenter - currUpperLeftX) / currentZoomWidth); 
 
+			// new height * ratio of mouse in from left of current VIEW (zoom)
+			double amountToSubtractY = output[3] * ( (yCenter - currUpperLeftY) / currentZoomHeight);
 
+			newUpperLeftX = (int) Math.round(xCenter - amountToSubtractX); // subtract, cast long to int
+			newUpperLeftY = (int) Math.round(yCenter - amountToSubtractY); // subtract, cast long to int
+			
+		} else {
+
+			newUpperLeftX = (int) (currUpperLeftX - (output[2] / 4.0));
+			newUpperLeftY = (int) (currUpperLeftY - (output[3] / 4.0));
+			
+		}
+		
 		if (newUpperLeftX < 0) {
 			newUpperLeftX = 0;
-		} else if ((newUpperLeftX + output[2]) > xDim) {
-			newUpperLeftX = xDim - output[2];
+		} else if ((newUpperLeftX + output[2]) > imageDimensionX) {
+			newUpperLeftX = imageDimensionX - output[2];
+
 		}
 		
 		if (newUpperLeftY < 0) {
 			newUpperLeftY = 0;
-		} else if ((newUpperLeftY + output[3]) > yDim) {
-			newUpperLeftY = yDim - output[3];
+		} else if ((newUpperLeftY + output[3]) > imageDimensionY) {
+			newUpperLeftY = imageDimensionY - output[3];
 		}
 		
 		output[0] = newUpperLeftX;
 		output[1] = newUpperLeftY;
+		
 		return output;
 	}
 	
-	public static int[] zoomOut(int upperLeftX, int upperLeftY, int xDim, int yDim, int width, int height, int xCenter, int yCenter) {
+	public int[] zoomIn(int currUpperLeftX, int currUpperLeftY, int imageDimensionX, int imageDimensionY, int xCenter, int yCenter) {
 		int[] output = new int[4];
 
-		output[2] = width * 2;
-		output[3] = height * 2;
-		
-		int newUpperLeftX;
-		int newUpperLeftY;
-		if (xCenter != -1 && yCenter != -1) {
-			double amountToSubtractX = output[2] * ( (xCenter - upperLeftX) / ((double) width));
-			double amountToSubtractY = output[3] * ( (yCenter - upperLeftY) / ((double) height));
-
-			newUpperLeftX = (int) (xCenter - amountToSubtractX);
-			newUpperLeftY = (int) (yCenter - amountToSubtractY);
-		} else {
-			newUpperLeftX = (int) (upperLeftX - (width / 2.0));
-			newUpperLeftY = (int) (upperLeftY - (height / 2.0));
+		Zoom nextZoom = getNextZoomLevel();
+		if (nextZoom == null)  {
+			
+			output[0] = 0;
+			output[1] = 0;
+			output[2] = imageDimensionX;
+			output[3] = imageDimensionY;
+			return output;
 		}
 		
+		output[2] = (int) Math.round(nextZoom.scaleFactor * imageDimensionX); // new zoom width
+		output[3] = (int) Math.round(nextZoom.scaleFactor * imageDimensionY); // new zoom height
+		double currentZoomWidth = Math.round(scaleFactor * imageDimensionX);
+		double currentZoomHeight = Math.round(scaleFactor * imageDimensionY);
+	
+		// new width * ratio of mouse in from left of current VIEW (zoom)
+		double amountToSubtractX = output[2] * ( (xCenter - currUpperLeftX) / currentZoomWidth); 
 
+		// new height * ratio of mouse in from left of current VIEW (zoom)
+		double amountToSubtractY = output[3] * ( (yCenter - currUpperLeftY) / currentZoomHeight);
+		
+		int newUpperLeftX = (int) (xCenter - amountToSubtractX);
+		int newUpperLeftY = (int) (yCenter - amountToSubtractY);
+		
 		if (newUpperLeftX < 0) {
 			newUpperLeftX = 0;
-		} else if ((newUpperLeftX + output[2]) > xDim) {
-			newUpperLeftX = xDim - output[2];
+		} else if ((newUpperLeftX + output[2]) > imageDimensionX) {
+			newUpperLeftX = imageDimensionX - output[2];
 		}
 		
 		if (newUpperLeftY < 0) {
 			newUpperLeftY = 0;
-		} else if ((newUpperLeftY + output[3]) > yDim) {
-			newUpperLeftY = yDim - output[3];
+		} else if ((newUpperLeftY + output[3]) > imageDimensionY) {
+			newUpperLeftY = imageDimensionY - output[3];
 		}
-		
 		
 		output[0] = newUpperLeftX;
 		output[1] = newUpperLeftY;

@@ -116,7 +116,6 @@ public class NeuronProcessor {
 								}
 								
 								if (GUI.settings.processingPostObj && ic.getRunConfig().channelMan.getProcessChannels().size() > 1) {
-									((ImagePlus) chanProcessed[3]).show();
 									ic.addImage(OutputOption.ProcessedObjectsStack, chan, (ImagePlus) chanProcessed[3]);
 								}
 								

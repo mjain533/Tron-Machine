@@ -1,6 +1,7 @@
 package com.typicalprojects.TronMachine.neuronal_migration.processing;
 
 
+
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Logger;
 
@@ -40,6 +41,12 @@ public class StackOverlapper {
 
 	}
 	
+	private void convertInputsTo16bit() {
+		IJ.run(ip1, "16-bit", "stack");
+		IJ.run(ip2, "16-bit", "stack");
+
+	}
+	
 	public void thresholdInputs(int minThreshold, Logger logger, String taskName) {
 		
 		convertInputsTo8bit();
@@ -51,9 +58,13 @@ public class StackOverlapper {
 
 	}
 	
-	public void mergeGreenRedInputs() {
+	public void mergeGreenRedInputs(boolean convertTo8Bit) {
 		
-		convertInputsTo8bit();
+		if (convertTo8Bit) {
+			convertInputsTo8bit();
+		} else if (ip1.getBitDepth() != 16 || ip2.getBitDepth() != 16) {
+			convertInputsTo16bit();
+		}
 		result = new ImagePlus("",RGBStackMerge.mergeStacks(ip2.getImageStack(), ip1.getImageStack(), null, true));
 	}
 	
@@ -127,8 +138,8 @@ public class StackOverlapper {
 				}
 			}
 		}
-		
-		IJ.run(rawOverlap, "Close-", "stack");
+				
+		//IJ.run(rawOverlap, "Close-", "stack");
 		IJ.run(rawOverlap, "Open", "stack");
 				
 		this.result = rawOverlap;

@@ -193,7 +193,6 @@ public class MultiSelectPopup<K extends Displayable> extends JDialog {
 	}
 	
 	public void removeDisplay(boolean cancel) {
-		System.out.println("-2");
 		this.cancelled = cancel;
 		setVisible(false);
 	}

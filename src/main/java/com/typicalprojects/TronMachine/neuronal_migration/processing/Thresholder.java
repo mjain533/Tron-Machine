@@ -48,6 +48,7 @@ public class Thresholder {
 		this.imp = imp;
 	}
 	
+	@SuppressWarnings("unused")
 	public int threshold(int minThreshold, Logger log, String taskName) {
 
 		if (imp.getBitDepth()!=8 && imp.getBitDepth()!=16) {
@@ -76,7 +77,6 @@ public class Thresholder {
 					imp.setSlice(k);
 					Object[] result = execute(minThreshold);
 					if (((Integer) result[0]) == -1) success = false;// the threshold existed
-					System.out.println("Threshold: " + result[0]);
 					thresh = Math.max(thresh, (int) result[0]);
 				}
 				log.setCurrentTaskComplete();
@@ -222,14 +222,7 @@ public class Thresholder {
 		int threshold=-1;
 		int currentSlice = imp.getCurrentSlice();
 		ImageProcessor ip = imp.getProcessor();
-		int xe = ip.getWidth();
-		int ye = ip.getHeight();
-		int x, y, c=0;
-		int b = imp.getBitDepth()==8?255:65535;
-		if (this.opWhiteObjblackBackground){
-			c=b;
-			b=0;
-		}
+
 		int [] data = (ip.getHistogram());
 		int [] temp = new int [data.length];
 

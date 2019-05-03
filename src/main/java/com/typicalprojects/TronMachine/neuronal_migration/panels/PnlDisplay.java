@@ -35,7 +35,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import javax.swing.GroupLayout;
 import javax.swing.JComponent;
@@ -52,14 +51,12 @@ import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
-import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
-import com.typicalprojects.TronMachine.util.ImagePanel;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Toolbox;
 import com.typicalprojects.TronMachine.util.Zoom;
 
 import ij.ImagePlus;
+
 
 /**
  * <p>The panel used to display the image being worked with. The display panel actually has an {@link ImagePanel}
@@ -184,7 +181,10 @@ public class PnlDisplay  {
 
 				lastSelectedSlice = slice;
 				lblSliceNum.setText(slice + "");
-				outputHandler.sliderSliceChanged(getSliderSelectedSlice());
+				ImagePlus ip = outputHandler.sliderSliceChanged(getSliderSelectedPage(), getSliderSelectedSlice());
+				if (ip != null) {
+					pnlImage.setImage(ip, true);
+				}
 			}
 		});
 		this.sldrPage.addChangeListener(new ChangeListener() {
@@ -198,8 +198,10 @@ public class PnlDisplay  {
 
 				lastSelectedPage = page;
 				lblPageNum.setText(page.getDisplayAbbrev() + "");
-				outputHandler.sliderPageChanged(page);
-
+				Object[] feedback = outputHandler.sliderPageChanged(page, getSliderSelectedSlice());
+				if (feedback[0] != null) {
+					pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
+				}
 
 			}
 		});
@@ -215,108 +217,91 @@ public class PnlDisplay  {
 						break;
 
 					case KeyEvent.KEY_PRESSED:
+						
 						switch (ke.getKeyCode()) {
+						case KeyEvent.VK_0:
+						case KeyEvent.VK_1:
+						case KeyEvent.VK_2:
+						case KeyEvent.VK_3:
+						case KeyEvent.VK_4:
+						case KeyEvent.VK_5:
+						case KeyEvent.VK_6:
+						case KeyEvent.VK_7:
+						case KeyEvent.VK_8:
+						case KeyEvent.VK_9:
+							outputHandler.keyboardCharPressed(ke.getKeyChar());
+							break;
 						case KeyEvent.VK_SHIFT:
 
-							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
-								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-								if (oei == null)
-									break;
+							java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
+							SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
+							
+							if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y) && gui.getComponent().isFocused()) {
+								ke.consume();
 								
-								Channel chan = (Channel) getSliderSelectedPage();
-								if (!oei.getRunConfig().channelMan.isProcessChannel(chan))
-									break;
-
-								java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
-								SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
-								//if  (javaPoint.x < 0 || javaPoint.x >= pnlImage.getWidth() || javaPoint.y < 0 || javaPoint.y >= pnlImage.getHeight()) {
-								//	break;
-								//}
-								Zoom zoom = oei.getNextZoom();
-
-								if (zoom != null) {
-
-									if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
-
-										oei.setZoom(zoom);
-
-										pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
-
-									}
+								pnlImage.zoomIn(javaPoint.x, javaPoint.y, true);
+								ImagePlus ip = outputHandler.zoomChanged(getSliderSelectedPage(), pnlImage.getZoom());
+								if (ip != null) {
+									pnlImage.setImage(ip, true);
 								}
-
+								pnlImage.repaint();
+								
 							}
+							
 							break;
 						case KeyEvent.VK_SPACE:
 						case KeyEvent.VK_ESCAPE:
-							if (gui.getWizard().getStatus() == Status.SELECT_OB) {
-								ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-								if (oei != null) {
-									Channel chan = (Channel) getSliderSelectedPage();
-
-									if (!oei.getRunConfig().channelMan.isProcessChannel(chan))
-										break;
-									java.awt.Point javaPoint = MouseInfo.getPointerInfo().getLocation();
-									SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
-									getImagePanel().grabFocus();
-									ke.consume();
-									if (!oei.getZoom().equals(Zoom.ZOOM_100)) {
-										Zoom zoom = oei.getPreviousZoomLevel();
-										oei.setZoom(zoom);
-										if (pnlImage.screenPositionIsInImage(javaPoint.x, javaPoint.y)) {
-											pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), javaPoint.x, javaPoint.y, zoom);
-										} else {
-											pnlImage.setImage(oei.getImgWithDots(chan).getBufferedImage(), -1, -1, zoom);
-										}
-
-									}
-
-								}
+							
+							javaPoint = MouseInfo.getPointerInfo().getLocation();
+							SwingUtilities.convertPointFromScreen(javaPoint, pnlImage);
+							if (!rawPanel.contains(javaPoint) || !gui.getComponent().isFocused()) {
+								break;
 							}
+							
+							ke.consume();
+							pnlImage.zoomOut(false, javaPoint.x, javaPoint.y, true);
+							ImagePlus ip = outputHandler.zoomChanged(getSliderSelectedPage(), pnlImage.getZoom());
+							if (ip != null) {
+								pnlImage.setImage(ip, true);
+							}
+							pnlImage.repaint();
+
+							break;
+						case KeyEvent.VK_R:
+						case KeyEvent.VK_E:
+							ke.consume();
+							outputHandler.keyboardCharPressed(ke.getKeyChar());
 							break;
 						case KeyEvent.VK_A:
 
-							if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
+							if (isMouseWithinImgPanel()) {
+								getImagePanel().grabFocus();
 								ke.consume();
-								gui.getPanelOptions().triggerROIAddButton();
-							} else if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (isMouseWithinImgPanel()) {
-									getImagePanel().grabFocus();
-									ke.consume();
-									getImagePanel().shiftImage(1);
-								}
-
+								getImagePanel().shiftImage(1);
 							}
 							break;
 						case KeyEvent.VK_W:
-							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (isMouseWithinImgPanel()) {
+							if (isMouseWithinImgPanel()) {
 
-									ke.consume();
-									getImagePanel().grabFocus();
-
-									getImagePanel().shiftImage(2);
-								}
+								ke.consume();
+								getImagePanel().grabFocus();
+								getImagePanel().shiftImage(2);
 							}
 							break;
 						case KeyEvent.VK_S:
-							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (isMouseWithinImgPanel()) {
+							if (isMouseWithinImgPanel()) {
 
-									ke.consume();
-									getImagePanel().grabFocus();
-									getImagePanel().shiftImage(4);
-								}
+								ke.consume();
+								getImagePanel().grabFocus();
+								getImagePanel().shiftImage(4);
 							}
 							break;
 						case KeyEvent.VK_D:
-							if (gui.getWizard().getStatus() == Status.SELECT_OB && gui.getPanelOptions().getObjectEditableImage() != null) {
-								if (isMouseWithinImgPanel()) {
+							if (isMouseWithinImgPanel()) {
 
-									ke.consume();
-									getImagePanel().grabFocus();
-									getImagePanel().shiftImage(3);
-								}
+								ke.consume();
+								getImagePanel().grabFocus();
+								getImagePanel().shiftImage(3);
 							}
 							break;
 						default:
@@ -362,37 +347,9 @@ public class PnlDisplay  {
 
 			public void mouseReleased(MouseEvent e) {
 				pnlImage.setCursor(cursor);
+				Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
+				outputHandler.mouseClickOnImage(p, getSliderSelectedPage(), getSliderSelectedSlice(), !SwingUtilities.isRightMouseButton(e));
 
-				if (gui.getWizard().getStatus() == Status.SELECT_OB) {
-					if (SwingUtilities.isRightMouseButton(e)){
-
-						ObjectEditableImage oei = gui.getPanelOptions().getObjectEditableImage();
-						
-						if (oei != null) {
-							Channel chan = (Channel) getSliderSelectedPage();
-							if (oei.getRunConfig().channelMan.isProcessChannel(chan)) {
-								Point p = pnlImage.getPixelPoint(e.getX(), e.getY());
-								Point closest = oei.getNearestPoint(chan, p);
-								if (closest != null) {
-									oei.removePoint(chan, closest);
-								}
-							}
-							
-						}
-
-					} else {
-						int x = e.getX();
-						int y = e.getY();
-						Point p = pnlImage.getPixelPoint(x, y);
-						outputHandler.mouseClickOnImage(p);
-					}
-
-				} else if (gui.getWizard().getStatus() == Status.SELECT_ROI) {
-					int x = e.getX();
-					int y = e.getY();
-					Point p = pnlImage.getPixelPoint(x, y);
-					outputHandler.mouseClickOnImage(p);
-				}
 			}
 
 			public void mouseEntered(MouseEvent e) {
@@ -462,55 +419,52 @@ public class PnlDisplay  {
 	public JPanel getRawPanel() {
 		return this.rawPanel;
 	}
-
-	public void setSliceSlider(boolean enabled, int min, int max) {
+	
+	public void disableSliceSlider(boolean keepSliceBounds) {
 		changing = true;
-		if (enabled) {
-			this.sldrSlice.setMinimum(min);
-			this.sldrSlice.setMaximum(max);
-			this.sldrSlice.setValue(min);
-			this.lblSliceNum.setText(min + "");
-			this.sldrSlice.setEnabled(true);
-
-		} else {
-			this.sldrSlice.setMinimum(1);
-			this.sldrSlice.setMaximum(2);
-			this.sldrSlice.setValue(1);
+		if (!keepSliceBounds) {
+			this.sldrSlice.setMinimum(0);
+			this.sldrSlice.setMaximum(1);
+			this.sldrSlice.setValue(0);
 			this.lblSliceNum.setText("--");
-			this.sldrSlice.setEnabled(false);
+		} else {
+			this.lblSliceNum.setText("--");
 		}
+		this.sldrSlice.setEnabled(false);
 		this.lastSelectedSlice = this.sldrSlice.getValue();
-
-		this.sldrSlice.setMinorTickSpacing(1);
-		this.sldrSlice.setSnapToTicks(true);
 		changing = false;
 	}
 
-	public void setSliceSlider(boolean enabled, int min, int max, int value) {
+	public void enableSliceSlider(int min, int max, int value, boolean usePreviousValues) {
+		
+		if (min < 1 || max <= min) {
+			throw new IllegalArgumentException();
+		}
 		changing = true;
-		if (enabled) {
+		
+		if (usePreviousValues && this.sldrSlice.getMinimum() != 0) {
+			this.lblSliceNum.setText(this.sldrSlice.getValue() + "");
+		} else {
 			this.sldrSlice.setMinimum(min);
 			this.sldrSlice.setMaximum(max);
 			this.sldrSlice.setValue(value);
-			this.lblSliceNum.setText(min + "");
-			this.sldrSlice.setEnabled(true);
+			this.lblSliceNum.setText(value + "");
 
-		} else {
-			this.sldrSlice.setMinimum(1);
-			this.sldrSlice.setMaximum(2);
-			this.sldrSlice.setValue(value);
-			this.lblSliceNum.setText("--");
-			this.sldrSlice.setEnabled(false);
 		}
-
-
-		this.lastSelectedSlice = this.sldrSlice.getValue();
-
-		this.sldrSlice.updateUI();
-
+		this.sldrSlice.setEnabled(true);
 		this.sldrSlice.setMinorTickSpacing(1);
 		this.sldrSlice.setSnapToTicks(true);
+		this.lastSelectedSlice = this.sldrSlice.getValue();
 		changing = false;
+
+
+	}
+	
+	public void setSelectedPage(int page) {
+		page = page - 1;
+		if (page <= this.sldrPage.getMaximum() || page >= this.sldrPage.getMinimum()) {
+			this.sldrPage.setValue(page);
+		}
 	}
 
 	public void setPageSlider(boolean enabled, List<? extends PnlDisplayPage> displayPages, String pagesLabel) {
@@ -539,14 +493,6 @@ public class PnlDisplay  {
 		this.sldrPage.setSnapToTicks(true);
 		changing = false;
 
-	}
-
-	public void setImage(ImagePlus image, Zoom zoom, int clickX, int clickY) {
-		this.pnlImage.setImage(image.getBufferedImage(), clickX, clickY, zoom);
-	}
-
-	public void setImage(BufferedImage image, Zoom zoom, int clickX, int clickY) {
-		this.pnlImage.setImage(image, clickX, clickY, zoom);
 	}
 
 
@@ -583,12 +529,16 @@ public class PnlDisplay  {
 
 	public interface PnlDisplayFeedbackReceiver {
 
-		public void sliderSliceChanged(int slice);
+		public ImagePlus sliderSliceChanged(PnlDisplayPage chan, int slice);
 
-		public void sliderPageChanged(PnlDisplayPage chan);
+		public Object[] sliderPageChanged(PnlDisplayPage chan, int slice);
 
-		public void mouseClickOnImage(Point p);
-
+		public void mouseClickOnImage(Point p, PnlDisplayPage displayPage, int slice, boolean wasLeftClick);
+		
+		public ImagePlus zoomChanged(PnlDisplayPage dspPage, Zoom newZoom);
+		
+		public void keyboardCharPressed(char pressed);
+		
 	}
 
 

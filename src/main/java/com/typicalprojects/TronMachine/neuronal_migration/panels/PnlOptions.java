@@ -70,6 +70,7 @@ import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlD
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayPage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.NeuronProcessor;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage.PostProcessImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.PreprocessedEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
@@ -82,6 +83,8 @@ import com.typicalprojects.TronMachine.util.PolarizedPolygonROI;
 import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
 
+import ij.ImagePlus;
+
 
 
 /**
@@ -90,41 +93,41 @@ import com.typicalprojects.TronMachine.util.Zoom;
  * @author Justin Carrington
  */
 public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeReceiver {
-	
+
 	/** Constant designating {@link PnlOptions} is disabled **/
 	public static final int STATE_DISABLED = 1;
-	
+
 	/** Constant designating {@link PnlOptions} is displaying slice selection **/
 	public static final int STATE_SLICE = 2;
-	
+
 	/** Constant designating {@link PnlOptions} is displaying object selection fields **/
 	public static final int STATE_OBJ = 3;
-	
+
 	/** Constant designating {@link PnlOptions} is displaying post-object-selection fields **/
 	public static final int STATE_POST_OBJ = 4;
-	
+
 	/** Constant designating {@link PnlOptions} is displaying ROI selection fields **/
 	public static final int STATE_ROI = 5;
-	
+
 	/** Constant designating the layout for {@link PnlOptions} is slice selection **/
 	public static final int LAYOUT_TYPE_SLICE = 1;
-	
+
 	/** Constant designating the layout for {@link PnlOptions} is object selection **/
 	public static final int LAYOUT_TYPE_OBJ = 2;
-	
+
 	/** Constant designating the layout for {@link PnlOptions} is post-object selection **/
 	public static final int LAYOUT_TYPE_POST_OBJ = 3;
-	
+
 	/** Constant designating the layout for {@link PnlOptions} is ROI selection **/
 	public static final int LAYOUT_TYPE_ROI = 4;
-	
+
 
 
 	private final JPanel rawPanel;
 	private final GUI gui;
 
 	private volatile PreprocessedEditableImage imageCurrentlyPreprocessing = null;
-	private volatile ObjectEditableImage imageCurrentlyObjEditing = null;
+	private volatile ObjectEditableImage imgCurrObjEditing = null;
 	private volatile ROIEditableImage imageCurrentlyROIEditing = null;
 
 	private JLabel lblDisabled;
@@ -165,14 +168,17 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private JButton objBtnHelp;
 	private JButton objBtnPick;
 	private HelpPopup objHelpPopup;
-	
+
 	private JLabel pstObLblCurrDisp;
 	private JLabel pstObLblCurrView;
 	private JLabel pstObLblInstructions;
+	private JLabel pstObLblOptions;
 	private JTextField pstObTxtCurrDisp;
 	private JTextField pstObTxtCurrView;
 	private JButton pstObBtnNext;
 	private JButton pstObBtnHelp;
+	private JCheckBox pstObChkDots;
+	private JCheckBox pstObChkMax;
 
 	private List<File> imagesForObjectAnalysis = new LinkedList<File>();
 	private List<File> imagesForObjectSelection = new LinkedList<File>();
@@ -254,7 +260,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		roiLblInstruction = new JLabel("Please create at least one ROI below.");
 
-		distBtnAddROI = new JButton("<html><p style='text-align: center;'><a style='text-decoration:underline'>A</a>dd</p></html>");
+		distBtnAddROI = new JButton("<html><p style='text-align: center;'>Add (<a style='text-decoration:underline'>R</a>)</p></html>");
 		distBtnAddROI.setFont(GUI.extraSmallBoldFont);
 		distBtnAddROI.setFocusable(false);
 		distBtnAddROI.setMargin(new Insets(0, -30, 0, -30));
@@ -362,25 +368,25 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		objChkDots = new JCheckBox("Dots");
 		objChkDots.setFocusable(false);
 		objChkDots.setBackground(GUI.colorPnlEnabled);
-		
+
 		// Post-object processing
-		
+
 		pstObBtnNext = new JButton("Next");
 		pstObBtnNext.setMargin(new Insets(0,5,0,5));
 		pstObBtnNext.setFocusable(false);
-		
+
 		pstObLblCurrDisp = new JLabel("Displaying:");
 
 		pstObTxtCurrDisp = new JTextField();
 		pstObTxtCurrDisp.setColumns(10);
 		pstObTxtCurrDisp.setEditable(false);
-		
+
 		pstObLblCurrView = new JLabel("Curr. View:");
 
 		pstObTxtCurrView = new JTextField();
 		pstObTxtCurrView.setColumns(10);
 		pstObTxtCurrView.setEditable(false);
-		
+
 		pstObBtnHelp = new JButton("");
 		pstObBtnHelp.setIcon(new ImageIcon(new ImageIcon(PnlOptions.class.getResource("/question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
 		pstObBtnHelp.setForeground(Color.BLUE);
@@ -389,7 +395,19 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		pstObBtnHelp.setBackground(Color.WHITE);
 		pstObBtnHelp.setFocusable(false);
 
-		pstObLblInstructions = new JLabel("Right click to remove double-counted points.");
+		pstObLblInstructions = new JLabel("Right click to remove double points.");
+
+		pstObLblOptions = new JLabel("Options:");
+		pstObChkDots = new JCheckBox("<html>Dots (<a style='text-decoration:underline'>E</a>)</p></html>");
+		pstObChkDots.setBackground(GUI.colorPnlEnabled);
+		pstObChkDots.setFocusable(false);
+		pstObChkDots.setSelected(true);
+		pstObChkDots.setEnabled(false);
+		pstObChkMax = new JCheckBox("<html>Max Project (<a style='text-decoration:underline'>R</a>)</p></html>");
+		pstObChkMax.setBackground(GUI.colorPnlEnabled);
+		pstObChkMax.setFocusable(false);
+		pstObChkMax.setSelected(true);
+		pstObChkMax.setEnabled(false);
 
 		// Slices
 
@@ -473,9 +491,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					objBtnPick.setText("Pick Mult.");
 					objBtnRemove.setText("Remove");
 					objTxtRemove.setEnabled(true);
-					if (imageCurrentlyObjEditing != null) {
-						imageCurrentlyObjEditing.cancelDeletionZone(gui.getPanelDisplay().getSliderSelectedPageAsChannel());
-					}
+
+					imgCurrObjEditing.cancelDeletionZone();
+					gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+							gui.getImageDisplay().getZoom(), true).getBufferedImage(), true);
+
 					return;
 				}
 
@@ -494,7 +514,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 							Integer lower = Integer.parseInt(upperLower[0]);
 							Integer higher = Integer.parseInt(upperLower[1]);
 							if (lower > higher) {
-								GUI.displayMessage("Error: For value ranges, the lower bound must be lower than the higher bound.", "Invalid Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+								GUI.displayMessage("Error: For value ranges, the lower bound must be lower than the higher bound.", "Invalid Input", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 							for (int i = lower; i <= higher; i++) {
@@ -504,18 +524,20 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						}
 					}
 				} catch (Exception exc) {
-					GUI.displayMessage("Error: Found text that isn't valid format (not ','  '-'  or an integer).", "Invalid Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+					GUI.displayMessage("Error: Found text that isn't valid format (not ','  '-'  or an integer).", "Invalid Input", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 
 					return;
 				}
 
 				Channel chan = gui.getPanelDisplay().getSliderSelectedPageAsChannel();
-				boolean validPoints = imageCurrentlyObjEditing.removePoints(chan, objectsToRemove);
+				boolean validPoints = imgCurrObjEditing.removePoints(chan, objectsToRemove);
 				objTxtRemove.setText("");
 				if (!validPoints) {
-					GUI.displayMessage("Warning: Your input contained at least one object number that doesn't exist.", "Odd Input", gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE);
+					GUI.displayMessage("Warning: Your input contained at least one object number that doesn't exist.", "Odd Input", gui.getImageDisplay(), JOptionPane.WARNING_MESSAGE);
 				}
 
+				gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+						gui.getImageDisplay().getZoom(), true), true);
 
 			}
 		});
@@ -523,13 +545,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		this.objChkDots.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				if (imageCurrentlyObjEditing != null) {
+				if (imgCurrObjEditing != null) {
 					try {
 
-						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedPageAsChannel());
-
+						imgCurrObjEditing.setDisplayOptions(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected());
+						gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+								gui.getImageDisplay().getZoom(), true), true);
 					} catch (IllegalArgumentException ex) {
-						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 
 						objChkDots.setSelected(true);
 					}
@@ -540,13 +563,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		this.objChkOriginal.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				if (imageCurrentlyObjEditing != null) {
+				if (imgCurrObjEditing != null) {
 					try {
 
-						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedPageAsChannel());
-
+						imgCurrObjEditing.setDisplayOptions(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected());
+						gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+								gui.getImageDisplay().getZoom(), true), true);
 					} catch (IllegalArgumentException ex) {
-						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 
 						objChkOriginal.setSelected(true);
 					}
@@ -557,13 +581,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		this.objChkMask.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				if (imageCurrentlyObjEditing != null) {
+				if (imgCurrObjEditing != null) {
 					try {
 
-						imageCurrentlyObjEditing.setDisplaying(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected(), gui.getPanelDisplay().getSliderSelectedPageAsChannel());
-
+						imgCurrObjEditing.setDisplayOptions(objChkOriginal.isSelected(), objChkMask.isSelected(), objChkDots.isSelected());
+						gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+								gui.getImageDisplay().getZoom(), true), true);
 					} catch (IllegalArgumentException ex) {
-						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must have at least one layer selected.", "Layering Error", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 
 						objChkMask.setSelected(true);
 					}
@@ -575,12 +600,12 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			public void actionPerformed(ActionEvent e) {
 
 				if (objBtnPick.getText().equals("Pick Mult.")) {
-					if (imageCurrentlyObjEditing != null) {
+					if (imgCurrObjEditing != null) {
 						objBtnNext.setEnabled(false);
 						objBtnRemove.setText("Cancel");
 						objBtnPick.setText("Done");
 						objTxtRemove.setEnabled(false);
-						imageCurrentlyObjEditing.setCreatingDeletionZone(true);
+						imgCurrObjEditing.setCreatingDeletionZone(true);
 					}
 
 				} else {
@@ -588,11 +613,13 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					objBtnPick.setText("Pick Mult.");
 					objBtnRemove.setText("Remove");
 					objTxtRemove.setEnabled(true);
-					boolean occurred = imageCurrentlyObjEditing.deleteObjectsWithinDeletionZone(gui.getPanelDisplay().getSliderSelectedPageAsChannel());
+					boolean occurred = imgCurrObjEditing.deleteObjectsWithinDeletionZone();
 					if (!occurred) {
-						GUI.displayMessage("No objects were removed because you didn't select at least 3 points for the bounding region.", "Error Removing Points", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
-
+						GUI.displayMessage("No objects were removed because you didn't select at least 3 points for the bounding region.", "Error Removing Points", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 					}
+					gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+							gui.getImageDisplay().getZoom(), true).getBufferedImage(), true);
+
 				}
 
 			}
@@ -602,9 +629,50 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.objBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				nextObjImage(false);
 
+			}
+		});
+
+		this.pstObChkDots.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				if (imgCurrObjEditing != null && imgCurrObjEditing.isPostProcessing()) {
+					imgCurrObjEditing.setDisplayPostObjectDots(pstObChkDots.isSelected());
+					gui.getImageDisplay().setImage(imgCurrObjEditing.getPostObjectImage(gui.getPanelDisplay().getSliderSelectedPage().getDisplayAbbrev(),
+							gui.getPanelDisplay().getSliderSelectedSlice(), gui.getImageDisplay().getZoom()), true);
+
+				}
+
+			}
+		});
+		this.pstObChkMax.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				boolean maxed = pstObChkMax.isSelected();
+				if (imgCurrObjEditing != null && imgCurrObjEditing.isPostProcessing()) {
+					imgCurrObjEditing.setDisplayPostObjectMax(pstObChkMax.isSelected());
+
+					String selectedPage = gui.getPanelDisplay().getSliderSelectedPage().getDisplayAbbrev();
+					if (maxed) {
+						gui.getPanelDisplay().disableSliceSlider(true); 
+					} else {
+						gui.getPanelDisplay().enableSliceSlider(1, imgCurrObjEditing.getPostObjectImageStackSize(selectedPage), 1, true);
+					}
+
+					gui.getImageDisplay().setImage(imgCurrObjEditing.getPostObjectImage(selectedPage,
+							gui.getPanelDisplay().getSliderSelectedSlice(), gui.getImageDisplay().getZoom()), true);
+
+
+				}
+
+
+			}
+		});
+
+		this.pstObBtnNext.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				nextObjImage(true);
 			}
 		});
 
@@ -612,7 +680,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			public void actionPerformed(ActionEvent e) {
 				if (imageCurrentlyROIEditing != null) {
 					imageCurrentlyROIEditing.clearPoints();
-					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), Zoom.ZOOM_100, -1, -1);
+					gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), false);
 				}
 			}
 		});
@@ -625,8 +693,8 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						distBtnDeleteROI.setEnabled(false);
 						distBtnCancelROI.setEnabled(false);
 						distBtnNext.setEnabled(false);
-						String input = GUI.getInput("To create the ROI, type its name below and then select the side of the ROI to be designated as POSITIVE:", "Select ROI Name", gui.getPanelDisplay().getImagePanel());
-						
+						String input = GUI.getInput("To create the ROI, type its name below and then select the side of the ROI to be designated as POSITIVE:", "Select ROI Name", gui.getImageDisplay());
+
 						if (input == null || input.equals("")) {
 
 							distBtnAddROI.setEnabled(true);
@@ -649,11 +717,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 							}
 
 
-							gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), Zoom.ZOOM_100, -1, -1);
+							gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), false);
 
 						}
 					} else {
-						GUI.displayMessage("You must select at least 2 points on he image before creating an ROI.<br><br>The ROI line must not overlap with existing lines.", "ROI Creation Error", gui.getPanelDisplay().getImagePanel(), JOptionPane.ERROR_MESSAGE);
+						GUI.displayMessage("You must select at least 2 points on he image before creating an ROI.<br><br>The ROI line must not overlap with existing lines.", "ROI Creation Error", gui.getImageDisplay(), JOptionPane.ERROR_MESSAGE);
 
 					}
 				}
@@ -670,7 +738,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					}
 					roiListROI.clearSelection();
 
-					gui.getPanelDisplay().getImagePanel().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), -1, -1, Zoom.ZOOM_100);
+					gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), false);
 				}
 
 
@@ -692,7 +760,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			}
 		});
 	}
-	
+
 	/**
 	 * @return the swing component for this panel.
 	 */
@@ -709,14 +777,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * 
 	 */
 	private synchronized void nextROIImage() { 
-		
+
 		distBtnAddROI.setEnabled(false);
 		distBtnDeleteROI.setEnabled(false);
 		distBtnCancelROI.setEnabled(false);
 		distBtnNext.setEnabled(false);
-		
+
 		boolean cancelNext = false;
-		
+
 		if (imageCurrentlyROIEditing != null) {
 			String errorsInTagValidation = null;
 			if (!imageCurrentlyROIEditing.hasROIs()) {
@@ -730,14 +798,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 				if (!GUI.confirmWithUser("You have not edited any ROI line tags tags (i.e. setting which is the Reference roi). "+
 						"Are you sure you want to continue?", 
 						"Confirm Skip Tag Selection", 
-						gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
+						gui.getImageDisplay(), JOptionPane.WARNING_MESSAGE)) {
 
 					cancelNext = true;
 
 				}
 			}
 		}
-		
+
 		if (cancelNext) {
 			distBtnAddROI.setEnabled(true);
 			distBtnDeleteROI.setEnabled(true);
@@ -745,7 +813,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			distBtnNext.setEnabled(true);
 			return;
 		}
-		
+
 		currWorker = new Thread(new Runnable() {
 			public void run(){
 
@@ -753,14 +821,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 					if (currWorker == null)
 						return;
-					
+
 					gui.getBrightnessAdjuster().reset(true);
 					gui.getBrightnessAdjuster().removeDisplay();
 					setDisplayState(STATE_DISABLED, "Please wait...");
 					gui.getPanelDisplay().setDisplayState(false, "Please wait...");
-					
+
 					int status = _nextROIImageHelper();
-					
+
 					boolean goToNextState = false;
 					if (status == 1)
 						goToNextState = true;
@@ -777,22 +845,22 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 					} else if (status != 3)
 						throw new RuntimeException(); // shouldn't occur, a safety measure.
-					
+
 					if (currWorker == null)
 						return;
-					
+
 					if (goToNextState) {
 
 						gui.getWizard().nextState();
 						return;
 
 					}
-					
-					
+
+
 					ImageContainer ic = imageCurrentlyROIEditing.getContainer();
 					RunConfiguration runConfig = ic.getRunConfig();
 
-					gui.getPanelDisplay().setSliceSlider(false, -1, -1);
+					gui.getPanelDisplay().disableSliceSlider(false);
 
 					Channel roiDrawChan = runConfig.channelMan.getPrimaryROIDrawChan();
 					List<Channel> channelsForROISelection = runConfig.channelMan.getOrderedChannels();
@@ -802,7 +870,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 					gui.getPanelDisplay().setPageSlider(true, channelsForROISelection, "Chan");
 
-					gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(roiDrawChan), Zoom.ZOOM_100, -1, -1);
+					gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(roiDrawChan), false);
 
 					distTxtCurrDisp.setText(ic.getImageTitle());
 					distBtnNext.setEnabled(true);
@@ -821,16 +889,16 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, roiDrawChan);
 					}
 					setDisplayState(STATE_ROI, null);
-					
+
 					distBtnAddROI.setEnabled(true);
 					distBtnDeleteROI.setEnabled(true);
 					distBtnCancelROI.setEnabled(true);
 					distBtnNext.setEnabled(true);
-					
+
 					gui.getPanelDisplay().setDisplayState(true, null);
 					gui.getLogger().setCurrentTaskComplete();
-					
-					
+
+
 				} catch (Exception ex) {
 					GUI.displayMessage("An unknown error has occurred.<br>" + ex.getMessage() + "<br>", "Display Next Error", gui.getComponent(), JOptionPane.ERROR_MESSAGE);
 					ex.printStackTrace();
@@ -906,11 +974,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		}
 
 		List<Channel> listToSendSlider = this.imageCurrentlyPreprocessing.getRunConfig().channelMan.getOrderedChannels();
-		
+
 		int stackSize = imageCurrentlyPreprocessing.getOrigStackSize(listToSendSlider.get(0));
-		this.gui.getPanelDisplay().setSliceSlider(true, 1, stackSize);
+		this.gui.getPanelDisplay().enableSliceSlider(1, stackSize, 1, false);
 		this.gui.getPanelDisplay().setPageSlider(true, listToSendSlider, "Chan");
-		this.gui.getPanelDisplay().setImage(imageCurrentlyPreprocessing.getSlice(listToSendSlider.get(0), 1, false), Zoom.ZOOM_100, -1, -1);
+		this.gui.getImageDisplay().setImage(imageCurrentlyPreprocessing.getSlice(listToSendSlider.get(0), 1, false), false);
 		this.sliceTxtDisplaying.setText(imageCurrentlyPreprocessing.getContainer().getImageTitle());
 		this.sliceTxtLowSlice.setText("" + 1);
 		this.sliceTxtHighSlice.setText("" + stackSize);
@@ -968,7 +1036,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		} else {
 			this.gui.getLogger().setCurrentTaskComplete();
 		}
-		
+
 
 		this.imageCurrentlyPreprocessing = new PreprocessedEditableImage(pi.getIC(), this.gui);
 
@@ -985,38 +1053,39 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * 
 	 */
 	private synchronized void nextObjImage(final boolean returnFromPostObjProcessing) {
-		
+
+		// TODO: fix the help button for this page
 
 		// TODO: When done with post-processing, check if should keep (i.e. OutputOption selected in preferences
 		// or save resources from post-processing is selected) or remove the object stack. If not remove, make
 		// sure to apply the appropriate LUT to it.
-		
+
 		objBtnNext.setEnabled(false);
 		objTxtRemove.setEnabled(false);
 		objBtnRemove.setEnabled(false);
 		objChkDots.setEnabled(false);
 		objChkOriginal.setEnabled(false);
 		objChkMask.setEnabled(false);
-		
+
 		boolean cancelNext = false;
-		
-		if (this.imageCurrentlyObjEditing != null) {
-			Channel chan = imageCurrentlyObjEditing.getSelectionStateMeta().getChannelNotLookedAt();
-			if (chan != null) {
 
-				if (!GUI.confirmWithUser("You have not yet looked at the "+ chan.getName() + 
-						" channel yet. Are you sure you want to continue?", 
-						"Confirm Skip Channel", 
-						gui.getPanelDisplay().getImagePanel(), JOptionPane.WARNING_MESSAGE)) {
-					cancelNext = true;
+		if (this.imgCurrObjEditing != null) {
+			if (!this.imgCurrObjEditing.isPostProcessing()) {
+				Channel chan = imgCurrObjEditing.getSelectionStateMeta().getChannelNotLookedAt();
+				if (chan != null) {
 
+					if (!GUI.confirmWithUser("You have not yet looked at the "+ chan.getName() + 
+							" channel yet. Are you sure you want to continue?", 
+							"Confirm Skip Channel", 
+							gui.getImageDisplay(), JOptionPane.WARNING_MESSAGE)) {
+						cancelNext = true;
+
+					}
 				}
 			}
-			
-			
-			
+
 		}
-		
+
 		if (cancelNext) {
 			objBtnNext.setEnabled(true);
 			objTxtRemove.setEnabled(true);
@@ -1025,41 +1094,43 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			objChkOriginal.setEnabled(true);
 			objChkMask.setEnabled(true);
 			return;
-			
-		}
-		
 
-		
+		}
+
+
+
 		currWorker = new Thread(new Runnable() {
 			public void run(){
 				try {
-					
+
 					if (currWorker == null)
 						return;
-					
+
 					setDisplayState(STATE_DISABLED, "Please wait...");
 					gui.getPanelDisplay().setDisplayState(false, "Pleast wait...");
-					
-					if (imageCurrentlyObjEditing != null) {
-						
+
+					if (imgCurrObjEditing != null) {
+
 						if (!returnFromPostObjProcessing && GUI.settings.processingPostObj) {
-							
-							if (imageCurrentlyObjEditing.checkPostObjectImages()) {
+
+							if (imgCurrObjEditing.checkPostObjectImages()) {
+
 								_nextPostObjImageHelper();
+								return;
 							}
 						}
-						
+
 						if (GUI.settings.processingPostObjDelete) {
-							imageCurrentlyObjEditing.getContainer().removeImageFromIC(OutputOption.Channel, null);
-							imageCurrentlyObjEditing.getContainer().removeImageFromIC(OutputOption.ProcessedObjectsStack, null);
+							imgCurrObjEditing.getContainer().removeImageFromIC(OutputOption.Channel, null);
+							imgCurrObjEditing.getContainer().removeImageFromIC(OutputOption.ProcessedObjectsStack, null);
 						}
-						
+
 					}
-					
-					
-					
+
+
+
 					int status = _nextObjImageHelper();
-					
+
 					boolean goToNextState = false;
 					if (status == 1)
 						goToNextState = true; // no more images
@@ -1076,25 +1147,24 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						}
 					} else if (status != 3)
 						throw new RuntimeException(); // shouldn't occur, a safety measure.
-					
+
 					if (currWorker == null)
 						return;
-					
+
 					if (goToNextState) {
-						System.out.println("Go to next");
 						gui.getWizard().nextState(imagesForROICreation);
 						return;
 
 					}
-					
-					ImageContainer ic = imageCurrentlyObjEditing.getContainer();
 
-					gui.getPanelDisplay().setSliceSlider(false, -1, -1);
+					ImageContainer ic = imgCurrObjEditing.getContainer();
+
+					gui.getPanelDisplay().disableSliceSlider(false);
 					List<Channel> chans = new ArrayList<Channel>();
 					int processedInsertIndex = 0;
 					for (Channel chan : ic.getRunConfig().channelMan.getOrderedChannels()) {
 
-						if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
+						if (imgCurrObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
 							chans.add(processedInsertIndex, chan); // Add to beginning
 							processedInsertIndex++;
 						} else {
@@ -1103,7 +1173,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					}
 
 					gui.getPanelDisplay().setPageSlider(true, chans, "Chan");
-					gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chans.get(0)).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+					gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(chans.get(0), Zoom.ZOOM_100, true).getBufferedImage(), false);
 					objTxtCurrDisp.setText(ic.getImageTitle());
 					objTxtRemove.setText("");
 					objTxtRemove.setEnabled(true);
@@ -1117,7 +1187,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					objChkMask.setSelected(true);
 
 
-					imageCurrentlyObjEditing.getSelectionStateMeta().lookAt(gui.getPanelDisplay().getSliderSelectedPageAsChannel());
+					imgCurrObjEditing.getSelectionStateMeta().lookAt(gui.getPanelDisplay().getSliderSelectedPageAsChannel());
 					setDisplayState(STATE_OBJ, null);
 					gui.getPanelDisplay().setDisplayState(true, null);
 					gui.getLogger().setCurrentTaskComplete();
@@ -1130,10 +1200,10 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		});
 		currWorker.setDaemon(true);
 		currWorker.start();
-		
+
 
 	}
-	
+
 	/**
 	 * This is a helper method. <br><br>
 	 * 
@@ -1143,43 +1213,52 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 */
 	private synchronized void _nextPostObjImageHelper() {
 		this.gui.getLogger().setCurrentTask("Beginning post-object processing...");
-		
-		
-		// TODO: Create the required images and set them.
+
+		List<PostProcessImage> ppis = imgCurrObjEditing.createPostObjectImages();
+
+		gui.getPanelDisplay().setPageSlider(true, ppis, "Img");
+		imgCurrObjEditing.setDisplayPostObjectDots(true);
+		imgCurrObjEditing.setDisplayPostObjectMax(true);
+		gui.getImageDisplay().setImage(imgCurrObjEditing.getPostObjectImage(ppis.get(0).getDisplayAbbrev(), 1, Zoom.ZOOM_100), false);
+		pstObTxtCurrDisp.setText(imgCurrObjEditing.getContainer().getImageTitle());
+		pstObTxtCurrView.setText(ppis.get(0).getTitle(true));
+		pstObChkDots.setSelected(true);
+		pstObChkDots.setEnabled(true);
+		pstObChkMax.setSelected(true);
+		pstObChkMax.setEnabled(true);
 		pstObBtnNext.setEnabled(true);
-		pstObTxtCurrDisp.setText(imageCurrentlyObjEditing.getContainer().getImageTitle());
 		setDisplayState(STATE_POST_OBJ, null);
 		gui.getPanelDisplay().setDisplayState(true, null);
 		this.gui.getLogger().setCurrentTaskComplete();
 	}
-	
+
 	/**
 	 * This is a helper method. <br><br>
 	 * 
-	 * Saves the current object image and then opens the next one, storing in {@link #imageCurrentlyObjEditing}.
+	 * Saves the current object image and then opens the next one, storing in {@link #imgCurrObjEditing}.
 	 * Returns an integer corresponding to the result of these operations.
 	 * 
 	 * @return 1 = there are no more images to process. 2 = the next image could not be opened for some reason 
 	 * (user is informed of this). 3 = successfully picked next, which is now set as the current.
 	 */
 	private synchronized int _nextObjImageHelper() {
-		
-		if (this.imageCurrentlyObjEditing != null) {
+
+		if (this.imgCurrObjEditing != null) {
 
 			this.gui.getLogger().setCurrentTask("Creating new images...");
 
-			this.imageCurrentlyObjEditing.createAndAddNewImagesToIC();
+			this.imgCurrObjEditing.createAndAddNewImagesToIC();
 			this.gui.getLogger().setCurrentTaskComplete();
 
 			this.gui.getLogger().setCurrentTask("Saving state...");
 
 			// convert
-			ROIEditableImage roiei = this.imageCurrentlyObjEditing.convertToROIEditableImage();
+			ROIEditableImage roiei = this.imgCurrObjEditing.convertToROIEditableImage();
 			// delete obj if not serve ints
-			imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
-			imageCurrentlyObjEditing.deleteSerializedVersion();
+			imgCurrObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ);
+			imgCurrObjEditing.deleteSerializedVersion();
 			if (GUI.settings.saveIntermediates) {
-				ObjectEditableImage.saveObjEditableImage(this.imageCurrentlyObjEditing, this.imageCurrentlyObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ));
+				ObjectEditableImage.saveObjEditableImage(this.imgCurrObjEditing, this.imgCurrObjEditing.getContainer().getSerializeFile(ImageContainer.STATE_OBJ));
 			}
 
 			// save roi
@@ -1188,7 +1267,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			this.imagesForROICreation.add(serializeFile);
 			this.gui.getLogger().setCurrentTaskComplete();
 
-			this.imageCurrentlyObjEditing = null;
+			this.imgCurrObjEditing = null;
 		}
 
 
@@ -1197,18 +1276,18 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.gui.getLogger().setCurrentTask("Opening image...");
 
-		this.imageCurrentlyObjEditing = ObjectEditableImage.loadObjEditableImage(this.imagesForObjectSelection.remove(0));
+		this.imgCurrObjEditing = ObjectEditableImage.loadObjEditableImage(this.imagesForObjectSelection.remove(0));
 
-		if (imageCurrentlyObjEditing == null) {
+		if (imgCurrObjEditing == null) {
 			this.gui.getLogger().setCurrentTaskCompleteWithError();
 			GUI.displayMessage("There was an error opening saved object state.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
 
 			return 2; // returning true allows it to just skip to the next image.
-		} else if (!imageCurrentlyObjEditing.getRunConfig().channelMan.hasIdenticalChannels(GUI.settings.channelMan)) {
+		} else if (!imgCurrObjEditing.getRunConfig().channelMan.hasIdenticalChannels(GUI.settings.channelMan)) {
 			this.gui.getLogger().setCurrentTaskCompleteWithError();
 			GUI.displayMessage("The saved Object state couldn't be opened because the Channel Setup does not match the current Channel Setup "
 					+ "in the Preferences. To fix this, use the Templates option in the Preferences to load the Channel Setup from a run.", "File Open Error", null, JOptionPane.ERROR_MESSAGE);
-			imageCurrentlyObjEditing = null;
+			imgCurrObjEditing = null;
 			return 2;
 		} else {
 			this.gui.getLogger().setCurrentTaskComplete();
@@ -1217,7 +1296,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		return 3;
 
 	}
-	
+
 
 	/**
 	 * This is a helper method. <br><br>
@@ -1266,11 +1345,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		} else {
 			this.gui.getLogger().setCurrentTaskComplete();
 		}
-		
+
 		return 3;
-		
+
 	}
-	
+
 	/**
 	 * Sets the images which will be displayed for slice selection. This does NOT begin slice selection.
 	 * To do that, use {@link #startSliceSelecting()}
@@ -1280,7 +1359,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	public synchronized void setImagesForSliceSelection(List<ImagePhantom> images) {
 		this.imagesForSliceSelection = images;
 	}
-	
+
 	/**
 	 * Begins slice selection
 	 */
@@ -1293,7 +1372,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * Begins processing image object by creating a worker.
 	 */
 	public synchronized void startProcessingImageObjects() {
-		
+
 		if (this.imagesForObjectAnalysis.isEmpty()) {
 			this.gui.getWizard().cancel();
 			return;
@@ -1310,7 +1389,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * Starts processing ORIS by creating a worker.
 	 */
 	public synchronized void startAnalyzingROIs() {
-		
+
 		if (this.imagesForROIAnalysis.isEmpty()) {
 			this.gui.getWizard().cancel();
 			return;
@@ -1322,7 +1401,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		}
 
 	}
-	
+
 	/**
 	 * Starts image object selection by user.
 	 * 
@@ -1330,7 +1409,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * @return true if there were images to start processing
 	 */
 	public synchronized boolean startImageObjectSelecting(List<File> files) {
-		
+
 		if (files.isEmpty()) {
 			return false;
 		}
@@ -1341,7 +1420,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		return true;
 
 	}
-	
+
 	/**
 	 * Starts ROI selection by user.
 	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
@@ -1349,7 +1428,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 */
 	public synchronized boolean startImageROISelecting(List<File> images) {
 		if (images.isEmpty()) {
-			System.out.println("Decision to cancel");
 			return false;
 		}
 		if (this.gui.getWizard().getStatus() != Status.SELECT_FILES) {
@@ -1360,7 +1438,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		return true;
 
 	}
-	
+
 	/**
 	 * The current display state.
 	 * 
@@ -1369,7 +1447,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	public int getState() {
 		return this.currentState;
 	}
-	
+
 	/**
 	 * Sets the current display state.
 	 * 
@@ -1527,18 +1605,12 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 										.addComponent(objTxtRemove, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(objBtnRemove).addComponent(objBtnPick))
 								.addPreferredGap(ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
-								//
 								.addGroup(gl_objPnl.createParallelGroup(Alignment.BASELINE)
 										.addComponent(objLblShow)
-
-										//.addGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										//.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-
 										.addComponent(objChkMask)
 										.addComponent(objChkOriginal)
 										.addComponent(objChkDots)
 										.addComponent(objBtnNext))
-								/*.addComponent(objBtnNext)*/
 								.addContainerGap())
 						);
 				this.rawPanel.setLayout(gl_objPnl);
@@ -1562,16 +1634,15 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 												.addComponent(pstObLblInstructions)
 												.addPreferredGap(ComponentPlacement.RELATED)
 												.addComponent(pstObBtnHelp, GroupLayout.PREFERRED_SIZE, 17, GroupLayout.PREFERRED_SIZE))
-										/*.addGroup(gl_pnlDist.createSequentialGroup()
-												.addGroup(gl_pnlDist.createParallelGroup(Alignment.TRAILING, false)
-														.addComponent(distBtnAddROI, Alignment.LEADING, 0, 0, Short.MAX_VALUE)
-														.addGroup(Alignment.LEADING, gl_pnlDist.createParallelGroup(Alignment.TRAILING, false)
-																.addComponent(distBtnDeleteROI, Alignment.LEADING, 0, 0, Short.MAX_VALUE)
-																.addComponent(distBtnCancelROI, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 43, Short.MAX_VALUE)))
-												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(roiSP, GroupLayout.DEFAULT_SIZE, 192, Short.MAX_VALUE)
-												.addPreferredGap(ComponentPlacement.RELATED)
-												.addComponent(distBtnNext))*/)
+										.addGroup(Alignment.TRAILING,  gl_pnlPostObj.createSequentialGroup()
+												.addComponent(pstObLblOptions, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)	
+												.addComponent(pstObChkDots, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)		
+												.addComponent(pstObChkMax, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+												.addComponent(pstObBtnNext))
+										)
 								.addContainerGap())
 						);
 				gl_pnlPostObj.setVerticalGroup(
@@ -1582,25 +1653,21 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 										.addComponent(pstObTxtCurrDisp, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(pstObLblCurrDisp))
 								.addPreferredGap(ComponentPlacement.RELATED)
-								.addGroup(gl_pnlPostObj.createParallelGroup(Alignment.LEADING)  //TODO changed from BASELINE, may need to be BASELINE
+								.addGroup(gl_pnlPostObj.createParallelGroup(Alignment.BASELINE)
 										.addComponent(pstObTxtCurrView, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
 										.addComponent(pstObLblCurrView))
 								.addPreferredGap(ComponentPlacement.RELATED)
-								.addGroup(gl_pnlPostObj.createParallelGroup(Alignment.LEADING, false)
-										.addComponent(distBtnHelp, 0, 0, Short.MAX_VALUE)
-										.addComponent(roiLblInstruction, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-								/*.addPreferredGap(ComponentPlacement.RELATED)
-								.addGroup(gl_pnlDist.createParallelGroup(Alignment.LEADING, false)
-										.addComponent(roiSP, 0, 0, Short.MAX_VALUE)
-										.addGroup(gl_pnlDist.createParallelGroup(Alignment.TRAILING)
-												.addGroup(gl_pnlDist.createSequentialGroup()
-														.addComponent(distBtnAddROI, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
-														.addPreferredGap(ComponentPlacement.RELATED)
-														.addComponent(distBtnDeleteROI, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE)
-														.addPreferredGap(ComponentPlacement.RELATED)
-														.addComponent(distBtnCancelROI, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE))
-												.addComponent(distBtnNext)))*/
-								.addContainerGap(74, Short.MAX_VALUE))
+								.addGroup(gl_pnlPostObj.createParallelGroup(Alignment.LEADING)
+										.addComponent(pstObLblInstructions)
+										.addComponent(pstObBtnHelp, GroupLayout.PREFERRED_SIZE, 19, GroupLayout.PREFERRED_SIZE))
+								.addPreferredGap(ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+								.addGroup(gl_pnlPostObj.createParallelGroup(Alignment.BASELINE)
+										.addComponent(pstObLblOptions)
+										.addComponent(pstObChkDots)
+										.addComponent(pstObChkMax)
+										.addComponent(pstObBtnNext))
+
+								.addContainerGap())
 						);
 				this.rawPanel.setLayout(gl_pnlPostObj);
 				break;
@@ -1669,31 +1736,39 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		}
 
 	}
-	
+
 	@Override
-	public synchronized void sliderSliceChanged(int slice) {
-		if(this.imageCurrentlyPreprocessing != null)
-		{
-			this.gui.getPanelDisplay().setImage(this.imageCurrentlyPreprocessing.getSlice(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), slice, false), Zoom.ZOOM_100, -1, -1);
+	public synchronized ImagePlus sliderSliceChanged(PnlDisplayPage currentPage, int slice) {
+		if (currentState == STATE_SLICE) {
+			if(this.imageCurrentlyPreprocessing != null) {
+				return this.imageCurrentlyPreprocessing.getSlice((Channel) currentPage, slice, false);
+			}
+		} else if (currentState == STATE_POST_OBJ && this.imgCurrObjEditing != null) {
+			return this.imgCurrObjEditing.getPostObjectImage(currentPage.getDisplayAbbrev(), slice, gui.getImageDisplay().getZoom());
 		}
+
+		return null;
+
 	}
 
 	@Override
-	public synchronized void sliderPageChanged(PnlDisplayPage displayPage) {
+	public synchronized Object[] sliderPageChanged(PnlDisplayPage displayPage, int slice) {
+		ImagePlus ipToSet = null;
+		boolean keepZoom = false;
 		if (currentState == STATE_SLICE) {
-			if(this.imageCurrentlyPreprocessing != null)
-			{
-				this.gui.getPanelDisplay().setImage(this.imageCurrentlyPreprocessing.getSlice((Channel) displayPage, gui.getPanelDisplay().getSliderSelectedSlice(), false).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+			if(this.imageCurrentlyPreprocessing != null) {
+				ipToSet = this.imageCurrentlyPreprocessing.getSlice((Channel) displayPage, slice, false);
 			}
 
 		} else if (currentState == STATE_OBJ) {
-			if(imageCurrentlyObjEditing != null)
+			if(imgCurrObjEditing != null)
 			{
+
 				Channel chan = (Channel) displayPage;
-				this.imageCurrentlyObjEditing.getSelectionStateMeta().lookAt(chan);
-				imageCurrentlyObjEditing.setZoom(Zoom.ZOOM_100);
-				if (imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
-					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getImgWithDots(chan).getBufferedImage(), Zoom.ZOOM_100, -1, -1);
+				this.imgCurrObjEditing.getSelectionStateMeta().lookAt(chan);
+				gui.getImageDisplay().zoomOut(true, false);
+				if (imgCurrObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
+					ipToSet = imgCurrObjEditing.getImgWithDots(chan, Zoom.ZOOM_100, true);
 					this.objBtnPick.setEnabled(true);
 					this.objBtnRemove.setEnabled(true);
 					this.objChkDots.setEnabled(true);
@@ -1705,8 +1780,16 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					this.objChkDots.setEnabled(false);
 					this.objChkMask.setEnabled(false);
 					this.objChkOriginal.setEnabled(false);
-					this.gui.getPanelDisplay().setImage(imageCurrentlyObjEditing.getContainer().getImage(OutputOption.MaxedChannel, chan, false), Zoom.ZOOM_100, -1, -1);
+					ipToSet = imgCurrObjEditing.getContainer().getImage(OutputOption.MaxedChannel, chan, false);
 				}
+
+			}
+		} else if (currentState == STATE_POST_OBJ) {
+
+			if(imgCurrObjEditing != null) {
+				keepZoom = true;
+				pstObTxtCurrView.setText(((PostProcessImage) displayPage).getTitle(pstObChkMax.isSelected()));
+				ipToSet = imgCurrObjEditing.getPostObjectImage(displayPage.getDisplayAbbrev(), slice, gui.getImageDisplay().getZoom());
 			}
 		} else if (currentState == STATE_ROI) {
 			if (imageCurrentlyROIEditing != null) {
@@ -1714,25 +1797,27 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 				if (!imageCurrentlyROIEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
 					this.gui.getBrightnessAdjuster().setModifying(imageCurrentlyROIEditing.getContainer(), OutputOption.MaxedChannel, chan);
-					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
+					ipToSet = this.imageCurrentlyROIEditing.getPaintedCopy(chan);
 				} else {
 					this.gui.getBrightnessAdjuster().setModifying(null, null, null);
-					this.gui.getPanelDisplay().setImage(this.imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
+					ipToSet = this.imageCurrentlyROIEditing.getPaintedCopy(chan);
 				}
 			}
 		}
+
+		return new Object[] {ipToSet, keepZoom};
 	}
-	
+
 	/**
 	 * Cancels neuron processing by resetting all fields and canceling any workers. Not synchronized, meaning
 	 * this will regardless of what is being done elsewhere in the panel.
 	 */
 	public void cancelNeuronProcessing() {
-		
+
 		if (this.currWorker != null) {
 			this.currWorker = null; // should stop the thread, because these are always made daemon
 		}
-		
+
 		if (this.neuronProcessor != null) {
 			this.neuronProcessor.cancelProcessing();
 			this.neuronProcessor = null;
@@ -1742,7 +1827,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			this.roiProcessor = null;
 		}
 		this.imageCurrentlyPreprocessing = null;
-		this.imageCurrentlyObjEditing = null;
+		this.imgCurrObjEditing = null;
 		this.imageCurrentlyROIEditing = null;
 		this.imagesForObjectAnalysis = new LinkedList<File>();
 		this.imagesForObjectSelection = new LinkedList<File>();
@@ -1756,18 +1841,78 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	}
 
 	@Override
-	public synchronized void mouseClickOnImage(Point p) {
+	public ImagePlus zoomChanged(PnlDisplayPage dspPage, Zoom newZoom) {
+
+		if (gui.getWizard().getStatus() == Status.SELECT_OB) {
+			if (imgCurrObjEditing != null) {
+				if (imgCurrObjEditing.isPostProcessing()) {
+					return imgCurrObjEditing.getPostObjectImage(dspPage.getDisplayAbbrev(), gui.getPanelDisplay().getSliderSelectedSlice(), newZoom);
+				}
+				Channel chan = (Channel) dspPage;
+
+				if (imgCurrObjEditing.getRunConfig().channelMan.isProcessChannel(chan)) {
+					return imgCurrObjEditing.getImgWithDots(chan, newZoom, true);
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public synchronized void mouseClickOnImage(Point p, PnlDisplayPage displayPage, int slice, boolean isLeftClick) {
 
 		if (currentState == STATE_OBJ) {
 
-			if (p != null && imageCurrentlyObjEditing != null && imageCurrentlyObjEditing.getRunConfig().channelMan.isProcessChannel(gui.getPanelDisplay().getSliderSelectedPageAsChannel())) {
-				if (this.imageCurrentlyObjEditing.isCreatingDeletionZone()) {
-					imageCurrentlyObjEditing.addDeletionZonePoint(p, gui.getPanelDisplay().getSliderSelectedPageAsChannel());
+			if (p != null && imgCurrObjEditing != null && imgCurrObjEditing.getRunConfig().channelMan.isProcessChannel(gui.getPanelDisplay().getSliderSelectedPageAsChannel())) {
+
+				if (isLeftClick) {
+					if (this.imgCurrObjEditing.isCreatingDeletionZone()) {
+						imgCurrObjEditing.addDeletionZonePoint(p);
+					} else {
+						imgCurrObjEditing.addPoint(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), p);
+					}
 				} else {
-					imageCurrentlyObjEditing.addPoint(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), p);
+					Channel chan = gui.getPanelDisplay().getSliderSelectedPageAsChannel();
+					Point closest = imgCurrObjEditing.getNearestPoint(chan, gui.getImageDisplay().getZoom(), p);
+					if (closest != null) {
+						imgCurrObjEditing.removePoint(chan, closest);
+					}
+
 				}
 
+				gui.getImageDisplay().setImage(imgCurrObjEditing.getImgWithDots(gui.getPanelDisplay().getSliderSelectedPageAsChannel(), 
+						gui.getImageDisplay().getZoom(), true).getBufferedImage(), true);
+
+
 			}
+		} else if (currentState == STATE_POST_OBJ) {
+			
+			if (p != null && imgCurrObjEditing != null && imgCurrObjEditing.isPostProcessing() && !isLeftClick) {
+				Point closest1 = null;
+				Point closest2 = null;
+				if (this.pstObChkMax.isSelected()) {
+					closest1 = imgCurrObjEditing.getNearestPoint(imgCurrObjEditing.getPostProcessingChannel(true), Zoom.ZOOM_100, p);
+					closest2 = imgCurrObjEditing.getNearestPoint(imgCurrObjEditing.getPostProcessingChannel(false), Zoom.ZOOM_100, p);
+
+				} else {
+					closest1 = imgCurrObjEditing.getNearestPoint(imgCurrObjEditing.getPostProcessingChannel(true), Zoom.ZOOM_100, p, slice);
+					closest2 = imgCurrObjEditing.getNearestPoint(imgCurrObjEditing.getPostProcessingChannel(false), Zoom.ZOOM_100, p, slice);
+
+				}
+				
+				if (closest1 != null) {
+					imgCurrObjEditing.removePoint(imgCurrObjEditing.getPostProcessingChannel(true), closest1);
+				
+				}
+				if (closest2 != null) {
+					imgCurrObjEditing.removePoint(imgCurrObjEditing.getPostProcessingChannel(false), closest2);
+
+				}
+				
+				gui.getImageDisplay().setImage(imgCurrObjEditing.getPostObjectImage(displayPage.getDisplayAbbrev(), slice, gui.getImageDisplay().getZoom()), true);
+
+			}
+			
 		} else if (currentState == STATE_ROI) {
 
 			if (p != null && imageCurrentlyROIEditing != null) {
@@ -1781,12 +1926,38 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 					imageCurrentlyROIEditing.addPoint(p);
 				}
-				gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), Zoom.ZOOM_100, -1, -1);
+				gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(gui.getPanelDisplay().getSliderSelectedPageAsChannel()), true);
 			}
 
 		}		
 	}
-	
+
+
+	@Override
+	public void keyboardCharPressed(char character) {
+		if (Character.isLetter(character)) {
+			character = Character.toUpperCase(character);
+		}
+		if (currentState == STATE_ROI) {
+			if (character == 'R') {
+				if (this.distBtnAddROI.isEnabled()) {
+					this.distBtnAddROI.doClick();
+				}
+			}
+		} else if (currentState == STATE_POST_OBJ) {
+			if (character == 'E') {
+				this.pstObChkDots.doClick();
+			} else if (character == 'R') {
+				this.pstObChkMax.doClick();
+			} else {
+				gui.getPanelDisplay().setSelectedPage(Character.getNumericValue(character));
+
+			}
+		}
+
+	}
+
+
 	@Override
 	public synchronized void updateImage(int min, int max) {
 		if (this.imageCurrentlyROIEditing == null) {
@@ -1794,24 +1965,14 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		}
 		Channel chan = gui.getPanelDisplay().getSliderSelectedPageAsChannel();
 		this.imageCurrentlyROIEditing.applyMinMax(chan, min, max);
-		gui.getPanelDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan), Zoom.ZOOM_100, -1, -1);
+		gui.getImageDisplay().setImage(imageCurrentlyROIEditing.getPaintedCopy(chan), true);
 	}
 
 	/**
 	 * @return image currently object editing, will be null if not in the object edit phase.
 	 */
 	public ObjectEditableImage getObjectEditableImage() {
-		return this.imageCurrentlyObjEditing;
-	}
-
-	/**
-	 * Does same thing as manually clicking add ROI button. Useful so that keystrokes can trigger the add
-	 * ROI button, rather than needing to manually press it.
-	 */
-	public synchronized void triggerROIAddButton() {
-		if (this.distBtnAddROI.isEnabled()) {
-			this.distBtnAddROI.doClick();
-		}
+		return this.imgCurrObjEditing;
 	}
 
 

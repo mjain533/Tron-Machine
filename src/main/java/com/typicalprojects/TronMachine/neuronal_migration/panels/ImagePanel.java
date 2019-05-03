@@ -23,7 +23,7 @@
  *     Erik Dent
  *     
  */
-package com.typicalprojects.TronMachine.util;
+package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -33,7 +33,10 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import javax.swing.JPanel;
 
+import com.typicalprojects.TronMachine.util.Point;
+import com.typicalprojects.TronMachine.util.Zoom;
 
+import ij.ImagePlus;
 
 public class ImagePanel extends JPanel{
 
@@ -49,12 +52,12 @@ public class ImagePanel extends JPanel{
 	private volatile int pastWidth;
 	private volatile int posX;
 	private volatile int posY;
-	private Zoom zoom;
-	private int zoomWidth;
-	private int zoomHeight;
-	private int zoomX;
-	private int zoomY;
-	private boolean needsUpdate = false;
+	private Zoom zoom = Zoom.ZOOM_100;
+	private int zoomWidth = -1;
+	private int zoomHeight = -1;
+	private int zoomX = 0;
+	private int zoomY = 0;
+	private boolean needsUpdateZoom = false;
 
 	public ImagePanel() {
 		super();
@@ -64,9 +67,7 @@ public class ImagePanel extends JPanel{
 		
 		if (x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1)) {
 			
-			
-			
-			if (this.zoom != null && this.zoom != Zoom.ZOOM_100) {
+			if (this.zoom != Zoom.ZOOM_100) {
 				double modedX = (zoomWidth * ((x - posX) / (double) imgPartWidth)) + zoomX;
 				double modedY = (zoomHeight * ((y - posY) / (double) imgPartHeight)) + zoomY;
 				//double xImg = ((modedX - posX) / (double) imgWidth) * image.getWidth();
@@ -116,7 +117,7 @@ public class ImagePanel extends JPanel{
 			this.zoomY = Math.min(this.image.getHeight() - this.zoomHeight, this.zoomY + shiftAmount);
 			break;
 		}
-		this.needsUpdate = true;
+		this.needsUpdateZoom = true;
 		repaint();
 	}
 	
@@ -128,79 +129,175 @@ public class ImagePanel extends JPanel{
 		return x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1);
 	}
 	
+	/**
+	 * See {@link #setImage(BufferedImage, boolean)}
+	 * 
+	 * @param ip			The image to set in the panel
+	 * @param keepZoom	True of the current zoom should be kept, false to zoom out to full size
+	 */
+	public synchronized void setImage(ImagePlus ip, boolean keepZoom) {
+		setImage(ip.getBufferedImage(), keepZoom);
+	}
 	
-	
-	public synchronized void setImage(BufferedImage ig, int xCenter, int yCenter, Zoom zoom) {
+	/**
+	 * Sets the current image being display in this image panel, updating the display (repainting it)
+	 * 
+	 * @param ip			The image to set in the panel
+	 * @param keepZoom	True of the current zoom should be kept, false to zoom out to full size
+	 */
+	public synchronized void setImage(BufferedImage ig, boolean keepZoom) {
 		this.image = ig;
-		this.pastHeight = -1;
-		if (zoom != null && this.zoom != zoom) {
-			if (zoom.equals(Zoom.ZOOM_100)) {
-				this.zoom = null;
-				zoomWidth = -1;
-				zoomHeight = -1;
-				zoomX = -1;
-				zoomY = -1;
-				this.zoom = zoom;
-				this.needsUpdate = true;
-			} else  {
-
-				if (this.zoom == null || this.zoom.equals(Zoom.ZOOM_100)) {
-					zoomWidth = this.image.getWidth();
-					zoomHeight = this.image.getHeight();
-					zoomX = 0;
-					zoomY = 0;
-					this.zoom = Zoom.ZOOM_100; // will be changed
-				}
-
-				int zoomDiff = Math.subtractExact(zoom.getLevel(), this.zoom.getLevel());
-				
-				if (xCenter >= posX && xCenter <= (posX + imgPartWidth - 1) && yCenter >= posY && yCenter <= (posY + imgPartHeight - 1)) {
-					if (zoomDiff > 0) {
-						// zoom in
-						if (xCenter >= posX && xCenter <= (posX + imgPartWidth - 1) && yCenter >= posY && yCenter <= (posY + imgPartHeight - 1)) {
-							for (int numZooms = 0; numZooms < zoomDiff; numZooms++) {
-								//if (x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1))
-								//double modedX = (((double) zoomWidth) * ((xCenter + 1) / ((double) this.getWidth()))) + zoomX;
-								double modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
-								double modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
-								int[] zoomStats = Zoom.zoomIn(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
-								this.zoomX = zoomStats[0];
-								this.zoomY = zoomStats[1];
-								this.zoomWidth = zoomStats[2];
-								this.zoomHeight = zoomStats[3];
-							}
-						}
-						
-					} else {
-						double modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
-						double modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
-
-						for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
-							int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, (int) modedX, (int) modedY);
-							this.zoomX = zoomStats[0];
-							this.zoomY = zoomStats[1];
-							this.zoomWidth = zoomStats[2];
-							this.zoomHeight = zoomStats[3];
-						}
-
-					}
-					this.zoom = zoom;
-					this.needsUpdate = true;
-
-				} else if (zoomDiff < 0) {
-					for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
-						int[] zoomStats = Zoom.zoomOut(zoomX, zoomY, this.image.getWidth() - 1, this.image.getHeight() - 1, zoomWidth, zoomHeight, -1, -1);
-						this.zoomX = zoomStats[0];
-						this.zoomY = zoomStats[1];
-						this.zoomWidth = zoomStats[2];
-						this.zoomHeight = zoomStats[3];
-					}
-				}
-				
-			}
+		this.needsUpdateZoom = true;
+		if (!keepZoom || zoom == Zoom.ZOOM_100) {
+			zoomWidth = -1;
+			zoomHeight = -1;
+			zoomX = 0;
+			zoomY = 0;
+			this.zoom = Zoom.ZOOM_100;
+			this.needsUpdateZoom = true;
 		}
 		repaint();
 	}
+	
+	public Zoom getZoom() {
+		return this.zoom;
+	}
+	
+	public synchronized void zoomIn(int xCenter, int yCenter, boolean dontRepaint) {
+		
+		Zoom nextZoom = this.zoom.getNextZoomLevel();
+		if (nextZoom == null)
+			return;
+		
+		if (xCenter < posX || xCenter > (posX + imgPartWidth - 1) || yCenter < posY || yCenter > (posY + imgPartHeight - 1)) { // check if mouse is within image
+			// mouse is not within image
+			return;
+		}
+		
+		double modedX;
+		double modedY;
+		if (this.zoom != Zoom.ZOOM_100) {
+			modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
+			modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
+		} else {
+			modedX = (((double) this.image.getWidth()) * ((xCenter - posX + 1) / ((double) imgPartWidth)));
+			modedY = (((double) this.image.getHeight()) * ((yCenter - posY + 1) / ((double) imgPartHeight)));
+		}
+		
+		int[] zoomStats = this.zoom.zoomIn(this.zoomX, this.zoomY, this.image.getWidth(), this.image.getHeight(), (int) modedX, (int) modedY);
+		this.zoomX = zoomStats[0];
+		this.zoomY = zoomStats[1];
+		this.zoomWidth = zoomStats[2];
+		this.zoomHeight = zoomStats[3];
+		
+		this.zoom = nextZoom;
+		this.needsUpdateZoom = true;
+		if (!dontRepaint) {
+			repaint();
+		}
+		
+	}
+	
+	public synchronized void zoomOut(boolean zoomToFull, boolean dontRepaint) {
+		zoomOut(zoomToFull, -1, -1, dontRepaint);
+	}
+	
+	public synchronized void zoomOut(boolean zoomToFull, int xCenter, int yCenter, boolean dontRepaint) {
+		
+		if (this.zoom == Zoom.ZOOM_100)
+			return;
+		
+		if (zoomToFull) {
+			this.zoomHeight = -1;
+			this.zoomWidth = -1;
+			this.zoomX = 0;
+			this.zoomY = 0;
+			this.zoom = Zoom.ZOOM_100;
+			this.needsUpdateZoom = true;
+			if (!dontRepaint) {
+				repaint();
+			}
+			return;
+		}
+		
+		Zoom nextZoom = this.zoom.getPreviousZoomLevel();
+		
+		int[] zoomStats = null;
+		
+		if (xCenter == -1 || yCenter == -1 || xCenter < posX || xCenter > (posX + imgPartWidth - 1) || yCenter < posY || yCenter > (posY + imgPartHeight - 1)) { // check if mouse is within image
+			zoomStats = this.zoom.zoomOut(this.zoomX, this.zoomY, this.image.getWidth(), this.image.getHeight(), -1, -1);
+
+		} else {
+			
+			double modedX = (((double) zoomWidth) * ((xCenter - posX + 1) / ((double) imgPartWidth))) + zoomX;
+			double modedY = (((double) zoomHeight) * ((yCenter - posY + 1) / ((double) imgPartHeight))) + zoomY;
+			
+			zoomStats = this.zoom.zoomOut(this.zoomX, this.zoomY, this.image.getWidth(), this.image.getHeight(), (int) modedX, (int) modedY);
+			// mouse is within image
+
+		}
+		
+		this.zoomX = zoomStats[0];
+		this.zoomY = zoomStats[1];
+		this.zoomWidth = zoomStats[2];
+		this.zoomHeight = zoomStats[3];
+		
+		this.zoom = nextZoom;
+		this.needsUpdateZoom = true;
+
+		if (!dontRepaint) {
+			repaint();
+		}
+		
+	}
+	
+	
+	
+	public void setZoom(Zoom zoom, int xCenter, int yCenter) {
+		
+		
+		if (this.zoom == zoom)
+			return;
+		else if (zoom == Zoom.ZOOM_100) {
+			this.zoomHeight = -1;
+			this.zoomWidth = -1;
+			this.zoomX = 0;
+			this.zoomY = 0;
+			this.zoom = Zoom.ZOOM_100;
+			this.needsUpdateZoom = true;
+			repaint();
+			return;
+		}
+		
+		int zoomDiff = Math.subtractExact(zoom.getLevel(), this.zoom.getLevel());
+		
+		if (zoomDiff > 0) {
+			// zoom in
+			// successively zoom in.
+			
+			if (xCenter == -1 || yCenter == -1)
+				return;
+			
+			for (int numZooms = 0; numZooms < zoomDiff; numZooms++) {
+				zoomIn(xCenter, yCenter, true);
+			}
+			
+			this.needsUpdateZoom = true;
+			repaint();
+			
+		} else {
+			
+			// zoom out
+			for (int numZooms = 0; numZooms < (-1 * zoomDiff); numZooms++) {
+				zoomOut(false, xCenter, yCenter, true);
+			}
+			
+			this.needsUpdateZoom = true;
+			repaint();
+		}
+		
+	}
+	
 
 	public synchronized void paintComponent(Graphics g) {
 
@@ -208,17 +305,20 @@ public class ImagePanel extends JPanel{
 		if (image != null) {
 			BufferedImage zoomedIg = image;
 			boolean drawZoomBox = false;
-			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight && !this.needsUpdate) {
-				g.drawImage(scaled, posX, posY, this); // see javadoc for more info on the parameters 
-				if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+			if (this.getWidth() == pastWidth && this.getHeight() == pastHeight && !this.needsUpdateZoom) {
+				// Image panel didn't change size and we don't need to update.
+				g.drawImage(scaled, posX, posY, this);
+				if (!this.zoom.equals(Zoom.ZOOM_100)) {
 					drawZoomBox(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
 				}
 				return;
-			} else if (this.zoom != null && !zoom.equals(Zoom.ZOOM_100)) {
+			} else if (!this.zoom.equals(Zoom.ZOOM_100)) {
 				drawZoomBox = true;
+				
+
 				zoomedIg = image.getSubimage(zoomX, zoomY, zoomWidth, zoomHeight);
 			}
-			this.needsUpdate = false;
+			this.needsUpdateZoom = false;
 
 			pastHeight = getHeight();
 			pastWidth = getWidth();
