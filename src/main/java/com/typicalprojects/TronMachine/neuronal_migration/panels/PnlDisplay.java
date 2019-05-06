@@ -51,6 +51,7 @@ import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
+import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Point;
 import com.typicalprojects.TronMachine.util.Toolbox;
 import com.typicalprojects.TronMachine.util.Zoom;
@@ -200,7 +201,15 @@ public class PnlDisplay  {
 				lblPageNum.setText(page.getDisplayAbbrev() + "");
 				Object[] feedback = outputHandler.sliderPageChanged(page, getSliderSelectedSlice());
 				if (feedback[0] != null) {
-					pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
+					if (feedback.length > 2 && feedback[2] != null && feedback[2] instanceof Boolean && (boolean) feedback[2]) {
+						pnlImage.setScaleBar(ImageContainer.getInfernoLUT(), "No Overlap", "Max Overlap");
+						pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
+
+					} else {
+						pnlImage.setScaleBar(null, null, null);
+						pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
+
+					}
 				}
 
 			}

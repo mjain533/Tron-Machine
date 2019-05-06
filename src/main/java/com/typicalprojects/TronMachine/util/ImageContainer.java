@@ -823,6 +823,10 @@ public class ImageContainer implements Serializable {
 		imp.updateImage();
 	}
 	
+	public static IndexColorModel getInfernoLUT() {
+		return fireLUT;
+	}
+	
 	public static void applyInfernoLUT(ImagePlus imp) {
 		
 		if (imp.getBitDepth() != 8) {

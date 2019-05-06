@@ -27,10 +27,13 @@ package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+
 import javax.swing.JPanel;
 
 import com.typicalprojects.TronMachine.util.Point;
@@ -58,6 +61,10 @@ public class ImagePanel extends JPanel{
 	private int zoomX = 0;
 	private int zoomY = 0;
 	private boolean needsUpdateZoom = false;
+	
+	private IndexColorModel heatScale = null;
+	private String heatScaleMaxText = null;
+	private String heatScaleMinText = null;
 
 	public ImagePanel() {
 		super();
@@ -127,6 +134,12 @@ public class ImagePanel extends JPanel{
 	
 	public boolean screenPositionIsInImage(int x, int y) {
 		return x >= posX && x <= (posX + imgPartWidth - 1) && y >= posY && y <= (posY + imgPartHeight - 1);
+	}
+	
+	public synchronized void setScaleBar(IndexColorModel heatScale, String heatScaleMinText, String heatScaleMaxText) {
+		this.heatScale = heatScale;
+		this.heatScaleMinText = heatScaleMinText;
+		this.heatScaleMaxText = heatScaleMaxText;
 	}
 	
 	/**
@@ -251,8 +264,6 @@ public class ImagePanel extends JPanel{
 		
 	}
 	
-	
-	
 	public void setZoom(Zoom zoom, int xCenter, int yCenter) {
 		
 		
@@ -311,6 +322,7 @@ public class ImagePanel extends JPanel{
 				if (!this.zoom.equals(Zoom.ZOOM_100)) {
 					drawZoomBox(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
 				}
+				drawHeatScale(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
 				return;
 			} else if (!this.zoom.equals(Zoom.ZOOM_100)) {
 				drawZoomBox = true;
@@ -347,7 +359,7 @@ public class ImagePanel extends JPanel{
 			if (drawZoomBox) {
 				drawZoomBox(g, this.posX, this.posY, this.imgPartWidth, this.imgPartHeight);
 			}
-			
+						
 			return;
 		}
 
@@ -360,18 +372,73 @@ public class ImagePanel extends JPanel{
 		if (imagePnlWidth < 100 || imagePnlHeight < 100)
 			return;
 		int scaleFactor = (int) Math.ceil(imagePnlWidth / 8.0);
+		int scaleFactor2 = (int) Math.ceil(imagePnlHeight / 8.0);
+
 		Graphics2D g2= (Graphics2D) g;
 		int strokeWidth = imagePnlWidth / 250;
 		g2.setStroke(new BasicStroke(strokeWidth));
 		g2.setColor(Color.MAGENTA);
-		g2.drawRect(upperLeftImagePosX + 5, upperLeftImagePosY + 5, scaleFactor, scaleFactor);
+		g2.drawRect(upperLeftImagePosX + 5, upperLeftImagePosY + 5, scaleFactor, scaleFactor2);
 		g2.setColor(Color.CYAN);
 		g2.drawRect((int) (upperLeftImagePosX + 5 + (scaleFactor * (this.zoomX / (double) this.image.getWidth()))), 
-				(int) (upperLeftImagePosY + 5 + (scaleFactor * (this.zoomY / (double) this.image.getHeight()))), 
+				(int) (upperLeftImagePosY + 5 + (scaleFactor2 * (this.zoomY / (double) this.image.getHeight()))), 
 				(int) (scaleFactor * (this.zoomWidth / (double) this.image.getWidth())) + 1, 
-				(int) (scaleFactor * (this.zoomHeight / (double) this.image.getHeight())) + 1);
-		//g.setColor(Color.YELLOW);
+				(int) (scaleFactor2 * (this.zoomHeight / (double) this.image.getHeight())) + 1);
 		
 	}
+	
+	private void drawHeatScale(Graphics g, int upperLeftImagePosX, int upperLeftImagePosY, int imagePnlWidth, int imagePnlHeight) {
+		if (this.heatScale == null) {
+			return;
+		}
+		
+		
+		int heatScaleWidth = imagePnlWidth / 4;
+		int heatScaleHeight = heatScaleWidth / 6;
+		
+		
+		Graphics2D g2= (Graphics2D) g;
+		int strokeWidth = imagePnlWidth / 250;
+		g2.setStroke(new BasicStroke(strokeWidth));
+		byte[] reds = new byte[256];
+		byte[] greens = new byte[256];
+		byte[] blues = new byte[256];
+
+		this.heatScale.getReds(reds);
+		this.heatScale.getGreens(greens);
+		this.heatScale.getBlues(blues);
+
+		int startX = upperLeftImagePosX + (int) ((imagePnlWidth / 2.0) - (heatScaleWidth / 2.0));
+		int startY = upperLeftImagePosY + (imagePnlHeight /50);
+		for (int i = 0; i <= heatScaleWidth; i++) {
+			int index = (int) ((i / (double) heatScaleWidth) * 255.0);
+			g2.setColor(new Color((reds[index] & 0xFF), (greens[index] & 0xFF), (blues[index] & 0xFF)));
+			g2.drawLine(startX + i, startY, startX + i, startY +heatScaleHeight );
+		}
+
+		g2.setColor(Color.RED);
+		g2.drawRect(startX, startY, heatScaleWidth, heatScaleHeight);
+		
+		int fontHeight = (int) (heatScaleHeight / 1.5);
+		
+		g2.setFont(new Font("Arial", Font.BOLD, fontHeight));
+		if (this.heatScaleMinText != null) {
+			int stringWidth = g2.getFontMetrics().stringWidth(this.heatScaleMinText);
+			
+			if ((startX - stringWidth - (imagePnlWidth /80)) > ((imagePnlWidth / 8.0)+5)) {
+				g2.drawString(this.heatScaleMinText, startX - stringWidth - (imagePnlWidth /80), startY + heatScaleHeight - g2.getFontMetrics().getDescent() - (int) ((heatScaleHeight - fontHeight)/ 2.0));
+			}
+		}
+		
+		if (this.heatScaleMaxText != null) {
+			int stringWidth = g2.getFontMetrics().stringWidth(this.heatScaleMaxText);
+			
+			if ((startX + heatScaleWidth + stringWidth + (imagePnlWidth /80)) <= imagePnlWidth) {
+				g2.drawString(this.heatScaleMaxText, startX + heatScaleWidth + (imagePnlWidth /80), startY + heatScaleHeight - g2.getFontMetrics().getDescent() - (int) ((heatScaleHeight - fontHeight)/ 2.0));
+			}
+		}
+
+	}
+	
 
 }

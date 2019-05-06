@@ -74,7 +74,6 @@ import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEdita
 import com.typicalprojects.TronMachine.neuronal_migration.processing.PreprocessedEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
-import com.typicalprojects.TronMachine.popup.HelpPopup;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChangeReceiver;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
@@ -140,7 +139,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private JButton distBtnDeleteROI;
 	private JButton distBtnNext;
 	private JButton distBtnHelp;
-	private HelpPopup distHelpPopup;
+	private String distHelpPopupText;
 
 
 
@@ -167,7 +166,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private JTextField objTxtRemove;
 	private JButton objBtnHelp;
 	private JButton objBtnPick;
-	private HelpPopup objHelpPopup;
+	private String objHelpPopupText;
 
 	private JLabel pstObLblCurrDisp;
 	private JLabel pstObLblCurrView;
@@ -179,6 +178,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private JButton pstObBtnHelp;
 	private JCheckBox pstObChkDots;
 	private JCheckBox pstObChkMax;
+	private String pstObHelpPopupText;
 
 	private List<File> imagesForObjectAnalysis = new LinkedList<File>();
 	private List<File> imagesForObjectSelection = new LinkedList<File>();
@@ -212,28 +212,54 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.gui = gui;
 
-		String message = "<html><h3><em>Removing Objects</em></h3>"
+		this.objHelpPopupText = "<h3><em><font color='red'>Removing Objects</font></em></h3>"
+				+ "<p>"
 				+ "Type object numbers in the text field after 'Rmv:' and click Remove to delete objects. You may enter a single number, a range of numbers (i.e. 1-5), or a combination of both separated by commas and no spaces (i.e. 1-5,7,9,11-15). "
 				+ "Points can also be removed by right clicking them on the image itself. You may remove large chunks of objects in a region by clicking 'Pick Mult.' and then drawing a polygon by clicking points on the image. Points within the polygon will be removed. "
 				+ "The polygon's start and end points don't need to line up exactly. A line will be drawn between your start and end points to finish the shape, but make sure the start and end points are close. Points in this region will be removed from all processed channels."
-				+ "<br>"
-				+ "<h3><em>Adding Objects</em></h3>"
+				+ "</p>"
+				+ "<h3><em><font color='red'>Adding Objects</font></em></h3>"
+				+ "<p>"
 				+ "To add points, simply (left) click on the image."
-				+ "<br>"
-				+ "<h3><em>Modifying the View</em></h3>"
+				+ "</p>"
+				+ "<h3><em><font color='red'>Modifying the View</font></em></h3>"
+				+ "<p>"
 				+ "You can resize the program window to enlarge the image. If this is insufficient, you may zoom in by hitting the Shift key (will zoom in where your mouse lies, so the mouse must be within the image boundaries). "
 				+ "You can navigate while zoomed using A (left), W (up), S (down), D (right), and zoom out using the space bar.<br><br>"
 				+ "You may also toggle the image dots (and numbers), object mask, and original image using the checkboxes in the options panel."
-				+ "</html>";
+				+ "</p>";
 
-		this.objHelpPopup = new HelpPopup(580, 615, message);
-
-		String message2 = "<html>Click on the image to start adding points to the ROI. Then, click 'Add' in the "
+		this.distHelpPopupText = "<p>Click on the image to start adding points to the ROI. Then, click 'Add' in the "
 				+ "panel below the image to add the region. You can delete this region via the 'Delete' button.<br><br>"
-				+ "To RESET the points you've selected, click the 'Cancel' button.</html>";
-
-		this.distHelpPopup = new HelpPopup(250, 350, message2);
-
+				+ "To RESET the points you've selected, click the 'Cancel' button.</p>";
+		
+		this.pstObHelpPopupText = "<h3><em><font color='red'>Overlap Detection</font></em></h3>"
+				+ "<p>"
+				+ "This feature allows you to exclude objects (neurons) which were counted twice, once in each of two "
+				+ "channels designated for neuron processing. Like in the previous view, "
+				+ "you can resize the program window to enlarge the image. If this is insufficient, you may zoom in by hitting the Shift key (will zoom in where your mouse lies, so the mouse must be within the image boundaries). "
+				+ "You can navigate while zoomed using A (left), W (up), S (down), D (right), and zoom out using the space bar.<br><br>"
+				+ "You may also toggle the image dots which represent objects using the checkbox in the options panel or by pressing E."
+				+ "</p>"
+				+ "<h3><em><font color='red'>Images</font></em></h3>"
+				+ "<p>"
+				+ "Four images are provided for overlap detection. All images can either be displayed in Z-project (max method) "
+				+ "or stack version, which is toggled using the checkbox in the options panel or by pressing R. Dots representing objects "
+				+ "are colored either blue or magenta for each channel, where color assignments are at random (to reduce bias). "
+				+ "<br><br>"
+				+ "The first image is a ROUGH prediction of overlapping cells based on image processing techniques. The second image is a depiction of "
+				+ "overlap overlap in objects calculated by the TRON program, where yellow is overlap and green and red are the two "
+				+ "channels for neuron processing (green and red do NOT necessarily correlate with actual colors of channels). "
+				+ "The third image is a raw depiction of all overlapping pixels between the two channels, where black is no overlap and "
+				+ "yellow is most overlap (according to scale at top of image). This should give a pretty good depiction of the degree of "
+				+ "overlap. The fourth image is a merge of the two original channels, where yellow pixels indicate overlap."
+				+ "</p>"
+				+ "<h3><em><font color='red'>Removing an Object</font></em></h3>"
+				+ "<p>"
+				+ "When you want to remove an object that has been double clicked, right-click near the dot (object). The object "
+				+ "in each channel closest to your crosshair will be removed, unless there are no object(s) close to the crosshair."
+				+ "</p>";
+		
 		lblDisabled = new JLabel("<html><body><p style='width: 100px; text-align: center;'>Please select images using the interface above.</p></body></html>");
 		lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -478,7 +504,8 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		this.objBtnHelp.addActionListener(new ActionListener() {
 
 			public void actionPerformed(ActionEvent e) {
-				objHelpPopup.display(gui.getComponent());				
+
+				GUI.displayPopupMessage(objHelpPopupText, "Help", gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
 			}
 
 		});
@@ -669,6 +696,13 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 			}
 		});
+		
+		this.pstObBtnHelp.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				GUI.displayPopupMessage(pstObHelpPopupText, "Help", gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
+				
+			}
+		});
 
 		this.pstObBtnNext.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -747,7 +781,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.distBtnHelp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				distHelpPopup.display(gui.getComponent());
+				GUI.displayPopupMessage(distHelpPopupText, "Help", gui.getComponent(), JOptionPane.INFORMATION_MESSAGE);
 
 			}
 		});
@@ -1054,11 +1088,6 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 */
 	private synchronized void nextObjImage(final boolean returnFromPostObjProcessing) {
 
-		// TODO: fix the help button for this page
-
-		// TODO: When done with post-processing, check if should keep (i.e. OutputOption selected in preferences
-		// or save resources from post-processing is selected) or remove the object stack. If not remove, make
-		// sure to apply the appropriate LUT to it.
 
 		objBtnNext.setEnabled(false);
 		objTxtRemove.setEnabled(false);
@@ -1755,6 +1784,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	public synchronized Object[] sliderPageChanged(PnlDisplayPage displayPage, int slice) {
 		ImagePlus ipToSet = null;
 		boolean keepZoom = false;
+		boolean useScaleBar = false;
 		if (currentState == STATE_SLICE) {
 			if(this.imageCurrentlyPreprocessing != null) {
 				ipToSet = this.imageCurrentlyPreprocessing.getSlice((Channel) displayPage, slice, false);
@@ -1790,6 +1820,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 				keepZoom = true;
 				pstObTxtCurrView.setText(((PostProcessImage) displayPage).getTitle(pstObChkMax.isSelected()));
 				ipToSet = imgCurrObjEditing.getPostObjectImage(displayPage.getDisplayAbbrev(), slice, gui.getImageDisplay().getZoom());
+				useScaleBar = displayPage.getDisplayAbbrev().equalsIgnoreCase("ov");
 			}
 		} else if (currentState == STATE_ROI) {
 			if (imageCurrentlyROIEditing != null) {
@@ -1805,7 +1836,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			}
 		}
 
-		return new Object[] {ipToSet, keepZoom};
+		return new Object[] {ipToSet, keepZoom, useScaleBar};
 	}
 
 	/**

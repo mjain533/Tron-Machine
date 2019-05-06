@@ -765,6 +765,31 @@ public class GUI  {
 	}
 
 	/**
+	 * Sends a larger popup message to the user with an 'OK' button.
+	 * 
+	 * @param msg				The message to send the user
+	 * @param title				Title at the top of the message pop-up
+	 * @param relative			The component on which the pop-up should be centered. If null is passed, then
+	 * 							it will be placed in the screen's center.
+	 * @param joptionpaneMsgType	The message type, which should be one of the JOptionPane settings.
+	 */
+	public static void displayPopupMessage(String msg, String title, Component relative, int joptionpaneMsgType) {
+		String string;
+		JLabel label = new JLabel(msg);
+		if (label.getPreferredSize().width > 400) {
+			string = "<html><body style='width:" + 400 + "px;'>"+msg+"</body></html>";
+		} else {
+			string = "<html><body><p>" + msg+ "</p></body></html>";
+		}
+		if (relative == null)
+			relative = GUI.SINGLETON.quantFrame;
+		JOptionPane.showMessageDialog(relative,
+				string, title, joptionpaneMsgType);
+
+
+	}
+	
+	/**
 	 * Sends a simple message to the user with an 'OK' button.
 	 * 
 	 * @param msg				The message to send the user
@@ -777,7 +802,7 @@ public class GUI  {
 		String string;
 		JLabel label = new JLabel(msg);
 		if (label.getPreferredSize().width > 300) {
-			string = "<html><body><p style='width:" + 300 + "px;'>"+msg+"</p></body></html>";
+			string = "<html><body style='width:" + 300 + "px;'><p>"+msg+"</p></body></html>";
 		} else {
 			string = "<html><body><p>" + msg+ "</p></body></html>";
 		}

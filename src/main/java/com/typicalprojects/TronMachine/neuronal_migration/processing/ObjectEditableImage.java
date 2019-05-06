@@ -575,6 +575,8 @@ public class ObjectEditableImage implements Serializable{
 		overlapper.createOverlapGradientStack();
 		stack = overlapper.getResult();
 		overlapper.maxProjectResult();
+		// If change "Ov" abbreviation to something else, going to need to modify how the scale bar gets
+		// placed when this image is displayed.
 		imagesList.add(new PostProcessImage("Gradiated (Raw) Overlap", stack, overlapper.getResult(), "Ov"));
 		
 		overlapper = new StackOverlapper();

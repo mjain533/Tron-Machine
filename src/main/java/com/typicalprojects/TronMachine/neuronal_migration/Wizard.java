@@ -53,6 +53,7 @@ public class Wizard {
 	@SuppressWarnings("unchecked")
 	private void setStatus(Status status, Object... input) {
 		this.status = status;
+		gui.getImageDisplay().setScaleBar(null, null, null);
 		switch(status) {
 		case SETUP:
 			gui.getInstructionPanel().setInstruction(Instruction.SETUP);
