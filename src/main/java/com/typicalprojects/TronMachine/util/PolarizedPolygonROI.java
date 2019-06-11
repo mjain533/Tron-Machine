@@ -30,8 +30,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 import ij.gui.PolygonRoi;
 import ij.io.RoiDecoder;
@@ -96,13 +94,9 @@ public class PolarizedPolygonROI implements Serializable {
 		return this.name.equals(((PolarizedPolygonROI) other).name);
 	}
 	
-	public Map<Integer, Integer> getPointsOnLine() {
-		Polygon p = polyROI.getPolygon();
-		Map<Integer, Integer> mapping = new HashMap<Integer, Integer>();
-		for (int polygonPt = 0; polygonPt < p.npoints; polygonPt ++) {
-			mapping.put(p.xpoints[polygonPt], p.ypoints[polygonPt]);
-		}
-		return mapping;
+	public Polygon getPointsOnLine() {
+		return polyROI.getPolygon();
+
 	}
 	
 	public boolean isPositive(int x, int y) {

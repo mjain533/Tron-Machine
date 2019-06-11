@@ -182,7 +182,7 @@ public class Wizard {
 	}
 	
 	public void startFromRoiState(List<FileContainer> fcs) {
-		this.status = Status.SELECT_OB;
+		this.status = Status.SELECT_ROI;
 		List<File> files = new ArrayList<File>();
 		for (FileContainer fc : fcs) {
 			files.add(fc.file);

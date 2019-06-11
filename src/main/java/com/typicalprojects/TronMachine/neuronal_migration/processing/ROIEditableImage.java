@@ -1035,20 +1035,19 @@ public class ROIEditableImage implements Serializable {
 					newTable.addValue(0, i + 1);
 					newTable.addValue(1, p.x);
 					newTable.addValue(2, p.y);
-
+					System.out.println("Occurred");
 					int r = 3;
 					for (PolarizedPolygonROI roi : this.rois) {
 
 						double shortestDist = Double.MAX_VALUE;
-						int lowestY = Integer.MAX_VALUE;
-						int highestY = Integer.MIN_VALUE;
-						Map<Integer, Integer> coordinatePts = roi.getPointsOnLine();
-						for (Entry<Integer, Integer> en : coordinatePts.entrySet()) {
-							lowestY = Math.min(lowestY, en.getValue());
-							highestY = Math.max(highestY, en.getValue());
-							double dist = Math.sqrt(Math.pow(en.getKey() - p.x, 2) + Math.pow(en.getValue() - p.y, 2));
-							if (dist < shortestDist)
+						Polygon coordinatePts = roi.getPointsOnLine();
+						
+						for (int linePtInd = 0; linePtInd < coordinatePts.npoints; linePtInd++) {
+							double dist = Math.sqrt(Math.pow(coordinatePts.xpoints[linePtInd] - p.x, 2) + Math.pow(coordinatePts.ypoints[linePtInd] - p.y, 2));
+							if (dist < shortestDist) {
 								shortestDist = dist;
+								
+							}
 						}
 
 
