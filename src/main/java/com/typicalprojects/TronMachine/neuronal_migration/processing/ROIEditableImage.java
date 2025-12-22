@@ -149,7 +149,29 @@ public class ROIEditableImage implements Serializable {
 	}
 
 	public ImagePlus getPaintedCopy(Channel channelToDrawROI) {
-		
+		 if (this.ic == null) {
+        System.err.println("ROIEditableImage.getPaintedCopy(): ImageContainer is null!");
+        return null;
+    }
+
+    ImagePlus baseImage;
+    try {
+        if (getRunConfig().channelMan.isProcessChannel(channelToDrawROI)) {
+            baseImage = this.ic.getImage(OutputOption.ProcessedFull, channelToDrawROI, true);
+        } else {
+            baseImage = this.ic.getImage(OutputOption.MaxedChannel, channelToDrawROI, true);
+        }
+    } catch (Exception e) {
+        System.err.println("Failed to get ImagePlus for channel: " + channelToDrawROI);
+        e.printStackTrace();
+        return null;
+    }
+
+    if (baseImage == null || baseImage.getProcessor() == null) {
+        System.err.println("Base ImagePlus or processor is null for channel: " + channelToDrawROI);
+        return null;
+    }
+
 
 		if (this.cache.containsKey(channelToDrawROI)) {
 			return this.cache.get(channelToDrawROI);
