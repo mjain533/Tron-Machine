@@ -119,7 +119,7 @@ public class Settings {
 		public static Settings loadSettings(boolean forceLoadDefault) throws FileNotFoundException, SecurityException, IOException {
 
 			InputStream defaultDataSource = /*new FileInputStream(defaultSettings)*/Settings.class.getClassLoader().getResourceAsStream("default_settings.yml");
-			LinkedHashMap<String, Object> defaultData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor())).load(defaultDataSource);
+			LinkedHashMap<String, Object> defaultData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor(new org.yaml.snakeyaml.LoaderOptions()))).load(defaultDataSource);
 
 			LinkedHashMap<String, Object> customData = null;
 			boolean changed = false;
@@ -127,7 +127,7 @@ public class Settings {
 				String fullSettingsPath = settingsMainPath + File.separator + settingsFileName;
 				if (new File(fullSettingsPath).exists()) {
 					InputStream customDataSource = new FileInputStream(fullSettingsPath);
-					customData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor())).load(customDataSource);
+					customData = (LinkedHashMap<String, Object>) (new Yaml(new SafeConstructor(new org.yaml.snakeyaml.LoaderOptions()))).load(customDataSource);
 
 				} else {
 					changed = true;

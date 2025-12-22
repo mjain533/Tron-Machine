@@ -56,8 +56,8 @@ import ij.io.FileSaver;
 import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.process.ImageProcessor;
-import loci.plugins.BF;
-import loci.plugins.in.ImporterOptions;
+//import loci.plugins.BF;
+//import loci.plugins.in.ImporterOptions;
 
 public class ImageContainer implements Serializable {
 
@@ -118,10 +118,17 @@ public class ImageContainer implements Serializable {
 			this.imageFile = imageFile;
 			makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
 
-			ImporterOptions io = new ImporterOptions();
-			io.setId(this.imageFile.getPath());
-			io.setSplitChannels(true);
-			ImagePlus[]  ips= BF.openImagePlus(io);
+			// BioFormats support disabled - library unavailable in Maven Central
+			//ImporterOptions io = new ImporterOptions();
+			//io.setId(this.imageFile.getPath());
+			//io.setSplitChannels(true);
+			//ImagePlus[]  ips= BF.openImagePlus(io);
+			
+			// Fall back to ImageJ Opener
+			Opener opener = new Opener();
+			ImagePlus imagePlus = opener.openImage(this.imageFile.getPath());
+			ImagePlus[] ips = new ImagePlus[] { imagePlus };
+			
 			this.cal = ips[0].getCalibration();
 
 			if (this.cal == null) {
