@@ -56,6 +56,14 @@
 					</jvmArgs>
 				</configuration>
 			</plugin>
+			<plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.11.0</version>
+      <configuration>
+        <release>17</release>
+      </configuration>
+    </plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -106,6 +114,11 @@
 
 	<dependencies>
 		<dependency>
+  			<groupId>org.apache.commons</groupId>
+  			<artifactId>commons-lang3</artifactId>
+  			<version>3.14.0</version>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
@@ -113,7 +126,7 @@
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
-			<version>1.52b</version>
+			<version>1.54f</version>
 		</dependency>
 		<dependency>
 			<groupId>com.jgoodies</groupId>
@@ -128,13 +141,13 @@
 		<dependency>
 			<groupId>ome</groupId>
 			<artifactId>bioformats_package</artifactId>
-			<version>5.8.2</version>
+  			<version>8.3.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.17</version>
+			<version>5.2.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.opencsv</groupId>
@@ -144,13 +157,17 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
-			<version>3.17</version>
+			<version>5.2.5</version>
 		</dependency>
-
+		<dependency>
+  <groupId>jakarta.xml.bind</groupId>
+  <artifactId>jakarta.xml.bind-api</artifactId>
+  <version>4.0.0</version>
+</dependency>
 		<dependency>
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
-			<version>1.24-SNAPSHOT</version>
+  			<version>1.33</version>
 		</dependency>
 
 	</dependencies>
