@@ -199,11 +199,23 @@ public class AdvancedWorkbook {
 	 */
 	public boolean save(File saveFile) {
 		try {
+			if (!saveFile.getParentFile().exists()) {
+				saveFile.getParentFile().mkdirs();
+			}
 			saveFile.createNewFile();
-			workbook.write(new FileOutputStream(saveFile));
-
+			
+			FileOutputStream fileOut = new FileOutputStream(saveFile);
+			try {
+				workbook.write(fileOut);
+			} finally {
+				fileOut.close();
+			}
+			
+			System.out.println("Successfully saved: " + saveFile.getAbsolutePath());
 			return true;
 		} catch (IOException e) {
+			System.err.println("Failed to save file: " + saveFile.getAbsolutePath());
+			System.err.println("Error: " + e.getMessage());
 			e.printStackTrace();
 			return false;
 		}

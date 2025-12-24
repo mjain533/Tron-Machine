@@ -218,7 +218,12 @@ public class ROIEditableImage implements Serializable {
 			}
 
 			ip.setColor(Color.GREEN);
-			ip.drawOverlay(new Overlay(pgr));
+			pgr.setImage(dup);
+			try {
+				ip.drawOverlay(new Overlay(pgr));
+			} catch (NullPointerException e) {
+				System.err.println("Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null");
+			}
 			dup.updateImage();
 
 
@@ -239,10 +244,20 @@ public class ROIEditableImage implements Serializable {
 				roiWrapper = this.rois.get(i);
 				roi = roiWrapper.get();
 			}
+			
+			// Null-safety check for ROI
+			if (roi == null) {
+				continue;
+			}
 
 			roi.setStrokeColor(Color.GREEN);
 			roi.setStrokeWidth(strokeWidth);
-			ip.drawOverlay(new Overlay(roi));
+			roi.setImage(dup);
+			try {
+				ip.drawOverlay(new Overlay(roi));
+			} catch (NullPointerException e) {
+				System.err.println("Warning: Could not draw ROI overlay in getPaintedCopy - ROI missing ImagePlus reference");
+			}
 			
 			int middleY = roi.getPolygon().ypoints[(roi.getPolygon().npoints / 2)];
 			middleY= Math.min(middleY, dup.getDimensions()[1] - 1 - (ip.getFontMetrics().getHeight()/ 2));
@@ -302,7 +317,11 @@ public class ROIEditableImage implements Serializable {
 			whiteOverlay.getProcessor().fillRect(0, 0, ip.getWidth(), ip.getHeight());
 			whiteOverlay.setZeroTransparent(true);
 			whiteOverlay.setOpacity(0.5);
-			ip.drawOverlay(new Overlay(whiteOverlay));
+			try {
+				ip.drawOverlay(new Overlay(whiteOverlay));
+			} catch (NullPointerException e) {
+				System.err.println("Warning: Could not draw white overlay in getPaintedCopy - processor/ImagePlus may be null");
+			}
 			dup.updateImage();
 		}		
 
@@ -533,16 +552,31 @@ public class ROIEditableImage implements Serializable {
 					roi = roiWrapper.get();
 				}
 				
+				// Null-safety check for ROI
+				if (roi == null) {
+					continue;
+				}
+				
 				roi.setStrokeWidth(strokeWidth);
 				if (op.equals(OutputOption.RoiDrawMinBlank)) {
 					roi.setStrokeColor(Color.WHITE);
 					ip.setColor(Color.WHITE);
-					ip.drawOverlay(new Overlay(roi));
+					roi.setImage(roiImg);
+					try {
+						ip.drawOverlay(new Overlay(roi));
+					} catch (NullPointerException e) {
+						System.err.println("Warning: Could not draw ROI overlay - ROI missing ImagePlus reference");
+					}
 					continue;
 				} else {
 					roi.setStrokeColor(Color.GREEN);
 					ip.setColor(Color.GREEN);
-					ip.drawOverlay(new Overlay(roi));
+					roi.setImage(roiImg);
+					try {
+						ip.drawOverlay(new Overlay(roi));
+					} catch (NullPointerException e) {
+						System.err.println("Warning: Could not draw ROI overlay - ROI missing ImagePlus reference");
+					}
 				}
 				
 				
@@ -777,7 +811,11 @@ public class ROIEditableImage implements Serializable {
 				ImageRoi roi = new ImageRoi(0, 0, ip);
 				roi.setZeroTransparent(true);
 				roi.setOpacity(1.0);
-				stack.getProcessor().drawOverlay(new Overlay(roi));
+				try {
+					stack.getProcessor().drawOverlay(new Overlay(roi));
+				} catch (NullPointerException e) {
+					System.err.println("Warning: Could not draw ImageRoi overlay in getImgWithDots - processor/ImagePlus may be null");
+				}
 				stack.updateImage();
 			}
 

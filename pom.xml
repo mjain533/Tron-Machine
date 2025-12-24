@@ -9,7 +9,20 @@
 	<name>TronMachine</name>
 	<url>http://maven.apache.org</url>
 
-
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.15.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.yaml</groupId>
+				<artifactId>snakeyaml</artifactId>
+				<version>1.33</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<build>
 
@@ -49,7 +62,25 @@
 								<exclude>META-INF/*.RSA</exclude>
 							</excludes>
 						</filter>
+						<filter>
+							<artifact>ome:bioformats_package</artifact>
+							<excludes>
+								<exclude>org/apache/commons/io/**</exclude>
+							</excludes>
+						</filter>
+						<filter>
+							<artifact>org.yaml:snakeyaml</artifact>
+							<excludes>
+								<exclude>org/apache/commons/io/**</exclude>
+							</excludes>
+						</filter>
 					</filters>
+					<relocations>
+						<relocation>
+							<pattern>org.apache.commons.io</pattern>
+							<shadedPattern>com.typicalprojects.shaded.org.apache.commons.io</shadedPattern>
+						</relocation>
+					</relocations>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -80,6 +111,10 @@
 			<url>https://repo.maven.apache.org/maven2</url>
 		</repository>
 		<repository>
+			<id>unidata-releases</id>
+			<url>https://artifacts.unidata.ucar.edu/repository/unidata-releases</url>
+		</repository>
+		<repository>
 			<id>Sonatype-public</id>
 			<name>SnakeYAML repository</name>
 			<url>https://oss.sonatype.org/content/groups/public/</url>
@@ -98,16 +133,7 @@
 	</repositories>
 
 	<dependencies>
-		<dependency>
-  			<groupId>org.apache.commons</groupId>
-  			<artifactId>commons-lang3</artifactId>
-  			<version>3.14.0</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
+		
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
@@ -126,9 +152,13 @@
 		<dependency>
 			<groupId>ome</groupId>
 			<artifactId>bioformats_package</artifactId>
-  			<version>8.3.0</version>
+			<version>8.3.0</version>
 		</dependency>
-
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.15.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
@@ -169,16 +199,12 @@
 			<artifactId>snakeyaml</artifactId>
   			<version>1.33</version>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
 
 	</dependencies>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>3.8.1</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 </project>

@@ -1,0 +1,11 @@
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw polygon overlay in getPaintedCopy - ROI/ImagePlus may be null
+Warning: Could not draw ROI overlay in getPaintedCopy - ROI missing ImagePlus reference
+Warning: Could not draw ROI overlay - ROI missing ImagePlus reference
+ERROR StatusLogger Log4j2 could not find a logging implementation. Please add log4j-core to the classpath. Using SimpleLogger to log to the console...

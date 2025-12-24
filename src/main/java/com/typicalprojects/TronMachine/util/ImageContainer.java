@@ -56,8 +56,10 @@ import ij.io.FileSaver;
 import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.process.ImageProcessor;
-//import loci.plugins.BF;
-//import loci.plugins.in.ImporterOptions;
+import loci.plugins.BF;
+import loci.plugins.in.ImporterOptions;
+
+
 
 public class ImageContainer implements Serializable {
 
@@ -118,16 +120,23 @@ public class ImageContainer implements Serializable {
 			this.imageFile = imageFile;
 			makeSaveDirectory(this.title, this.outputLocation, this.timeOfRun);
 
-			// BioFormats support disabled - library unavailable in Maven Central
-			//ImporterOptions io = new ImporterOptions();
-			//io.setId(this.imageFile.getPath());
-			//io.setSplitChannels(true);
-			//ImagePlus[]  ips= BF.openImagePlus(io);
-			
-			// Fall back to ImageJ Opener
-			Opener opener = new Opener();
-			ImagePlus imagePlus = opener.openImage(this.imageFile.getPath());
-			ImagePlus[] ips = new ImagePlus[] { imagePlus };
+			// Try BioFormats first for advanced formats (.czi, etc.), fall back to ImageJ Opener
+			ImagePlus[] ips = null;
+			try {
+				ImporterOptions options = new ImporterOptions();
+				options.setId(this.imageFile.getAbsolutePath());
+				options.setSplitChannels(true);
+				options.setQuiet(true);
+				ips = BF.openImagePlus(options);
+			} catch (Exception e) {
+				// Fallback to ImageJ Opener for standard formats
+				Opener opener = new Opener();
+				ImagePlus imagePlus = opener.openImage(this.imageFile.getPath());
+				if (imagePlus == null) {
+					throw new ImageOpenException("Failed to open image file: " + this.imageFile.getPath());
+				}
+				ips = new ImagePlus[] { imagePlus };
+			}
 			
 			this.cal = ips[0].getCalibration();
 
@@ -569,21 +578,33 @@ public class ImageContainer implements Serializable {
 		String ext = excel ? ".xlsx" : ".txt";
 
 		if (excel) {
-			AdvancedWorkbook aw = new AdvancedWorkbook();
-			List<String> keys = new ArrayList<String>(results.keySet());
+			try {
+				AdvancedWorkbook aw = new AdvancedWorkbook();
+				List<String> keys = new ArrayList<String>(results.keySet());
 
-			for (Channel chan : this.runConfig.channelMan.getOrderedChannels()) {
-				if (keys.contains(chan.getName())) {
-					aw.addSheetFromNeuronCounterResultTable(chan.getName(), results.get(chan.getName()));
-					keys.remove(chan.getName());
+				for (Channel chan : this.runConfig.channelMan.getOrderedChannels()) {
+					if (keys.contains(chan.getName())) {
+						aw.addSheetFromNeuronCounterResultTable(chan.getName(), results.get(chan.getName()));
+						keys.remove(chan.getName());
+					}
 				}
-			}
-			for (String key : keys) {
-				aw.addSheetFromNeuronCounterResultTable(key, results.get(key));
+				for (String key : keys) {
+					aw.addSheetFromNeuronCounterResultTable(key, results.get(key));
 
-			}
+				}
 
-			aw.save(new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx"));
+				File saveFile = new File(getSaveDirectory() + File.separator + this.title + " ANALYSIS.xlsx");
+				boolean saveSuccess = aw.save(saveFile);
+				if (!saveSuccess) {
+					System.err.println("WARNING: Failed to save Excel file: " + saveFile.getAbsolutePath());
+				}
+			} catch (IllegalStateException e) {
+				System.err.println("ERROR: Could not determine save directory");
+				e.printStackTrace();
+			} catch (Exception e) {
+				System.err.println("ERROR: Unexpected error while saving results tables");
+				e.printStackTrace();
+			}
 		} else {
 			for (Entry<String, ResultsTable> en : results.entrySet()) {
 				if (en.getValue() != null) {
@@ -594,9 +615,11 @@ public class ImageContainer implements Serializable {
 						pw.close();
 					} catch (IllegalStateException e) {
 						// Wont happen
+						System.err.println("ERROR: Could not determine intermediate files directory");
 						e.printStackTrace();
 					} catch (IOException e) {
 						// Wont happen
+						System.err.println("ERROR: IOException while saving text results file");
 						e.printStackTrace();
 					}
 				}

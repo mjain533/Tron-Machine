@@ -489,7 +489,7 @@ public class GUI  {
 		pnlCONTENT.setLayout(layout);
 
 		setUIFont(smallBoldFont);
-		
+		/* 
 		// Create the thread for determining if there are updates available.
 		Thread updateRetrieveThread = new Thread(new Runnable() {
 			public void run(){
@@ -530,9 +530,10 @@ public class GUI  {
 
 			}
 		});
+		
 		updateRetrieveThread.setDaemon(true);
 		updateRetrieveThread.start();
-
+		 */
 
 	}
 

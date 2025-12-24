@@ -1,0 +1,2244 @@
+02:44:19.373 [Thread-0] DEBUG loci.common.IniParser -- Line 1: 
+02:44:19.376 [Thread-0] DEBUG loci.common.IniParser -- Line 2: 
+02:44:19.376 [Thread-0] DEBUG loci.common.IniParser -- Line 3: [autoscale]
+02:44:19.378 [Thread-0] DEBUG loci.common.IniParser -- Line 4: type = boolean
+02:44:19.378 [Thread-0] DEBUG loci.common.IniParser -- Line 5: label = Autoscale
+02:44:19.379 [Thread-0] DEBUG loci.common.IniParser -- Line 6: info = <b>Autoscale</b> - Stretches the channel histograms to each channel's global minimum and maximum value throughout the stack. Does not alter underlying values in the image. <br><br>If unselected, all channel histograms are scaled to the image's digitization bit depth. Note that this range may be narrower than the bit depth of the file. For example, a 16-bit file may contain intensities digitized to 16-bits (0-65,535), to 12-bits (0-4,095), to 10-bits (0-1,023), etc. <br><br>Note that you can use the Brightness &amp; Contrast or Window/Level controls to adjust the contrast range regardless of whether this option is used. The histogram will provide min/max values in the stack.
+02:44:19.379 [Thread-0] DEBUG loci.common.IniParser -- Line 19: default = true
+02:44:19.379 [Thread-0] DEBUG loci.common.IniParser -- Line 20: 
+02:44:19.380 [Thread-0] DEBUG loci.common.IniParser -- Line 21: [colorMode]
+02:44:19.380 [Thread-0] DEBUG loci.common.IniParser -- Line 22: type = string
+02:44:19.380 [Thread-0] DEBUG loci.common.IniParser -- Line 23: label = Color_mode:
+02:44:19.380 [Thread-0] DEBUG loci.common.IniParser -- Line 24: info = <b>Color mode</b> - Visualizes channels according to the specified scheme. <br><br>Possible choices are:<ul> <li><b>Default</b> - Display channels as closely as possible to how they are stored in the file.</li> <li><b>Composite</b> - Open as a merged composite image. Channels are colorized according to metadata present in the dataset (if any), or in the following default order: 1=red, 2=green, 3=blue, 4=gray, 5=cyan, 6=magenta, 7=yellow.</li> <li><b>Colorized</b> - Open with each channel in a separate plane, colorized according to metadata present in the dataset (if any), or in the default order (see Composite above).</li> <li><b>Grayscale</b> - Open with each channel in a separate plane, displayed in plain grayscale.</li> <li><b>Custom</b> - Same as Colorized, except that you can explicitly choose how to colorize each channel.</li> </ul> Note that ImageJ can only composite together 7 or fewer channels. With more than 7 channels, some of the modes above may not work.
+02:44:19.380 [Thread-0] DEBUG loci.common.IniParser -- Line 43: default = Default
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 44: values = Default, Composite, Colorized, Grayscale, Custom
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 50: 
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 51: [concatenate]
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 52: type = boolean
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 53: label = Concatenate_series when compatible
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 54: info = <b>Concatenate series when compatible</b> - Allows multiple image series to be joined end to end. <br><br><b>Example:</b> You want to join two sequential timelapse series.
+02:44:19.381 [Thread-0] DEBUG loci.common.IniParser -- Line 58: default = false
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 59: 
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 60: [crop]
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 61: type = boolean
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 62: label = Crop on import
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 63: info = <b>Crop on import</b> - Image planes may be cropped during import to conserve memory. <br><br>A window is opened with display of the pixel width and height of the image plane. Enter the X and Y coordinates for the upper left corner of the crop region and the width and height of the selection to be displayed, in pixels.
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 69: default = false
+02:44:19.382 [Thread-0] DEBUG loci.common.IniParser -- Line 70: 
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 71: [firstTime]
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 72: type = boolean
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 73: default = true
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 74: 
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 75: [forceThumbnails]
+02:44:19.384 [Thread-0] DEBUG loci.common.IniParser -- Line 76: type = boolean
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 77: save = false
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 78: label = Force thumbnails
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 79: default = false
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 80: 
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 81: [groupFiles]
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 82: type = boolean
+02:44:19.385 [Thread-0] DEBUG loci.common.IniParser -- Line 83: label = Group_files with similar names
+02:44:19.386 [Thread-0] DEBUG loci.common.IniParser -- Line 84: info = <b>Group files with similar names</b> - Parses filenames in the selected folder to open files with similar names as planes in the same dataset. <br><br>The base filename and path is presented before opening for editing. <br><br><b>Example:</b> Suppose you have a collection of 12 TIFF files numbered data1.tif, data2.tif, ..., data12.tif, with each file representing one timepoint, and containing the 9 focal planes at that timepoint. If you leave this option unchecked and attempt to import data1.tif, Bio-Formats will create an image stack with 9 planes. But if you enable this option, Bio-Formats will automatically detect the other similarly named files and present a confirmation dialog with the detected file pattern, which in this example would be <code>data&lt;1-12&gt;.tif</code>. You can then edit the pattern in case it is incorrect. Bio-Formats will then import all 12 x 9 = 108 planes of the dataset.
+02:44:19.386 [Thread-0] DEBUG loci.common.IniParser -- Line 100: default = false
+02:44:19.386 [Thread-0] DEBUG loci.common.IniParser -- Line 101: 
+02:44:19.386 [Thread-0] DEBUG loci.common.IniParser -- Line 102: [ungroupFiles]
+02:44:19.387 [Thread-0] DEBUG loci.common.IniParser -- Line 103: type = boolean
+02:44:19.387 [Thread-0] DEBUG loci.common.IniParser -- Line 104: label = Open_files individually
+02:44:19.387 [Thread-0] DEBUG loci.common.IniParser -- Line 105: info = <b>Open files individually</b> - Treats each file as an individual file, instead of attempting to group it together with other files that belong to a larger dataset.
+02:44:19.388 [Thread-0] DEBUG loci.common.IniParser -- Line 108: default = false
+02:44:19.388 [Thread-0] DEBUG loci.common.IniParser -- Line 109: 
+02:44:19.388 [Thread-0] DEBUG loci.common.IniParser -- Line 110: [id]
+02:44:19.388 [Thread-0] DEBUG loci.common.IniParser -- Line 111: type = string
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 112: label = Open
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 113: save = false
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 114: 
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 115: [location]
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 116: type = string
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 117: save = false
+02:44:19.389 [Thread-0] DEBUG loci.common.IniParser -- Line 118: default = Local machine
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 119: values = Local machine, Internet
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 122: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 123: [openAllSeries]
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 124: type = boolean
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 125: label = Open_all_series
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 126: info = <b>Open all series</b> - Opens every available image series without prompting. <br><br>Some datasets contain multiple distinct image series. Normally when Bio-Formats detects such data it presents a dialog box with thumbnails allowing individual selection of each available series. Checking this box instructs Bio-Formats to bypass this dialog box and instead open every available image series. Essentially, it is a shortcut for checking all the boxes in the series selector dialog box. It is also useful in a macro when the number of available image series is unknown.
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 136: default = false
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 137: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 138: [quiet]
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 139: type = boolean
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 140: save = false
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 141: label = Quiet mode
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 142: default = false
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 143: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 144: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 145: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 146: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 147: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 148: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 149: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 150: 
+02:44:19.390 [Thread-0] DEBUG loci.common.IniParser -- Line 151: 
+02:44:19.397 [Thread-0] DEBUG loci.common.IniParser -- Line 152: 
+02:44:19.399 [Thread-0] DEBUG loci.common.IniParser -- Line 153: 
+02:44:19.399 [Thread-0] DEBUG loci.common.IniParser -- Line 154: 
+02:44:19.399 [Thread-0] DEBUG loci.common.IniParser -- Line 155: 
+02:44:19.400 [Thread-0] DEBUG loci.common.IniParser -- Line 156: 
+02:44:19.400 [Thread-0] DEBUG loci.common.IniParser -- Line 157: 
+02:44:19.400 [Thread-0] DEBUG loci.common.IniParser -- Line 158: [showMetadata]
+02:44:19.400 [Thread-0] DEBUG loci.common.IniParser -- Line 159: type = boolean
+02:44:19.401 [Thread-0] DEBUG loci.common.IniParser -- Line 160: label = Display_metadata
+02:44:19.401 [Thread-0] DEBUG loci.common.IniParser -- Line 161: info = <b>Display metadata</b> - Reads metadata that may be contained within the file format and displays it. You can save it as a text file or copy it from the File and Edit menus specific to the "Original Metadata" window. Readability depends upon the manner in which metadata is formatted in the data source. The metadata can also be displayed by pressing "i" (Image &gt; Show Info) when the imported image is active.
+02:44:19.401 [Thread-0] DEBUG loci.common.IniParser -- Line 168: default = false
+02:44:19.401 [Thread-0] DEBUG loci.common.IniParser -- Line 169: 
+02:44:19.401 [Thread-0] DEBUG loci.common.IniParser -- Line 170: [showOMEXML]
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 171: type = boolean
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 172: label = Display_OME-XML metadata
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 173: info = <b>Display OME-XML metadata</b> - Displays a tree of metadata standardized into the OME data model. This structure is the same regardless of file format, though some formats will populate more information than others. <br><br><b>Examples:</b><ul> <li>The title of the dataset is listed under OME &gt; Image &gt; Name.</li> <li>The time and date when the dataset was acquired is listed under OME &gt; Image &gt; CreationDate.</li> <li>The physical pixel sizes of each plane in microns is listed under OME &gt; Image &gt; Pixels &gt; PhysicalSizeX, PhysicalSizeY, PhysicalSizeZ.</li> </ul>
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 186: default = false
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 187: 
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 188: [showROIs]
+02:44:19.402 [Thread-0] DEBUG loci.common.IniParser -- Line 189: type = boolean
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 190: label = Display_ROIs
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 191: info = <b>Display ROIs</b> - Adds any ROIs in the file to ImageJ.
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 193: default = false
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 194: 
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 195: [roiMode]
+02:44:19.403 [Thread-0] DEBUG loci.common.IniParser -- Line 196: label = ROIs_Import Mode:
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 197: info = <b>ROI Import Mode</b> - ROIs can be imported to the ROI manager or an overlay.
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 199: type = string
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 200: default = ROI manager
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 201: values = ROI manager, Overlay
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 204: 
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 205: [specifyRanges]
+02:44:19.404 [Thread-0] DEBUG loci.common.IniParser -- Line 206: type = boolean
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 207: label = Specify_range for each series
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 208: info = <b>Specify range for each series</b> - Opens only the specified range of image planes from a dataset. <br><br>After analyzing the dataset dimensional parameters, Bio-Formats will present an additional dialog box prompting for the desired range. <br><br><b>Example:</b> You only want to open the range of focal planes in a z-series that actually contain structures of interest to conserve memory.
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 216: default = false
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 217: 
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 218: [splitFocalPlanes]
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 219: type = boolean
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 220: label = Split_focal planes
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 221: info = <b>Split focal planes</b> - Each focal plane is opened as a separate stack.
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 223: default = false
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 224: 
+02:44:19.405 [Thread-0] DEBUG loci.common.IniParser -- Line 225: [splitTimepoints]
+02:44:19.406 [Thread-0] DEBUG loci.common.IniParser -- Line 226: type = boolean
+02:44:19.406 [Thread-0] DEBUG loci.common.IniParser -- Line 227: label = Split_timepoints
+02:44:19.406 [Thread-0] DEBUG loci.common.IniParser -- Line 228: info = <b>Split timepoints</b> - Timelapse data will be opened as a separate stack for each timepoint.
+02:44:19.406 [Thread-0] DEBUG loci.common.IniParser -- Line 230: default = false
+02:44:19.407 [Thread-0] DEBUG loci.common.IniParser -- Line 231: 
+02:44:19.407 [Thread-0] DEBUG loci.common.IniParser -- Line 232: [splitWindows]
+02:44:19.407 [Thread-0] DEBUG loci.common.IniParser -- Line 233: type = boolean
+02:44:19.407 [Thread-0] DEBUG loci.common.IniParser -- Line 234: label = Split_channels
+02:44:19.407 [Thread-0] DEBUG loci.common.IniParser -- Line 235: info = <b>Split channels</b> - Each channel is opened as a separate stack. <br><br>This option is especially useful if you want to merge the channels into a specific order, rather than automatically assign channels to the order of RGB. The bit depth is preserved.
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 240: default = false
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 241: 
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 242: [stackFormat]
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 243: type = string
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 244: label = View stack with:
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 245: info = <b>View stack with</b> - The type of image viewer to use when displaying the dataset. <br><br>Possible choices are:<ul> <li><b>Metadata only</b> - Display no pixels, only metadata.</li> <li><b>Standard ImageJ</b> - This option is deprecated (i.e. intended for use by old macros only). Please use <i>Hyperstack</i> instead.</li> <li><b>Hyperstack</b> - Display the pixels in ImageJ's built-in 5D viewer.</li> <li><b>Data Browser</b> - Display the pixels in the multidimensional Data Browser viewer. The Data Browser has some additional features on top of the normal ImageJ hyperstack.</li> <li><b>Image5D</b> - Display the pixels in Joachim Walter's Image5D viewer. Requires the Image5D plugin.</li> <li><b>View5D</b> - Display the pixels in Rainer Heintzmann's View5D viewer. Requires the View5D plugin.</li> </ul>
+02:44:19.409 [Thread-0] DEBUG loci.common.IniParser -- Line 262: default = Hyperstack
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 263: values = Metadata only, Standard ImageJ, Hyperstack, Data Browser, Image5D, View5D
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 270: 
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 271: [stackOrder]
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 272: type = string
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 273: label = Stack_order:
+02:44:19.410 [Thread-0] DEBUG loci.common.IniParser -- Line 274: info = <b>Stack order</b> - Controls the rasterization order of the dataset's dimensional axes. <br><br>Unless you care about the order in which the image planes appear, you probably don't need to worry too much about this option. <br><br>By default, Bio-Formats reads the image planes in whatever order they are stored, which is format-dependent. However, several stack view modes require a specific rasterization order:<ul> <li>Hyperstacks must be in XYCZT order.</li> <li>Image5D must be in XYCZT order.</li> <li>View5D must be in XYZCT order.</li> </ul><b>Example:</b> For a dataset in XYCZT order with 2 channels, 3 focal planes and 5 time points, the order would be:<ol> <li>C1-Z1-T1</li> <li>C2-Z1-T1</li> <li>C1-Z2-T1</li> <li>C2-Z2-T1</li> <li>C1-Z3-T1</li> <li>C2-Z3-T1</li> <li>C1-Z1-T2</li> <li>C2-Z1-T2</li> <li>etc.</li> </ol>
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 296: default = XYCZT
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 297: values = Default, XYZCT, XYZTC, XYCZT, XYTCZ, XYCTZ, XYTZC
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 305: 
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 306: [swapDimensions]
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 307: type = boolean
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 308: label = Swap_dimensions
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 309: info = <b>Swap dimensions</b> - Allows reassignment of dimensional axes (e.g., channel, Z and time). <br><br>Bio-Formats is supposed to be smart about handling multidimensional image data, but in some cases gets things wrong. For example, when stitching together a dataset from multiple files using the <b>Group files with similar names</b> option, Bio-Formats  may not know which dimensional axis the file numbering is supposed to represent. It will take a guess, but in case it guesses wrong, you can use <b>Swap dimensions</b> to reassign which dimensions are which.
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 318: default = false
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 319: 
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 320: [upgradeCheck]
+02:44:19.411 [Thread-0] DEBUG loci.common.IniParser -- Line 321: type = boolean
+02:44:19.412 [Thread-0] DEBUG loci.common.IniParser -- Line 322: label = Check_for_upgrades to the Bio-Formats plugins
+02:44:19.412 [Thread-0] DEBUG loci.common.IniParser -- Line 323: default = true
+02:44:19.412 [Thread-0] DEBUG loci.common.IniParser -- Line 324: 
+02:44:19.412 [Thread-0] DEBUG loci.common.IniParser -- Line 325: [virtual]
+02:44:19.412 [Thread-0] DEBUG loci.common.IniParser -- Line 326: type = boolean
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 327: label = Use_virtual_stack
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 328: info = <b>Use virtual stack</b> - Only reads one image plane into memory at a time, loading from the data source on the fly as the active image plane changes. <br><br>This option is essential for datasets too large to fit into memory.
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 333: default = false
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 334: 
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 335: [stitchTiles]
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 336: type = boolean
+02:44:19.413 [Thread-0] DEBUG loci.common.IniParser -- Line 337: label = Stitch_tiles
+02:44:19.414 [Thread-0] DEBUG loci.common.IniParser -- Line 338: info = <b>Stitch tiles</b> - Performs very simple stitching of tiles. <br><br>The overlap is assumed to be 0%, and the stage coordinates are used to determine the proper placement of the tiles.  This is useful for seeing a quick preview of what the stitched image might look like, but is not a substitute for proper stitching plugins such as the <a href="http://pacific.mpi-cbg.de/wiki/index.php/Stitching_2D/3D"> 2D/3D Stitching plugin</a>.
+02:44:19.414 [Thread-0] DEBUG loci.common.IniParser -- Line 346: default = false
+02:44:19.414 [Thread-0] DEBUG loci.common.IniParser -- Line 347: 
+02:44:19.414 [Thread-0] DEBUG loci.common.IniParser -- Line 348: [windowless]
+02:44:19.414 [Thread-0] DEBUG loci.common.IniParser -- Line 349: type = boolean
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 350: label = windowless
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 351: default = false
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 352: 
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 353: [mustGroup]
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 354: type = boolean
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 355: label = mustGroup
+02:44:19.415 [Thread-0] DEBUG loci.common.IniParser -- Line 356: default = false
+02:44:19.448 [Thread-0] DEBUG loci.formats.ClassList -- Could not find loci.formats.in.URLReader
+java.lang.ClassNotFoundException: loci.formats.in.URLReader
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:421)
+	at java.base/java.lang.Class.forName(Class.java:412)
+	at loci.formats.ClassList.parseLine(ClassList.java:196)
+	at loci.formats.ClassList.parseFile(ClassList.java:258)
+	at loci.formats.ClassList.<init>(ClassList.java:138)
+	at loci.formats.ClassList.<init>(ClassList.java:122)
+	at loci.formats.ImageReader.getDefaultReaderClasses(ImageReader.java:82)
+	at loci.plugins.util.LociPrefs.makeImageReader(LociPrefs.java:84)
+	at loci.plugins.in.ImportProcess.createBaseReader(ImportProcess.java:625)
+	at loci.plugins.in.ImportProcess.initializeReader(ImportProcess.java:484)
+	at loci.plugins.in.ImportProcess.execute(ImportProcess.java:137)
+	at loci.plugins.BF.openImagePlus(BF.java:92)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:19.452 [Thread-0] DEBUG loci.formats.ClassList -- Could not find loci.formats.in.SlideBook6Reader
+java.lang.ClassNotFoundException: loci.formats.in.SlideBook6Reader
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:421)
+	at java.base/java.lang.Class.forName(Class.java:412)
+	at loci.formats.ClassList.parseLine(ClassList.java:196)
+	at loci.formats.ClassList.parseFile(ClassList.java:258)
+	at loci.formats.ClassList.<init>(ClassList.java:138)
+	at loci.formats.ClassList.<init>(ClassList.java:122)
+	at loci.formats.ImageReader.getDefaultReaderClasses(ImageReader.java:82)
+	at loci.plugins.util.LociPrefs.makeImageReader(LociPrefs.java:84)
+	at loci.plugins.in.ImportProcess.createBaseReader(ImportProcess.java:625)
+	at loci.plugins.in.ImportProcess.initializeReader(ImportProcess.java:484)
+	at loci.plugins.in.ImportProcess.execute(ImportProcess.java:137)
+	at loci.plugins.BF.openImagePlus(BF.java:92)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:19.453 [Thread-0] DEBUG loci.formats.ClassList -- Could not find loci.formats.in.ScreenReader
+java.lang.ClassNotFoundException: loci.formats.in.ScreenReader
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:421)
+	at java.base/java.lang.Class.forName(Class.java:412)
+	at loci.formats.ClassList.parseLine(ClassList.java:196)
+	at loci.formats.ClassList.parseFile(ClassList.java:258)
+	at loci.formats.ClassList.<init>(ClassList.java:138)
+	at loci.formats.ClassList.<init>(ClassList.java:122)
+	at loci.formats.ImageReader.getDefaultReaderClasses(ImageReader.java:82)
+	at loci.plugins.util.LociPrefs.makeImageReader(LociPrefs.java:84)
+	at loci.plugins.in.ImportProcess.createBaseReader(ImportProcess.java:625)
+	at loci.plugins.in.ImportProcess.initializeReader(ImportProcess.java:484)
+	at loci.plugins.in.ImportProcess.execute(ImportProcess.java:137)
+	at loci.plugins.BF.openImagePlus(BF.java:92)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:19.454 [Thread-0] DEBUG loci.formats.ClassList -- Could not find loci.formats.in.ZarrReader
+java.lang.ClassNotFoundException: loci.formats.in.ZarrReader
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:421)
+	at java.base/java.lang.Class.forName(Class.java:412)
+	at loci.formats.ClassList.parseLine(ClassList.java:196)
+	at loci.formats.ClassList.parseFile(ClassList.java:258)
+	at loci.formats.ClassList.<init>(ClassList.java:138)
+	at loci.formats.ClassList.<init>(ClassList.java:122)
+	at loci.formats.ImageReader.getDefaultReaderClasses(ImageReader.java:82)
+	at loci.plugins.util.LociPrefs.makeImageReader(LociPrefs.java:84)
+	at loci.plugins.in.ImportProcess.createBaseReader(ImportProcess.java:625)
+	at loci.plugins.in.ImportProcess.initializeReader(ImportProcess.java:484)
+	at loci.plugins.in.ImportProcess.execute(ImportProcess.java:137)
+	at loci.plugins.BF.openImagePlus(BF.java:92)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:19.454 [Thread-0] DEBUG loci.formats.ClassList -- Could not find ch.epfl.biop.formats.in.ZeissQuickStartCZIReader
+java.lang.ClassNotFoundException: ch.epfl.biop.formats.in.ZeissQuickStartCZIReader
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:421)
+	at java.base/java.lang.Class.forName(Class.java:412)
+	at loci.formats.ClassList.parseLine(ClassList.java:196)
+	at loci.formats.ClassList.parseFile(ClassList.java:258)
+	at loci.formats.ClassList.<init>(ClassList.java:138)
+	at loci.formats.ClassList.<init>(ClassList.java:122)
+	at loci.formats.ImageReader.getDefaultReaderClasses(ImageReader.java:82)
+	at loci.plugins.util.LociPrefs.makeImageReader(LociPrefs.java:84)
+	at loci.plugins.in.ImportProcess.createBaseReader(ImportProcess.java:625)
+	at loci.plugins.in.ImportProcess.initializeReader(ImportProcess.java:484)
+	at loci.plugins.in.ImportProcess.execute(ImportProcess.java:137)
+	at loci.plugins.BF.openImagePlus(BF.java:92)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:19.640 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- Deleting leftover folder: C:\Users\mayan\AppData\Local\Temp\nativelib-loader_14465218932520553414
+02:44:19.678 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- processor is INTEL_64 os.arch is amd64
+02:44:19.680 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- architecture is WINDOWS_64 os.name is windows 11
+02:44:19.680 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- architecture is WINDOWS_64 os.name is windows 11
+02:44:19.680 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- platform specific path is natives/windows_64/
+02:44:19.680 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- mappedLib is turbojpeg.dll
+02:44:19.681 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- Couldn't find resource natives/windows_64/turbojpeg.dll
+02:44:19.681 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- platform specific path is windows_64/
+02:44:19.681 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- mappedLib is turbojpeg.dll
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- Couldn't find resource windows_64/turbojpeg.dll
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.NativeLibraryUtil -- platform specific path is META-INF/lib/windows_64/
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- mappedLib is turbojpeg.dll
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- URL is jar:file:/C:/Users/mayan/Tron-Machine/JarBuilds/TronMachine-1.3.3.jar!/META-INF/lib/windows_64/turbojpeg.dll
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- URL path is file:/C:/Users/mayan/Tron-Machine/JarBuilds/TronMachine-1.3.3.jar!/META-INF/lib/windows_64/turbojpeg.dll
+02:44:19.682 [Thread-0] DEBUG org.scijava.nativelib.BaseJniExtractor -- Extracting 'jar:file:/C:/Users/mayan/Tron-Machine/JarBuilds/TronMachine-1.3.3.jar!/META-INF/lib/windows_64/turbojpeg.dll' to 'C:\Users\mayan\AppData\Local\Temp\nativelib-loader_17883468441111004671\turbojpeg.dll'
+02:44:19.697 [Thread-0] DEBUG loci.common.NIOByteBufferProvider -- Using mapped byte buffer? false
+02:44:19.713 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Loaded properties from: services.properties
+02:44:19.714 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface ome.codecs.services.JAIIIOService and implementation class ome.codecs.services.JAIIIOServiceImpl
+02:44:19.714 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.JPEGXRService and implementation class loci.formats.services.JPEGXRServiceImpl
+02:44:19.715 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.MDBService and implementation class loci.formats.services.MDBServiceImpl
+02:44:19.715 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.MetakitService and implementation class loci.formats.services.MetakitServiceImpl
+02:44:19.715 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.EXIFService and implementation class loci.formats.services.EXIFServiceImpl
+02:44:19.715 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.JHDFService and implementation class loci.formats.services.JHDFServiceImpl
+02:44:19.716 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.NetCDFService and implementation class loci.formats.services.NetCDFServiceImpl
+02:44:19.717 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.JAIIIOService and implementation class loci.formats.services.JAIIIOServiceImpl
+02:44:19.718 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.OMEXMLService and implementation class loci.formats.services.OMEXMLServiceImpl
+02:44:19.718 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.POIService and implementation class loci.formats.services.POIServiceImpl
+02:44:19.719 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.common.services.S3ClientService and implementation class loci.common.services.S3ClientServiceImpl
+02:44:19.719 [Thread-0] DEBUG loci.common.services.ServiceFactory -- Added interface interface loci.formats.services.JPEGTurboService and implementation class loci.formats.services.JPEGTurboServiceImpl
+02:44:19.758 [Thread-0] DEBUG loci.formats.FormatHandler -- ZeissCZIReader initializing C:\Users\mayan\Desktop\TRON Machine\Sample Image.czi
+02:44:19.759 [Thread-0] DEBUG loci.formats.FormatHandler -- loci.formats.in.ZeissCZIReader.initFile(C:\Users\mayan\Desktop\TRON Machine\Sample Image.czi)
+02:44:19.911 [Thread-0] WARN ome.xml.model.enums.handlers.DetectorTypeEnumHandler -- Unknown DetectorType value 'Airyscan' will be stored as "Other"
+02:44:19.912 [Thread-0] WARN ome.xml.model.enums.handlers.DetectorTypeEnumHandler -- Unknown DetectorType value 'GaAsP' will be stored as "Other"
+02:44:19.913 [Thread-0] WARN ome.xml.model.enums.handlers.DetectorTypeEnumHandler -- Unknown DetectorType value 'GaAsP' will be stored as "Other"
+02:44:19.914 [Thread-0] WARN ome.xml.model.enums.handlers.DetectorTypeEnumHandler -- Unknown DetectorType value 'Multialkali' will be stored as "Other"
+02:44:20.038 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.047 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:20.047 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:20.047 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:20.047 [Thread-0] DEBUG loci.formats.FormatHandler -- ZeissCZIReader initializing C:\Users\mayan\Desktop\TRON Machine\Sample Image.czi
+02:44:20.073 [Thread-0] DEBUG loci.formats.FormatHandler -- ZeissCZIReader initializing C:\Users\mayan\Desktop\TRON Machine\Sample Image.czi
+02:44:20.073 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.194 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.216 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.216 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.264 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:20.274 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.274 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.326 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:20.332 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.332 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.386 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:20.396 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.396 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.439 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.450 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.450 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.491 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:20.499 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.499 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.554 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:20.560 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.560 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.628 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:20.638 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.638 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.701 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.708 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.708 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.756 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:20.765 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.765 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.834 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:20.842 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.844 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.916 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:20.925 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.925 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:20.976 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:20.983 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:20.983 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.027 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:21.034 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.036 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.120 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:21.126 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.128 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.236 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:21.247 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.247 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.296 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:21.301 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.301 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.351 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:21.357 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.357 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.415 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:21.421 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.421 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.489 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:21.497 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.497 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.546 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:21.552 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.553 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.604 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:21.612 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.612 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.672 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:21.679 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.679 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.742 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:21.749 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.750 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.798 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:21.805 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.805 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.850 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:21.868 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.868 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:21.928 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:21.936 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:21.937 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.000 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:22.014 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.015 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.065 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:22.071 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.072 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.119 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:22.126 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.126 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.183 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:22.207 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.207 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.278 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:22.285 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.285 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.345 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:22.352 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.352 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.398 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:22.404 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.405 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.465 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:22.474 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.480 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.547 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:22.553 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.553 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.600 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:22.610 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.610 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.656 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:22.667 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.667 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.772 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:22.779 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.779 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.844 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:22.853 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.853 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.900 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:22.906 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.906 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:22.952 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:22.958 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:22.960 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.016 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:23.022 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.022 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.090 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:23.096 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.096 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.141 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF00FF5B with 00FF5B
+02:44:23.146 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.146 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.191 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFFF1800 with FF1800
+02:44:23.197 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.197 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.253 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FF0000FF with 0000FF
+02:44:23.260 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.260 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+02:44:23.331 [Thread-0] DEBUG loci.formats.FormatHandler -- Replaced color #FFD3D3D3 with D3D3D3
+02:44:23.336 [Thread-0] DEBUG loci.common.DateTools -- Invalid timestamp '2018-06-28T16:40:23.096' for current locale
+02:44:23.336 [Thread-0] DEBUG loci.common.DateTools -- Could not parse timestamp '2018-06-28T16:40:23.096' with EN_US locale
+java.lang.IllegalArgumentException: Invalid format: "2018-06-28T16:40:23.096" is malformed at ".096"
+	at org.joda.time.format.DateTimeFormatter.parseDateTime(DateTimeFormatter.java:953)
+	at org.joda.time.Instant.parse(Instant.java:130)
+	at loci.common.DateTools.parseDate(DateTools.java:291)
+	at loci.common.DateTools.getTime(DateTools.java:461)
+	at loci.common.DateTools.getTime(DateTools.java:447)
+	at loci.plugins.in.ImagePlusReader.constructSliceLabel(ImagePlusReader.java:636)
+	at loci.plugins.in.ImagePlusReader.readPlanes(ImagePlusReader.java:398)
+	at loci.plugins.in.ImagePlusReader.readImage(ImagePlusReader.java:282)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:243)
+	at loci.plugins.in.ImagePlusReader.readImages(ImagePlusReader.java:221)
+	at loci.plugins.in.ImagePlusReader.openImagePlus(ImagePlusReader.java:116)
+	at loci.plugins.BF.openImagePlus(BF.java:98)
+	at com.typicalprojects.TronMachine.util.ImageContainer.<init>(ImageContainer.java:130)
+	at com.typicalprojects.TronMachine.util.ImagePhantom.openOriginal(ImagePhantom.java:56)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions._nextPreprocessedImageHelper(PnlOptions.java:1063)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.nextPreprocessedImage(PnlOptions.java:971)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions.startSliceSelecting(PnlOptions.java:1397)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.setStatus(Wizard.java:80)
+	at com.typicalprojects.TronMachine.neuronal_migration.Wizard.nextState(Wizard.java:139)
+	at com.typicalprojects.TronMachine.neuronal_migration.panels.PnlSelectFiles$4$1.run(PnlSelectFiles.java:269)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Occurred
+Successfully saved: C:\Users\mayan\Desktop\TRON Machine\Output\Sample Image 24-12-2025 02-44-12\Sample Image ANALYSIS.xlsx

@@ -43,7 +43,32 @@
                 <exclude>META-INF/*.RSA</exclude>
               </excludes>
             </filter>
+            <filter>
+              <artifact>ome:bioformats_package</artifact>
+              <excludes>
+                <exclude>org/apache/commons/io/**</exclude>
+              </excludes>
+            </filter>
+            <filter>
+              <artifact>org.yaml:snakeyaml</artifact>
+              <excludes>
+                <exclude>org/apache/commons/io/**</exclude>
+              </excludes>
+            </filter>
           </filters>
+          <relocations>
+            <relocation>
+              <pattern>org.apache.commons.io</pattern>
+              <shadedPattern>com.typicalprojects.shaded.org.apache.commons.io</shadedPattern>
+            </relocation>
+          </relocations>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <release>17</release>
         </configuration>
       </plugin>
     </plugins>
@@ -52,6 +77,10 @@
     <repository>
       <id>central</id>
       <url>https://repo.maven.apache.org/maven2</url>
+    </repository>
+    <repository>
+      <id>unidata-releases</id>
+      <url>https://artifacts.unidata.ucar.edu/repository/unidata-releases</url>
     </repository>
     <repository>
       <id>Sonatype-public</id>
@@ -74,16 +103,27 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hamcrest-core</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>3.8.1</version>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.15.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>1.33</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
