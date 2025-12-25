@@ -549,7 +549,7 @@ public class FindAccessory extends JPanel implements	Runnable, PropertyChangeLis
 
 			// Directory
 			searchDirectory = new JLabel();
-			searchDirectory.setForeground(Color.black);
+			searchDirectory.setForeground(new Color(255, 255, 255));
 			searchDirectory.setFont(new Font("Helvetica",Font.PLAIN,9));
 			add(searchDirectory);
 		}
@@ -598,7 +598,7 @@ public class FindAccessory extends JPanel implements	Runnable, PropertyChangeLis
 			// So that frequent updates will appear smooth
 			progress.setDoubleBuffered(true);
 
-			progress.setForeground(Color.black);
+			progress.setForeground(new Color(255, 255, 255));
 			progress.setFont(new Font("Helvetica",Font.PLAIN,9));
 			add(progress,BorderLayout.EAST);
 		}
@@ -645,15 +645,7 @@ public class FindAccessory extends JPanel implements	Runnable, PropertyChangeLis
 		{
 			super(JTabbedPane.TOP);
 
-			setForeground(Color.black);
-			setFont(new Font("Helvetica",Font.BOLD,10));
-
-			// Add search-by-name panel
-			addTab(TAB_NAME,new FindByName());
-
-			// Add search-by-date panel
-			addTab(TAB_DATE,new FindByDate());
-
+		setForeground(new Color(255, 255, 255));
 			// Add search-by-content panel
 			addTab(TAB_CONTENT,new FindByContent());
 
@@ -845,8 +837,8 @@ public class FindAccessory extends JPanel implements	Runnable, PropertyChangeLis
 				}
 				else
 				{
-					setBackground(Color.white);
-					setForeground(Color.black);
+					setBackground(new Color(40, 45, 55));
+					setForeground(new Color(255, 255, 255));
 				}
 				return this;
 			}
@@ -943,13 +935,13 @@ class FindByDate extends JPanel implements FindFilterFactory
 		// format note
 		JLabel format = new JLabel(FORMAT_LABEL,SwingConstants.LEFT);
 		format.setFont(font);
-		format.setForeground(Color.black);
+		format.setForeground(new Color(255, 255, 255));
 		p.add(format);
 
 		// between
 		JLabel betweenLabel = new JLabel(FROM_DATE_LABEL,SwingConstants.RIGHT);
 		betweenLabel.setFont(font);
-		betweenLabel.setForeground(Color.black);
+		betweenLabel.setForeground(new Color(255, 255, 255));
 		p.add(betweenLabel);
 
 		// from date
@@ -962,7 +954,7 @@ class FindByDate extends JPanel implements FindFilterFactory
 		// and
 		JLabel andLabel = new JLabel(TO_DATE_LABEL,SwingConstants.RIGHT);
 		andLabel.setFont(font);
-		andLabel.setForeground(Color.black);
+		andLabel.setForeground(new Color(255, 255, 255));
 		p.add(andLabel);
 
 		//toDateField = new JTextField(8);
@@ -1156,7 +1148,7 @@ class FindByName extends JPanel implements FindFilterFactory
 		p.add(new JLabel("",SwingConstants.RIGHT));
 
 		ignoreCaseCheck = new JCheckBox("ignore case",true);
-		ignoreCaseCheck.setForeground(Color.black);
+		ignoreCaseCheck.setForeground(new Color(255, 255, 255));
 		ignoreCaseCheck.setFont(new Font("Helvetica",Font.PLAIN,10));
 		p.add(ignoreCaseCheck);
 
@@ -1296,13 +1288,13 @@ class FindByContent extends JPanel implements FindFilterFactory
 		p.add(l);
 
 		contentField = new JTextField();
-		contentField.setForeground(Color.black);
+		contentField.setForeground(new Color(255, 255, 255));
 		contentField.setFont(new Font("Helvetica",Font.PLAIN,10));
 		p.add(contentField);
 
 		// ignore case
 		ignoreCaseCheck = new JCheckBox("ignore case",true);
-		ignoreCaseCheck.setForeground(Color.black);
+		ignoreCaseCheck.setForeground(new Color(255, 255, 255));
 		ignoreCaseCheck.setFont(new Font("Helvetica",Font.PLAIN,9));
 		p.add(ignoreCaseCheck);
 

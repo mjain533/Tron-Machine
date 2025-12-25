@@ -40,7 +40,9 @@ import javax.swing.GroupLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.GroupLayout.Alignment;
@@ -50,6 +52,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager;
 import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.Point;
@@ -76,6 +79,7 @@ public class PnlDisplay  {
 	private Cursor cursor;
 
 	private ImagePanel pnlImage;
+	private PnlChannelInfo pnlChannelInfo;
 
 	private JSlider sldrSlice;
 	private JSlider sldrPage;
@@ -107,6 +111,8 @@ public class PnlDisplay  {
 		lblDisabled = new JLabel("<html><body><p style='width: 150px; text-align: center;'>Please select images using the interface to the left.</p></body></html>");
 		lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
 
+		// Initialize channel info panel
+		pnlChannelInfo = new PnlChannelInfo(null, this);
 
 		pnlSliderSlice = new JPanel();
 		pnlSliderSlice.setBackground(GUI.colorPnlEnabled);
@@ -395,7 +401,9 @@ public class PnlDisplay  {
 									.addComponent(pnlSliderPage, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE)
 									.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
+							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
+									.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
+									.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE))
 							.addContainerGap())
 					);
 			gl_panel.setVerticalGroup(
@@ -403,7 +411,10 @@ public class PnlDisplay  {
 					.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-									.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 589, Short.MAX_VALUE)
+									.addGroup(gl_panel.createSequentialGroup()
+											.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
+											.addPreferredGap(ComponentPlacement.RELATED)
+											.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.PREFERRED_SIZE, 125, GroupLayout.PREFERRED_SIZE))
 									.addGroup(gl_panel.createSequentialGroup()
 											.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 247, GroupLayout.PREFERRED_SIZE)
 											.addPreferredGap(ComponentPlacement.RELATED, 95, Short.MAX_VALUE)
@@ -427,6 +438,22 @@ public class PnlDisplay  {
 
 	public JPanel getRawPanel() {
 		return this.rawPanel;
+	}
+
+	public void repaintImage() {
+		if (pnlImage != null) {
+			pnlImage.repaint();
+		}
+	}
+
+	public void refreshImageWithNewColors() {
+		if (outputHandler != null && pnlImage != null) {
+			Object[] feedback = outputHandler.sliderPageChanged(getSliderSelectedPage(), getSliderSelectedSlice());
+			if (feedback != null && feedback.length > 0) {
+				pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
+				pnlImage.repaint();
+			}
+		}
 	}
 	
 	public void disableSliceSlider(boolean keepSliceBounds) {
@@ -527,6 +554,12 @@ public class PnlDisplay  {
 			return (Channel) getSliderSelectedPage();
 		} catch (Exception e) {
 			return null;
+		}
+	}
+
+	public void setChannelManager(ChannelManager cm) {
+		if (pnlChannelInfo != null) {
+			pnlChannelInfo.setChannelManager(cm);
 		}
 	}
 	

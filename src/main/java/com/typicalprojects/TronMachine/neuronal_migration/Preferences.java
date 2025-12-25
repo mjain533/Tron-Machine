@@ -188,7 +188,7 @@ public class Preferences extends JDialog {
 
 
 		lblCannotEdit = new JLabel("There were errors in your configuration.");
-		lblCannotEdit.setForeground(Color.RED);
+		lblCannotEdit.setForeground(new Color(255, 100, 100));
 		lblCannotEdit.setFont(GUI.mediumBoldFont);
 
 		btnApplyAndClose = new JButton("Apply and Close");
@@ -665,7 +665,7 @@ class PnlChanOptions extends JPanel implements SettingsPanel, ChannelSettingsHan
 		lblError = new JLabel("Error");
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumBoldFont);
-		lblError.setForeground(Color.RED);
+		lblError.setForeground(new Color(255, 100, 100));
 
 		JLabel lblInstructions = new JLabel("Channel list (double click to set meta and channel mapping):");
 
@@ -1359,7 +1359,7 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		lblError = new JLabel("Error");
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumBoldFont);
-		lblError.setForeground(Color.RED);
+		lblError.setForeground(new Color(255, 100, 100));
 
 		pnlSaveIntermediates = new JPanel();
 		pnlSaveIntermediates.setFont(new Font("Arial", Font.PLAIN, 13));
@@ -1776,7 +1776,7 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 
 		lblError = new JLabel("Error:");
 		lblError.setFont(GUI.mediumBoldFont);
-		lblError.setForeground(Color.RED);
+		lblError.setForeground(new Color(255, 100, 100));
 
 		JLabel lblMinimumThreshold = new JLabel("Auto-Threshold Minimum Value (0-255):");
 
@@ -2012,7 +2012,7 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 		lblError = new JLabel("Error");
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumBoldFont);
-		lblError.setForeground(Color.RED);
+		lblError.setForeground(new Color(255, 100, 100));
 
 		JLabel lblCalibration = new JLabel("Calibration (if not supplied by image file):");
 
@@ -2844,7 +2844,7 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 		lblError = new JLabel("Error");
 		lblError.setVisible(false);
 		lblError.setFont(GUI.mediumBoldFont);
-		lblError.setForeground(Color.RED);
+		lblError.setForeground(new Color(255, 100, 100));
 
 		btnNewTemplate = new JButton("Create From Current");
 		btnNewTemplate.addActionListener(new ActionListener() {

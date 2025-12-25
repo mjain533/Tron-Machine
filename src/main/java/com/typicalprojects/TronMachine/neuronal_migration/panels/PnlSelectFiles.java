@@ -115,8 +115,8 @@ public class PnlSelectFiles implements ListDropReceiver {
 		btnRemoveSelectedFile.setFocusable(false);
 
 		JSeparator separatorSelectFiles = new JSeparator();
-		separatorSelectFiles.setForeground(Color.BLACK);
-		separatorSelectFiles.setBackground(Color.BLACK);
+		separatorSelectFiles.setForeground(new Color(80, 85, 95));
+		separatorSelectFiles.setBackground(new Color(80, 85, 95));
 
 		btnGo = new JButton("Go");
 		btnGo.setFocusable(true);
@@ -133,7 +133,7 @@ public class PnlSelectFiles implements ListDropReceiver {
 		btnSelectFilesHelp.setFocusable(false);
 		btnSelectFilesHelp.setIcon(new ImageIcon(new ImageIcon(getClass().getClassLoader().getResource("question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
 
-		btnSelectFilesHelp.setForeground(Color.BLUE);
+		btnSelectFilesHelp.setForeground(new Color(255, 255, 255));
 		btnSelectFilesHelp.setBorderPainted(false);
 		btnSelectFilesHelp.setOpaque(false);
 		btnSelectFilesHelp.setBackground(Color.WHITE);

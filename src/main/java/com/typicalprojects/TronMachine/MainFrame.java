@@ -36,6 +36,8 @@ import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
 
+import ome.xml.model.primitives.Color;
+
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JLabel;
@@ -45,11 +47,11 @@ import javax.swing.SwingWorker;
 import javax.swing.SwingWorker.StateValue;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-
+import com.formdev.flatlaf.FlatLightLaf;
+import java.awt.Insets;
 import java.awt.Font;
 import javax.swing.JButton;
 import javax.swing.border.BevelBorder;
-
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -85,9 +87,28 @@ public class MainFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-				} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-						| UnsupportedLookAndFeelException e1) {
+					 FlatLightLaf.setup();
+
+            // Modern dark theme setup
+			UIManager.put("Component.arc", 12);
+            UIManager.put("Button.arc", 10);
+			UIManager.put("TextComponent.arc", 10);
+			UIManager.put("ScrollBar.thumbArc", 999);
+			UIManager.put("ScrollBar.thumbInsets", new Insets(2, 2, 2, 2));
+			
+			// Dark background colors
+			java.awt.Color darkBg = new java.awt.Color(30, 30, 35);
+			java.awt.Color darkPanel = new java.awt.Color(40, 40, 45);
+			java.awt.Color accentGreen = new java.awt.Color(0, 200, 100);
+			
+			UIManager.put("Panel.background", darkPanel);
+            UIManager.put("Frame.background", darkBg);
+            UIManager.put("Label.foreground", new java.awt.Color(220, 220, 220));
+            UIManager.put("Button.background", darkPanel);
+            UIManager.put("Button.foreground", new java.awt.Color(220, 220, 220));
+            UIManager.put("TextComponent.background", new java.awt.Color(50, 50, 55));
+            UIManager.put("TextComponent.foreground", new java.awt.Color(220, 220, 220));
+				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
 
@@ -110,12 +131,13 @@ public class MainFrame extends JFrame {
 
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 350, 250);
+		setSize(420, 280);
 		setLocationRelativeTo(null);
 		contentPane = new JPanel();
 		this.setResizable(false);
 
 		contentPane.setBorder(new EmptyBorder(10, 10, 10, 10));
+		contentPane.setBackground(new java.awt.Color(25, 28, 35));
 		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(0, 0));
 
@@ -123,14 +145,20 @@ public class MainFrame extends JFrame {
 		lblNewLabel.setBorder(new EmptyBorder(0, 0, 10, 0));
 		lblNewLabel.setFont(lblNewLabel.getFont().deriveFont(lblNewLabel.getFont().getStyle() | Font.BOLD, lblNewLabel.getFont().getSize() + 3f));
 		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setForeground(new java.awt.Color(235, 235, 240));
 		contentPane.add(lblNewLabel, BorderLayout.NORTH);
 
 		JPanel panel = new JPanel();
-		panel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+		panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+		panel.setBackground(new java.awt.Color(25, 28, 35));
 		contentPane.add(panel, BorderLayout.CENTER);
 
 		JButton btnQuantifyMigration = new JButton("<html><center>Quantify Neuronal Migration</center></html>")  ;
-		btnQuantifyMigration.setOpaque(true);
+		btnQuantifyMigration.setBackground(new java.awt.Color(58, 134, 255));
+		btnQuantifyMigration.setForeground(new java.awt.Color(255, 255, 255));
+		btnQuantifyMigration.setFocusPainted(false);
+		btnQuantifyMigration.setBorderPainted(false);
+		
 		btnQuantifyMigration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				EventQueue.invokeLater(new Runnable() {
@@ -197,8 +225,6 @@ public class MainFrame extends JFrame {
 		});
 		btnQuantifyMigration.setFont(btnQuantifyMigration.getFont().deriveFont(btnQuantifyMigration.getFont().getStyle() | Font.BOLD));
 		btnQuantifyMigration.setFocusable(false);
-		btnQuantifyMigration.setIconTextGap(0);
-		btnQuantifyMigration.setAlignmentY(0.0f);;
 
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(

@@ -114,9 +114,9 @@ public class GUI  {
 	public static final Font extraSmallBoldFont = new Font("PingFang TC", Font.BOLD, 10);
 	
 	/** Background color of a panel of the GUI when it is disabled **/
-	public static final Color colorPnlDisabled = new Color(169, 169, 169);
+	public static final Color colorPnlDisabled = new Color(50, 55, 65);
 	/** Background color of a panel of the GUI when it is enabled **/
-	public static final Color colorPnlEnabled = new Color(220, 220, 220);
+	public static final Color colorPnlEnabled = new Color(40, 45, 55);
 
 	/** 
 	 * The string representing the current date. It is in the form dd-MM-yyyy HH-mm-ss. Used for creating 
@@ -228,6 +228,7 @@ public class GUI  {
 		quantFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		quantFrame.setLocationRelativeTo(null);
 		quantFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		quantFrame.getContentPane().setBackground(new Color(25, 28, 35));
 		quantFrame.addWindowListener(new WindowAdapter(){
 			@Override
 			public void windowClosing(WindowEvent windowEvent) {
@@ -425,6 +426,7 @@ public class GUI  {
 		lblAttributes = new JLabel("Developed by J. Carrington, R. Taylor, K. Taylor, and E. Dent. Copyright 2018. Version "+ currentVersion+".");
 		lblAttributes.setFont(smallBoldFont);
 		lblAttributes.setBorder(new EmptyBorder(6, 10, 10, 10));
+		lblAttributes.setForeground(new Color(255, 255, 255));
 		quantFrame.getContentPane().add(lblAttributes, BorderLayout.SOUTH);
 
 
@@ -448,6 +450,7 @@ public class GUI  {
 
 		// Display panel
 		pnlDisplay = new PnlDisplay(this, pnlOptions);
+		pnlDisplay.setChannelManager(settings.channelMan);
 
 		// Create the wizard used to advaned between steps of the TRON machine
 		wizard = new Wizard(this);

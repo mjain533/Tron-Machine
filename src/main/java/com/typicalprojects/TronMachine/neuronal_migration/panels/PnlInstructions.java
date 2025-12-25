@@ -50,9 +50,9 @@ public class PnlInstructions {
 	private JPanel rawPanel;
 	
 	private final Font fontActiveInstruction = GUI.smallBoldFont;
-	private final Color colorActiveInstruction = new Color(0, 128, 0);
+	private final Color colorActiveInstruction = new Color(255, 255, 255);
 	private final Font fontPassive = GUI.smallPlainFont;
-	private final Color colorPassive = Color.BLACK;
+	private final Color colorPassive = new Color(255, 255, 255);
 	
 	public PnlInstructions() {
 		rawPanel = new JPanel();

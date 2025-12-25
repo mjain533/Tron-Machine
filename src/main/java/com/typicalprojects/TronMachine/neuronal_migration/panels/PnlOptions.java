@@ -75,6 +75,7 @@ import com.typicalprojects.TronMachine.neuronal_migration.processing.Preprocesse
 import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
 import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
 import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChangeReceiver;
+import com.typicalprojects.TronMachine.ui.ModernCardPanel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
 import com.typicalprojects.TronMachine.util.Point;
@@ -207,8 +208,8 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 */
 	public PnlOptions(GUI gui) {
 
-		this.rawPanel =  new JPanel();
-		this.rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+		this.rawPanel =  new ModernCardPanel();
+		this.rawPanel.setBorder(new EmptyBorder(16, 16, 16, 16));
 
 		this.gui = gui;
 
@@ -312,7 +313,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		distBtnHelp = new JButton("");
 		distBtnHelp.setIcon(new ImageIcon(new ImageIcon(PnlOptions.class.getResource("/question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-		distBtnHelp.setForeground(Color.BLUE);
+		distBtnHelp.setForeground(new Color(255, 255, 255));
 		distBtnHelp.setBorderPainted(false);
 		distBtnHelp.setOpaque(false);
 		distBtnHelp.setBackground(Color.WHITE);
@@ -360,7 +361,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		objBtnHelp = new JButton("");
 		objBtnHelp.setIcon(new ImageIcon(new ImageIcon(PnlOptions.class.getResource("/question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-		objBtnHelp.setForeground(Color.BLUE);
+		objBtnHelp.setForeground(new Color(255, 255, 255));
 		objBtnHelp.setBorderPainted(false);
 		objBtnHelp.setOpaque(false);
 		objBtnHelp.setBackground(Color.WHITE);
@@ -415,7 +416,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		pstObBtnHelp = new JButton("");
 		pstObBtnHelp.setIcon(new ImageIcon(new ImageIcon(PnlOptions.class.getResource("/question.png")).getImage().getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-		pstObBtnHelp.setForeground(Color.BLUE);
+		pstObBtnHelp.setForeground(new Color(255, 255, 255));
 		pstObBtnHelp.setBorderPainted(false);
 		pstObBtnHelp.setOpaque(false);
 		pstObBtnHelp.setBackground(Color.WHITE);
@@ -461,7 +462,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		sliceBtnNext.setFocusable(false);
 
 		sliceLblERR = new JLabel("ERROR: Invalid slice selection.");
-		sliceLblERR.setForeground(Color.RED);
+		sliceLblERR.setForeground(new Color(255, 100, 100));
 		sliceLblERR.setVisible(false);
 
 		this.sliceBtnNext.addActionListener(new ActionListener() {
@@ -2043,7 +2044,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 						renderer.setText("<html>"+roi.getName()+"</html>");
 
 					}
-					renderer.setBorder(new EmptyBorder(0,0,0,0));
+					renderer.setBorder(new EmptyBorder(16, 16, 16, 16));
 				} else {
 					renderer.setText(value.toString());
 				}
