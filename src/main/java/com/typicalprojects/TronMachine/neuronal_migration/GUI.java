@@ -74,6 +74,8 @@ import com.typicalprojects.TronMachine.neuronal_migration.Settings.SettingsManag
 import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.ImagePanel;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay;
+
+import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlChannelInfo;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlInstructions;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlLog;
 import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlOptions;
@@ -114,9 +116,9 @@ public class GUI  {
 	public static final Font extraSmallBoldFont = new Font("PingFang TC", Font.BOLD, 10);
 	
 	/** Background color of a panel of the GUI when it is disabled **/
-	public static final Color colorPnlDisabled = new Color(50, 55, 65);
+	public static final Color colorPnlDisabled = new Color(55, 60, 70);
 	/** Background color of a panel of the GUI when it is enabled **/
-	public static final Color colorPnlEnabled = new Color(40, 45, 55);
+	public static final Color colorPnlEnabled = new Color(45, 50, 60);
 
 	/** 
 	 * The string representing the current date. It is in the form dd-MM-yyyy HH-mm-ss. Used for creating 
@@ -133,6 +135,7 @@ public class GUI  {
 	private PnlLog pnlLog;
 	private PnlDisplay pnlDisplay;
 	private PnlOptions pnlOptions;
+	private PnlChannelInfo pnlChannelInfo;
 
 	/** Used for advancing from one step to another in the TRON machine. **/
 	private volatile Wizard wizard;
@@ -450,7 +453,9 @@ public class GUI  {
 
 		// Display panel
 		pnlDisplay = new PnlDisplay(this, pnlOptions);
-		pnlDisplay.setChannelManager(settings.channelMan);
+
+		// Channel info panel
+		pnlChannelInfo = new PnlChannelInfo(settings.channelMan, pnlDisplay);
 
 		// Create the wizard used to advaned between steps of the TRON machine
 		wizard = new Wizard(this);
@@ -469,23 +474,26 @@ public class GUI  {
 						.addPreferredGap(ComponentPlacement.RELATED)
 						.addComponent(pnlDisplay.getRawPanel(), GroupLayout.DEFAULT_SIZE, 397, Short.MAX_VALUE)
 						.addContainerGap())
+				.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 				);
 		layout.setVerticalGroup(
-				layout.createParallelGroup(Alignment.TRAILING)
-				.addGroup(layout.createSequentialGroup()
-						.addContainerGap()
-						.addGroup(layout.createParallelGroup(Alignment.LEADING)
-								.addComponent(pnlDisplay.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-								.addGroup(layout.createSequentialGroup()
-										.addComponent(pnlInstructions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
-										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/270, GroupLayout.PREFERRED_SIZE)
-										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlOptions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
-										.addPreferredGap(ComponentPlacement.RELATED)
-										.addComponent(pnlLog.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-										.addPreferredGap(ComponentPlacement.RELATED)))
-						.addGap(5))
+				layout.createSequentialGroup()
+				.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+						.addGroup(layout.createSequentialGroup()
+								.addContainerGap()
+								.addGroup(layout.createParallelGroup(Alignment.LEADING)
+										.addComponent(pnlDisplay.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+										.addGroup(layout.createSequentialGroup()
+												.addComponent(pnlInstructions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)
+												.addComponent(pnlSelectFiles.getRawPanel(), GroupLayout.PREFERRED_SIZE, /*GroupLayout.DEFAULT_SIZE*/270, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)
+												.addComponent(pnlOptions.getRawPanel(), GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+												.addPreferredGap(ComponentPlacement.RELATED)
+												.addComponent(pnlLog.getRawPanel(), GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+												.addPreferredGap(ComponentPlacement.RELATED)))
+								.addGap(5)))
+				.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.PREFERRED_SIZE, 125, GroupLayout.PREFERRED_SIZE)
 				);
 
 

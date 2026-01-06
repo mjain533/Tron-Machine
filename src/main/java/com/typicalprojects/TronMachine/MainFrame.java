@@ -35,6 +35,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.ui.ModernCardPanel;
 
 import ome.xml.model.primitives.Color;
 
@@ -47,7 +48,7 @@ import javax.swing.SwingWorker;
 import javax.swing.SwingWorker.StateValue;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.awt.Insets;
 import java.awt.Font;
 import javax.swing.JButton;
@@ -87,27 +88,28 @@ public class MainFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					 FlatLightLaf.setup();
+					FlatDarkLaf.setup();
 
             // Modern dark theme setup
-			UIManager.put("Component.arc", 12);
-            UIManager.put("Button.arc", 10);
+			UIManager.put("Component.arc", 15);
+            UIManager.put("Button.arc", 12);
 			UIManager.put("TextComponent.arc", 10);
 			UIManager.put("ScrollBar.thumbArc", 999);
 			UIManager.put("ScrollBar.thumbInsets", new Insets(2, 2, 2, 2));
 			
-			// Dark background colors
-			java.awt.Color darkBg = new java.awt.Color(30, 30, 35);
-			java.awt.Color darkPanel = new java.awt.Color(40, 40, 45);
-			java.awt.Color accentGreen = new java.awt.Color(0, 200, 100);
-			
-			UIManager.put("Panel.background", darkPanel);
+			// ZEISS ZEN-like dark blue theme
+			java.awt.Color darkBg = new java.awt.Color(25, 28, 35);
+			java.awt.Color darkPanel = new java.awt.Color(35, 40, 50);
+			java.awt.Color accentBlue = new java.awt.Color(0, 120, 200);
+			java.awt.Color cardBg = new java.awt.Color(45, 50, 60);
+
+			UIManager.put("Panel.background", darkBg);
             UIManager.put("Frame.background", darkBg);
-            UIManager.put("Label.foreground", new java.awt.Color(220, 220, 220));
+            UIManager.put("Label.foreground", new java.awt.Color(230, 230, 230));
             UIManager.put("Button.background", darkPanel);
-            UIManager.put("Button.foreground", new java.awt.Color(220, 220, 220));
-            UIManager.put("TextComponent.background", new java.awt.Color(50, 50, 55));
-            UIManager.put("TextComponent.foreground", new java.awt.Color(220, 220, 220));
+            UIManager.put("Button.foreground", new java.awt.Color(230, 230, 230));
+            UIManager.put("TextComponent.background", new java.awt.Color(55, 60, 70));
+            UIManager.put("TextComponent.foreground", new java.awt.Color(230, 230, 230));
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -148,13 +150,11 @@ public class MainFrame extends JFrame {
 		lblNewLabel.setForeground(new java.awt.Color(235, 235, 240));
 		contentPane.add(lblNewLabel, BorderLayout.NORTH);
 
-		JPanel panel = new JPanel();
-		panel.setBorder(new EmptyBorder(20, 20, 20, 20));
-		panel.setBackground(new java.awt.Color(25, 28, 35));
+		ModernCardPanel panel = new ModernCardPanel(20);
 		contentPane.add(panel, BorderLayout.CENTER);
 
 		JButton btnQuantifyMigration = new JButton("<html><center>Quantify Neuronal Migration</center></html>")  ;
-		btnQuantifyMigration.setBackground(new java.awt.Color(58, 134, 255));
+		btnQuantifyMigration.setBackground(new java.awt.Color(0, 120, 200));
 		btnQuantifyMigration.setForeground(new java.awt.Color(255, 255, 255));
 		btnQuantifyMigration.setFocusPainted(false);
 		btnQuantifyMigration.setBorderPainted(false);

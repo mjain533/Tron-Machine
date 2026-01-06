@@ -2,7 +2,7 @@
  * (C) Copyright 2018 Justin Carrington.
  *
  *  This file is part of TronMachine.
-
+ *
  *  TronMachine is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +12,7 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
-
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with TronMachine.  If not, see <https://www.gnu.org/licenses/>.
  *
@@ -25,56 +25,17 @@
  */
 package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Font;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
-import javax.swing.DefaultListCellRenderer;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.event.*;
 import javax.swing.GroupLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
-import javax.swing.SwingConstants;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
-import javax.swing.border.BevelBorder;
-import javax.swing.border.EmptyBorder;
 
-import com.typicalprojects.TronMachine.neuronal_migration.GUI;
-import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
-import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
-import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
-import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
-import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
-import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayPage;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.NeuronProcessor;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage.PostProcessImage;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.PreprocessedEditableImage;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
-import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
-import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChangeReceiver;
 import com.typicalprojects.TronMachine.ui.ModernCardPanel;
 import com.typicalprojects.TronMachine.util.ImageContainer;
 import com.typicalprojects.TronMachine.util.ImagePhantom;
@@ -84,8 +45,24 @@ import com.typicalprojects.TronMachine.util.SimpleJList;
 import com.typicalprojects.TronMachine.util.Zoom;
 
 import ij.ImagePlus;
-
-
+import ij.ImageStack;
+import com.typicalprojects.TronMachine.neuronal_migration.Wizard.Status;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage.PostProcessImage;
+import com.typicalprojects.TronMachine.neuronal_migration.GUI;
+import com.typicalprojects.TronMachine.neuronal_migration.OutputOption;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager;
+import com.typicalprojects.TronMachine.neuronal_migration.ChannelManager.Channel;
+import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayFeedbackReceiver;
+import com.typicalprojects.TronMachine.neuronal_migration.panels.PnlDisplay.PnlDisplayPage;
+import com.typicalprojects.TronMachine.popup.BrightnessAdjuster.BrightnessChangeReceiver;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.PreprocessedEditableImage;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.ObjectEditableImage;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.ROIEditableImage;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.NeuronProcessor;
+import com.typicalprojects.TronMachine.neuronal_migration.processing.RoiProcessor;
+import java.io.File;
+import java.util.LinkedList;
+import com.typicalprojects.TronMachine.neuronal_migration.RunConfiguration;
 
 /**
  * The panel used to display options during each phase of the neuron processing. On the left side of the GUI.
@@ -181,11 +158,11 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private JCheckBox pstObChkMax;
 	private String pstObHelpPopupText;
 
-	private List<File> imagesForObjectAnalysis = new LinkedList<File>();
-	private List<File> imagesForObjectSelection = new LinkedList<File>();
-	private List<File> imagesForROICreation = new LinkedList<File>();
-	private List<File> imagesForROIAnalysis = new LinkedList<File>();
-	private List<ImagePhantom> imagesForSliceSelection = new LinkedList<ImagePhantom>();
+	private java.util.List<File> imagesForObjectAnalysis = new LinkedList<File>();
+	private java.util.List<File> imagesForObjectSelection = new LinkedList<File>();
+	private java.util.List<File> imagesForROICreation = new LinkedList<File>();
+	private java.util.List<File> imagesForROIAnalysis = new LinkedList<File>();
+	private java.util.List<ImagePhantom> imagesForSliceSelection = new LinkedList<ImagePhantom>();
 	private int currentState = STATE_DISABLED;
 	private NeuronProcessor neuronProcessor;
 	private RoiProcessor roiProcessor;
@@ -765,7 +742,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 
 		this.distBtnDeleteROI.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				List<PolarizedPolygonROI> selectedRois = roiListROI.getSelectedMult();
+				java.util.List<PolarizedPolygonROI> selectedRois = roiListROI.getSelectedMult();
 				if (selectedRois != null && !selectedRois.isEmpty() && imageCurrentlyROIEditing != null) {
 					for (PolarizedPolygonROI roi : selectedRois) {
 						imageCurrentlyROIEditing.removeROI(roi);
@@ -898,7 +875,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					gui.getPanelDisplay().disableSliceSlider(false);
 
 					Channel roiDrawChan = runConfig.channelMan.getPrimaryROIDrawChan();
-					List<Channel> channelsForROISelection = runConfig.channelMan.getOrderedChannels();
+					java.util.List<Channel> channelsForROISelection = runConfig.channelMan.getOrderedChannels();
 					channelsForROISelection.remove(roiDrawChan);
 					channelsForROISelection.add(0, roiDrawChan);
 
@@ -1008,7 +985,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 			// This part reached, must mean that slice selection was invalid.
 		}
 
-		List<Channel> listToSendSlider = this.imageCurrentlyPreprocessing.getRunConfig().channelMan.getOrderedChannels();
+		java.util.List<Channel> listToSendSlider = this.imageCurrentlyPreprocessing.getRunConfig().channelMan.getOrderedChannels();
 
 		int stackSize = imageCurrentlyPreprocessing.getOrigStackSize(listToSendSlider.get(0));
 		this.gui.getPanelDisplay().enableSliceSlider(1, stackSize, 1, false);
@@ -1190,7 +1167,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 					ImageContainer ic = imgCurrObjEditing.getContainer();
 
 					gui.getPanelDisplay().disableSliceSlider(false);
-					List<Channel> chans = new ArrayList<Channel>();
+					java.util.List<Channel> chans = new ArrayList<Channel>();
 					int processedInsertIndex = 0;
 					for (Channel chan : ic.getRunConfig().channelMan.getOrderedChannels()) {
 
@@ -1244,7 +1221,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	private synchronized void _nextPostObjImageHelper() {
 		this.gui.getLogger().setCurrentTask("Beginning post-object processing...");
 
-		List<PostProcessImage> ppis = imgCurrObjEditing.createPostObjectImages();
+		java.util.List<PostProcessImage> ppis = imgCurrObjEditing.createPostObjectImages();
 
 		gui.getPanelDisplay().setPageSlider(true, ppis, "Img");
 		imgCurrObjEditing.setDisplayPostObjectDots(true);
@@ -1386,7 +1363,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * 
 	 * @param images the phantom images from which we can derive and ImagePlus.
 	 */
-	public synchronized void setImagesForSliceSelection(List<ImagePhantom> images) {
+	public synchronized void setImagesForSliceSelection(java.util.List<ImagePhantom> images) {
 		this.imagesForSliceSelection = images;
 	}
 
@@ -1438,7 +1415,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * @param files image serialization files designating images for object selection
 	 * @return true if there were images to start processing
 	 */
-	public synchronized boolean startImageObjectSelecting(List<File> files) {
+	public synchronized boolean startImageObjectSelecting(java.util.List<File> files) {
 
 		if (files.isEmpty()) {
 			return false;
@@ -1456,7 +1433,7 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 	 * @param images the serialization files (.ser) which designate serialized ObjectEditableImages
 	 * @return true if there were images to start processing
 	 */
-	public synchronized boolean startImageROISelecting(List<File> images) {
+	public synchronized boolean startImageROISelecting(java.util.List<File> images) {
 		if (images.isEmpty()) {
 			return false;
 		}
@@ -1838,6 +1815,66 @@ public class PnlOptions implements PnlDisplayFeedbackReceiver, BrightnessChangeR
 		}
 
 		return new Object[] {ipToSet, keepZoom, useScaleBar};
+	}
+
+	@Override
+	public void requestTintChannel(PnlDisplayPage displayPage, int slice, Color tintColor) {
+
+		// Only act if we have a preprocessed image container available
+		if (this.imageCurrentlyPreprocessing == null) return;
+
+		if (!(displayPage instanceof Channel)) return;
+		Channel chan = (Channel) displayPage;
+
+		try {
+			ImageContainer ic = this.imageCurrentlyPreprocessing.getContainer();
+			// Iterate all OutputOption types and replace any stored image for this channel
+			for (com.typicalprojects.TronMachine.neuronal_migration.OutputOption opt : com.typicalprojects.TronMachine.neuronal_migration.OutputOption.values()) {
+				try {
+					if (opt.getRestrictedOption() == com.typicalprojects.TronMachine.neuronal_migration.OutputOption.NO_CHANS)
+						continue;
+					if (!ic.containsImage(opt, chan))
+						continue;
+					ImagePlus src = ic.getImage(opt, chan, false);
+					if (src == null) continue;
+					int w = src.getWidth();
+					int h = src.getHeight();
+					int stackSize = src.getStackSize();
+					ij.ImageStack newStack = new ij.ImageStack(w, h);
+					for (int s = 1; s <= Math.max(1, stackSize); s++) {
+						ij.process.ImageProcessor p = (stackSize > 1) ? src.getStack().getProcessor(s) : src.getProcessor().duplicate();
+						int[] pixels = new int[w * h];
+						int idx = 0;
+						float maxVal = (float) p.getMax();
+						// Hue-shift algorithm for persistent replacement: preserve brightness, set hue to tint color
+						float[] tintHSB = Color.RGBtoHSB(tintColor.getRed(), tintColor.getGreen(), tintColor.getBlue(), null);
+						float tintHue = tintHSB[0];
+						for (int y = 0; y < h; y++) {
+							for (int x = 0; x < w; x++) {
+								float pv = p.getPixelValue(x, y);
+								int intensity = 0;
+								if (maxVal > 0) intensity = Math.round((pv / maxVal) * 255.0f);
+								float value = Math.max(0f, Math.min(1f, intensity / 255f));
+								int newRgbNoAlpha = Color.HSBtoRGB(tintHue, 1.0f, value) & 0xFFFFFF;
+								pixels[idx++] = newRgbNoAlpha;
+							}
+						}
+						ij.process.ColorProcessor cp = new ij.process.ColorProcessor(w, h, pixels);
+						newStack.addSlice(cp);
+					}
+					ImagePlus newImg = new ImagePlus(src.getTitle(), newStack);
+					newImg.setCalibration(src.getCalibration());
+					ic.addImage(opt, chan, newImg);
+				} catch (Exception e) {
+					// ignore single-option failures and continue
+					e.printStackTrace();
+				}
+			}
+
+		} catch (Exception e) {
+			// If anything goes wrong, log and continue (do not crash UI)
+			e.printStackTrace();
+		}
 	}
 
 	/**

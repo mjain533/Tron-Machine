@@ -12,13 +12,13 @@ public class ModernCardPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private int cornerRadius = 12;
+    private int cornerRadius = 15;
 
     private java.awt.Color backgroundColor =
-            new java.awt.Color(40, 45, 55);
+            new java.awt.Color(45, 50, 60);
 
     private java.awt.Color borderColor =
-            new java.awt.Color(58, 100, 160);
+            new java.awt.Color(0, 120, 200);
 
     public ModernCardPanel() {
         setOpaque(false);

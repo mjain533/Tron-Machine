@@ -218,6 +218,7 @@ public class Preferences extends JDialog {
 		pnlSepTop.setBorder(new LineBorder(Color.GRAY));
 
 		JPanel pnlPageName = new JPanel();
+		pnlPageName.setBackground(new Color(40, 40, 40));
 		this.activePanel = this.menuList.getElementAt(0).getRawComponent();
 		gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
@@ -271,6 +272,7 @@ public class Preferences extends JDialog {
 
 		lblPageName = new JLabel("Channel Configuration");
 		lblPageName.setFont(new Font("PingFang TC", Font.BOLD | Font.ITALIC, 15));
+		lblPageName.setForeground(new Color(255, 255, 255));
 		GroupLayout gl_pnlPageName = new GroupLayout(pnlPageName);
 		gl_pnlPageName.setHorizontalGroup(
 				gl_pnlPageName.createParallelGroup(Alignment.LEADING)
@@ -640,9 +642,10 @@ class PnlChanOptions extends JPanel implements SettingsPanel, ChannelSettingsHan
 		JPanel pnlChannels = new JPanel();
 		pnlChannels.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlChannels.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlChannels.setBackground(new Color(211, 211, 211));
+		pnlChannels.setBackground(new Color(50, 50, 50));
 
 		JLabel lblChannels = new JLabel("Channels");
+		lblChannels.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlChannels = new GroupLayout(pnlChannels);
 		gl_pnlChannels.setHorizontalGroup(
@@ -711,9 +714,10 @@ class PnlChanOptions extends JPanel implements SettingsPanel, ChannelSettingsHan
 		JPanel pnlCreateChannel = new JPanel();
 		pnlCreateChannel.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlCreateChannel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlCreateChannel.setBackground(new Color(211, 211, 211));
+		pnlCreateChannel.setBackground(new Color(50, 50, 50));
 
 		JLabel lblCreateChannel = new JLabel("Create Channel");
+		lblCreateChannel.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_pnlCreateChannel = new GroupLayout(pnlCreateChannel);
 		gl_pnlCreateChannel.setHorizontalGroup(
 				gl_pnlCreateChannel.createParallelGroup(Alignment.LEADING)
@@ -873,7 +877,8 @@ class PnlChanOptions extends JPanel implements SettingsPanel, ChannelSettingsHan
 		table.getTableHeader().setResizingAllowed(false);
 		table.getTableHeader().setReorderingAllowed(false);
 		table.setDefaultEditor(Color.class, new ColorEditor());
-		table.getTableHeader().setBackground(Color.LIGHT_GRAY); // Space above the scroll bar
+		table.getTableHeader().setBackground(new Color(60, 60, 60)); // Darker header
+		table.getTableHeader().setForeground(new Color(200, 200, 200)); // Light text
 
 		scrollPane.setViewportView(table);
 		scrollPane.getViewport().setBackground(Color.WHITE);
@@ -1281,9 +1286,10 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		JPanel pnlOutputLocation = new JPanel();
 		pnlOutputLocation.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlOutputLocation.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlOutputLocation.setBackground(new Color(211, 211, 211));
+		pnlOutputLocation.setBackground(new Color(50, 50, 50));
 
 		JLabel lblOutputLocation = new JLabel("Save Location");
+		lblOutputLocation.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlOutputLocation = new GroupLayout(pnlOutputLocation);
 		gl_pnlOutputLocation.setHorizontalGroup(
@@ -1364,9 +1370,10 @@ class PnlSaveOptions extends JPanel implements SettingsPanel {
 		pnlSaveIntermediates = new JPanel();
 		pnlSaveIntermediates.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlSaveIntermediates.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlSaveIntermediates.setBackground(new Color(211, 211, 211));
+		pnlSaveIntermediates.setBackground(new Color(50, 50, 50));
 
 		lblSaveInt = new JLabel("Intermediate States");
+		lblSaveInt.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_pnlSaveIntermediates = new GroupLayout(pnlSaveIntermediates);
 		gl_pnlSaveIntermediates.setHorizontalGroup(
 				gl_pnlSaveIntermediates.createParallelGroup(Alignment.LEADING)
@@ -1525,9 +1532,10 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		JPanel pnlBinOptions = new JPanel();
 		pnlBinOptions.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlBinOptions.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlBinOptions.setBackground(new Color(211, 211, 211));
+		pnlBinOptions.setBackground(new Color(50, 50, 50));
 
 		JLabel lblBinSettings = new JLabel("Bin Settings");
+		lblBinSettings.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlBinOptions = new GroupLayout(pnlBinOptions);
 		gl_pnlBinOptions.setHorizontalGroup(
@@ -1563,9 +1571,10 @@ class PnlBinOptions extends JPanel implements SettingsPanel {
 		JPanel pnlBinOutput = new JPanel();
 		pnlBinOutput.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlBinOutput.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlBinOutput.setBackground(new Color(211, 211, 211));
+		pnlBinOutput.setBackground(new Color(50, 50, 50));
 
 		JLabel lblBinOutput = new JLabel("Binning Output");
+		lblBinOutput.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_pnlBinOutput = new GroupLayout(pnlBinOutput);
 		gl_pnlBinOutput.setHorizontalGroup(
 				gl_pnlBinOutput.createParallelGroup(Alignment.LEADING)
@@ -1723,15 +1732,17 @@ class PnlProcessingOptions extends JPanel implements SettingsPanel {
 		JPanel pnlProcessingSettings = new JPanel();
 		pnlProcessingSettings.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlProcessingSettings.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlProcessingSettings.setBackground(new Color(211, 211, 211));
+		pnlProcessingSettings.setBackground(new Color(50, 50, 50));
 		
 		JPanel pnlObjectPostProcess = new JPanel();
 		pnlObjectPostProcess.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlObjectPostProcess.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlObjectPostProcess.setBackground(new Color(211, 211, 211));
+		pnlObjectPostProcess.setBackground(new Color(50, 50, 50));
 
 		JLabel lblProcessingSettings = new JLabel("Neuron Processing Parameter Values");
+		lblProcessingSettings.setForeground(new Color(0, 0, 0));
 		JLabel lblPostProcessingSettings = new JLabel("Neuron Overlap");
+		lblPostProcessingSettings.setForeground(new Color(0, 0, 0));
 		
 		chkPostProcessObj = new JCheckBox("Enabled overlap detection features");
 		chkPostProcessObjDelete = new JCheckBox("<html>Delete resources of post-processing (recommended--drastically reduces output file size, but then overlap "
@@ -1987,9 +1998,10 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 		JPanel pnlPixelConverstions = new JPanel();
 		pnlPixelConverstions.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlPixelConverstions.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlPixelConverstions.setBackground(new Color(211, 211, 211));
+		pnlPixelConverstions.setBackground(new Color(50, 50, 50));
 
 		JLabel lblPixelConversions = new JLabel("Image Pixel Units");
+		lblPixelConversions.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlPixelConverstions = new GroupLayout(pnlPixelConverstions);
 		gl_pnlPixelConverstions.setHorizontalGroup(
@@ -2100,9 +2112,10 @@ class PnlImageOptions extends JPanel implements SettingsPanel {
 		JPanel pnlColoring = new JPanel();
 		pnlColoring.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlColoring.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlColoring.setBackground(new Color(211, 211, 211));
+		pnlColoring.setBackground(new Color(50, 50, 50));
 
 		JLabel lblColoring = new JLabel("Coloring");
+		lblColoring.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_pnlColoring = new GroupLayout(pnlColoring);
 		gl_pnlColoring.setHorizontalGroup(
 				gl_pnlColoring.createParallelGroup(Alignment.LEADING)
@@ -2223,9 +2236,10 @@ class PnlReset extends JPanel implements SettingsPanel {
 		JPanel pnlPixelConverstions = new JPanel();
 		pnlPixelConverstions.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlPixelConverstions.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlPixelConverstions.setBackground(new Color(211, 211, 211));
+		pnlPixelConverstions.setBackground(new Color(50, 50, 50));
 
 		JLabel lblPixelConversions = new JLabel("Hard Reset");
+		lblPixelConversions.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlPixelConverstions = new GroupLayout(pnlPixelConverstions);
 		gl_pnlPixelConverstions.setHorizontalGroup(
@@ -2393,9 +2407,10 @@ class PnlOutputOptions extends JPanel implements SettingsPanel, ChannelSettingsH
 		JPanel panel = new JPanel();
 		panel.setFont(new Font("Arial", Font.PLAIN, 13));
 		panel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		panel.setBackground(new Color(211, 211, 211));
+		panel.setBackground(new Color(50, 50, 50));
 
 		JLabel lblObjectSelectionOutput = new JLabel("Object Selection Output");
+		lblObjectSelectionOutput.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_panel = new GroupLayout(panel);
 		gl_panel.setHorizontalGroup(
 				gl_panel.createParallelGroup(Alignment.LEADING)
@@ -2431,9 +2446,10 @@ class PnlOutputOptions extends JPanel implements SettingsPanel, ChannelSettingsH
 		JPanel panel_1 = new JPanel();
 		panel_1.setFont(new Font("Arial", Font.PLAIN, 13));
 		panel_1.setBorder(new LineBorder(new Color(0, 0, 0)));
-		panel_1.setBackground(new Color(211, 211, 211));
+		panel_1.setBackground(new Color(50, 50, 50));
 
 		JLabel lblRoiLineSelection = new JLabel("ROI Line Selection Output");
+		lblRoiLineSelection.setForeground(new Color(0, 0, 0));
 		GroupLayout gl_panel_1 = new GroupLayout(panel_1);
 		gl_panel_1.setHorizontalGroup(
 				gl_panel_1.createParallelGroup(Alignment.LEADING)
@@ -2817,9 +2833,10 @@ class PnlTemplates extends JPanel implements SettingsPanel, ListDropReceiver {
 		JPanel pnlTemplates = new JPanel();
 		pnlTemplates.setFont(new Font("Arial", Font.PLAIN, 13));
 		pnlTemplates.setBorder(new LineBorder(new Color(0, 0, 0)));
-		pnlTemplates.setBackground(new Color(211, 211, 211));
+		pnlTemplates.setBackground(new Color(50, 50, 50));
 
 		JLabel lblTemplates = new JLabel("Settings Templates");
+		lblTemplates.setForeground(new Color(0, 0, 0));
 
 		GroupLayout gl_pnlTemplates = new GroupLayout(pnlTemplates);
 		gl_pnlTemplates.setHorizontalGroup(

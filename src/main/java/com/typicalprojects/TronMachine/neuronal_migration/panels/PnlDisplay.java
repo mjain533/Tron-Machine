@@ -26,6 +26,8 @@
 package com.typicalprojects.TronMachine.neuronal_migration.panels;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.awt.Cursor;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
@@ -79,7 +81,6 @@ public class PnlDisplay  {
 	private Cursor cursor;
 
 	private ImagePanel pnlImage;
-	private PnlChannelInfo pnlChannelInfo;
 
 	private JSlider sldrSlice;
 	private JSlider sldrPage;
@@ -99,7 +100,7 @@ public class PnlDisplay  {
 	public PnlDisplay(GUI gui, PnlDisplayFeedbackReceiver sliderOutputHandler) {
 		
 
-		cursor = Toolbox.createCursor();
+		cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
 
 		
 		
@@ -111,8 +112,9 @@ public class PnlDisplay  {
 		lblDisabled = new JLabel("<html><body><p style='width: 150px; text-align: center;'>Please select images using the interface to the left.</p></body></html>");
 		lblDisabled.setHorizontalAlignment(SwingConstants.CENTER);
 
-		// Initialize channel info panel
-		pnlChannelInfo = new PnlChannelInfo(null, this);
+
+
+
 
 		pnlSliderSlice = new JPanel();
 		pnlSliderSlice.setBackground(GUI.colorPnlEnabled);
@@ -401,9 +403,7 @@ public class PnlDisplay  {
 									.addComponent(pnlSliderPage, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE)
 									.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 35, GroupLayout.PREFERRED_SIZE))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-									.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
-									.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE))
+							.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
 							.addContainerGap())
 					);
 			gl_panel.setVerticalGroup(
@@ -411,10 +411,7 @@ public class PnlDisplay  {
 					.addGroup(Alignment.LEADING, gl_panel.createSequentialGroup()
 							.addContainerGap()
 							.addGroup(gl_panel.createParallelGroup(Alignment.LEADING)
-									.addGroup(gl_panel.createSequentialGroup()
-											.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, 450, Short.MAX_VALUE)
-											.addPreferredGap(ComponentPlacement.RELATED)
-											.addComponent(pnlChannelInfo.getRawPanel(), GroupLayout.PREFERRED_SIZE, 125, GroupLayout.PREFERRED_SIZE))
+									.addComponent(pnlImage, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 									.addGroup(gl_panel.createSequentialGroup()
 											.addComponent(pnlSliderSlice, GroupLayout.PREFERRED_SIZE, 247, GroupLayout.PREFERRED_SIZE)
 											.addPreferredGap(ComponentPlacement.RELATED, 95, Short.MAX_VALUE)
@@ -453,6 +450,54 @@ public class PnlDisplay  {
 				pnlImage.setImage((ImagePlus) feedback[0], (boolean) feedback[1]);
 				pnlImage.repaint();
 			}
+		}
+	}
+
+	/**
+	 * Duplicate the currently displayed image, tint it using the provided color,
+	 * and replace the displayed image with the new copy. Keeps zoom state.
+	 */
+	public void duplicateAndTintDisplayedImage(Color tintColor) {
+		if (pnlImage == null) return;
+		// Immediate visual: tint the currently displayed buffered image for responsiveness
+		BufferedImage src = pnlImage.getImage();
+		if (src != null) {
+			int w = src.getWidth();
+			int h = src.getHeight();
+			BufferedImage dup = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+
+			int tr = tintColor.getRed();
+			int tg = tintColor.getGreen();
+			int tb = tintColor.getBlue();
+
+			// Hue-shift algorithm: preserve brightness/value from original, set hue to tint color
+			float[] tintHSB = Color.RGBtoHSB(tr, tg, tb, null);
+			float tintHue = tintHSB[0];
+			for (int y = 0; y < h; y++) {
+				for (int x = 0; x < w; x++) {
+					int rgb = src.getRGB(x, y);
+					int a = (rgb >> 24) & 0xFF;
+					int r = (rgb >> 16) & 0xFF;
+					int g = (rgb >> 8) & 0xFF;
+					int b = (rgb) & 0xFF;
+
+					// Compute intensity (luma) from original pixel and map to brightness
+					float intensity = (float) (0.299 * r + 0.587 * g + 0.114 * b);
+					float value = Math.max(0f, Math.min(1f, intensity / 255f));
+
+					int newRgbNoAlpha = Color.HSBtoRGB(tintHue, 1.0f, value) & 0xFFFFFF;
+					int newRgb = (a << 24) | newRgbNoAlpha;
+					dup.setRGB(x, y, newRgb);
+				}
+			}
+
+			pnlImage.setImage(dup, true);
+			pnlImage.repaint();
+		}
+
+		// Ask the receiver to persistently tint the full channel stack and replace it in the container
+		if (outputHandler != null) {
+			outputHandler.requestTintChannel(getSliderSelectedPage(), getSliderSelectedSlice(), tintColor);
 		}
 	}
 	
@@ -557,11 +602,9 @@ public class PnlDisplay  {
 		}
 	}
 
-	public void setChannelManager(ChannelManager cm) {
-		if (pnlChannelInfo != null) {
-			pnlChannelInfo.setChannelManager(cm);
-		}
-	}
+
+
+
 	
 	public interface PnlDisplayPage {
 		
@@ -574,6 +617,14 @@ public class PnlDisplay  {
 		public ImagePlus sliderSliceChanged(PnlDisplayPage chan, int slice);
 
 		public Object[] sliderPageChanged(PnlDisplayPage chan, int slice);
+
+		/**
+		 * Request that the receiver persistently tint the channel image (full stack) with the provided color.
+		 * @param chan display page (channel)
+		 * @param slice currently selected slice (may be used by implementation)
+		 * @param tintColor color to apply
+		 */
+		public void requestTintChannel(PnlDisplayPage chan, int slice, java.awt.Color tintColor);
 
 		public void mouseClickOnImage(Point p, PnlDisplayPage displayPage, int slice, boolean wasLeftClick);
 		

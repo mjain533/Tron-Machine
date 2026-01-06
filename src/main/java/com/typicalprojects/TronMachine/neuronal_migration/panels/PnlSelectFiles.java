@@ -95,18 +95,21 @@ public class PnlSelectFiles implements ListDropReceiver {
 		rawPanel = new JPanel();
 		rawPanel.setVisible(false);
 		rawPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
-		rawPanel.setBackground(new Color(220, 220, 220));
+		rawPanel.setBackground(new Color(50, 50, 50));
+		rawPanel.setForeground(new Color(0, 0, 0));
 
 		String message = "<html>If this box is checked, then only folders will be selected. When you select a folder, all CZI images within the folder will be selected along with all other CZI images in subfolder 6 levels deep.</html>";
 
 		this.helpPopup = new HelpPopup(220, 350, message);
 
 		JLabel lblSelectFileInstruction = new JLabel("<html>Please select an input image or folder of images (must have extension .czi):</html>");
+		lblSelectFileInstruction.setForeground(new Color(0, 0, 0));
 
 		btnSelectFiles = new JButton("Select File(s)...");
 		btnSelectFiles.setFocusable(false);
 
 		JLabel lblSelectedFiles = new JLabel("Selected Files");
+		lblSelectedFiles.setForeground(new Color(0, 0, 0));
 
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setFocusable(false);

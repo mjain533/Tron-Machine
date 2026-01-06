@@ -56,10 +56,12 @@ public class PnlInstructions {
 	
 	public PnlInstructions() {
 		rawPanel = new JPanel();
-		rawPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null), "Instructions", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		rawPanel.setBackground(new Color(40, 40, 40));
+		rawPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, null, null), "Instructions", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(200, 200, 200)));
 		
 		rawPanel.setLayout(new BorderLayout(0, 0));
 		currInstructions = new JLabel(" ");
+		currInstructions.setForeground(new Color(255, 255, 255));
 		currInstructions.setBorder(new EmptyBorder(2, 7, 4, 4));
 		rawPanel.add(currInstructions, BorderLayout.CENTER);
 		

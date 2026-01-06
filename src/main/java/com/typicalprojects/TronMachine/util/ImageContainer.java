@@ -414,7 +414,7 @@ public class ImageContainer implements Serializable {
 		if (ips == null)
 			throw new UnopenedException();
 		ImagePlus ip = null;
-		
+
 		if (it.getRestrictedOption() == OutputOption.NO_CHANS) {
 			ip = ips.get(null);
 		} else {
@@ -429,6 +429,9 @@ public class ImageContainer implements Serializable {
 			// REMOVE DUP TAG
 			return newImg;
 		} else {
+			if (chan != null) {
+				applyLUT(ip, chan.getImgColor());
+			}
 			return ip;
 		}
 
@@ -845,6 +848,31 @@ public class ImageContainer implements Serializable {
 		}
 		
 		fi.fileName = "CustomLUT";
+		// If image is RGB (24-bit), IndexColorModel is not supported. Apply per-pixel tint instead.
+		if (imp.getBitDepth() == 24) {
+			// Apply tint by multiplying each channel by the tint color fraction.
+			int w = imp.getWidth();
+			int h = imp.getHeight();
+			int stackSize = imp.getStackSize();
+			for (int s = 1; s <= stackSize; s++) {
+				ImageProcessor proc = imp.getStack().getProcessor(s);
+				// operate on ColorProcessor pixels via getPixel and set
+				int[] pixels = (int[]) proc.getPixels();
+				for (int i = 0; i < pixels.length; i++) {
+					int p = pixels[i];
+					int r = (p >> 16) & 0xFF;
+					int g = (p >> 8) & 0xFF;
+					int b = p & 0xFF;
+					int nr = (r * red) / 255;
+					int ng = (g * green) / 255;
+					int nb = (b * blue) / 255;
+					pixels[i] = (0xFF << 24) | (nr << 16) | (ng << 8) | nb;
+				}
+			}
+			imp.updateImage();
+			return;
+		}
+
 		ImageProcessor ip = imp.getChannelProcessor();
 		IndexColorModel cm = new IndexColorModel(8, 256, fi.reds, fi.greens, fi.blues);
 		ip.setColorModel(cm);
